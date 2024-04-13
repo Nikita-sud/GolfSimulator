@@ -42,6 +42,10 @@ public class GolfSimulator implements ApplicationListener, Disposable {
     private BallState ballState;
     private Texture grassTexture;
     private Function heightFunction;
+    private float cameraDistance = 10;
+    private float cameraAngle = 0; 
+    private float speed;  
+
 
 
     private Model createTerrainModel(Function heightFunction, float width, float depth, int widthSegments, int depthSegments) {
@@ -89,10 +93,11 @@ public class GolfSimulator implements ApplicationListener, Disposable {
     @Override
     public void create() {
         modelBatch = new ModelBatch();
-        heightFunction = new Function("sin(x/10) * cos(y/10)");
+        heightFunction = new Function("sin(x) * cos(y)");
         physicsEngine = new PhysicsEngine(heightFunction, 0.1);
-        ballState = new BallState(0, 0, 2, 2);
-
+        ballState = new BallState(0, 0, 0.1, 0.1);
+        speed = 10;
+   
         grassTexture = new Texture(Gdx.files.internal("textures/grassTexture.jpeg"));
 
         camera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -102,7 +107,7 @@ public class GolfSimulator implements ApplicationListener, Disposable {
         camera.far = 300.0f;
         camera.update();
 
-        shadowLight = new DirectionalShadowLight(1024, 1024, 50f, 50f, 0.1f, 100f);
+        shadowLight = new DirectionalShadowLight(1024, 1024, 500f, 500f, 0.1f, 100f);
         shadowLight.set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f);
         environment = new Environment();
         environment.add(shadowLight);
@@ -114,7 +119,7 @@ public class GolfSimulator implements ApplicationListener, Disposable {
         ObjLoader loader = new ObjLoader();
         ballModel = loader.loadModel(Gdx.files.internal("models/sphere.obj"));
         ballInstance = new ModelInstance(ballModel);
-        model = createTerrainModel(heightFunction, 100, 100, 50, 50);
+        model = createTerrainModel(heightFunction, 1000, 1000, 100, 100);
         modelInstance = new ModelInstance(model);
 
         camController = new CameraInputController(camera);
@@ -128,10 +133,16 @@ public class GolfSimulator implements ApplicationListener, Disposable {
         float deltaTime = Gdx.graphics.getDeltaTime();
         ballState = physicsEngine.updateState(ballState, deltaTime);
 
-        // Получаем вертикальную позицию мяча используя функцию высоты
-        float ballZ = (float) heightFunction.evaluate(ballState.getX(), ballState.getY());
+        float radius = 1f; // Радиус мяча
+        float ballZ = (float) heightFunction.evaluate(ballState.getX(), ballState.getY()) + radius;
+        ballInstance.transform.setToTranslation((float) ballState.getX(), ballZ, (float) ballState.getY());
 
-        ballInstance.transform.setToTranslation((float) ballState.getX(), ballZ+1f, (float) ballState.getY());
+        float cameraX = (float) (ballState.getX() + cameraDistance * Math.cos(cameraAngle));
+        float cameraY = (float) (ballState.getY() + cameraDistance * Math.sin(cameraAngle));
+        camera.position.set(cameraX, ballZ + 5f, cameraY);
+        camera.lookAt((float) ballState.getX(), ballZ + 1f, (float) ballState.getY());
+        camera.up.set(Vector3.Y);
+        camera.update();
 
         Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
@@ -153,8 +164,20 @@ public class GolfSimulator implements ApplicationListener, Disposable {
 
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            ballState.setVx(2.0); 
-            ballState.setVy(2.0); 
+            ballState.setVx(-speed*Math.cos(cameraAngle)); 
+            ballState.setVy(-speed*Math.sin(cameraAngle)); 
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            cameraAngle += 0.05; // Увеличиваем угол для вращения влево
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            cameraAngle -= 0.05; // Уменьшаем угол для вращения вправо
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            cameraDistance = Math.max(5, cameraDistance - 0.1f); // Приближаем камеру
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            cameraDistance = Math.min(15, cameraDistance + 0.1f); // Отдаляем камеру
         }
     }
 
