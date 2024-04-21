@@ -1,6 +1,9 @@
 package com.example.golfgame;
+import javafx.*;
 // Just testing out comitting .
-class InModule{
+public class InModule{
+
+
     public static void main(String[] args) {
         System.out.println("hello world");
     }
