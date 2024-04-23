@@ -23,6 +23,12 @@ public class BallState {
         this.vy = vy;
     }
 
+    public void setAllComponents(double x, double y, double vx, double vy){
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+    }
     /**
      * Sets the x-coordinate of the ball.
      *
