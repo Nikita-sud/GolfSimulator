@@ -1,6 +1,6 @@
 package com.example.golfgame;
 
-import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -27,14 +27,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import com.example.golfgame.ODE.*;
 
-/**
- * This class serves as the main simulator for the golf game. It manages rendering, input processing,
- * and physics updates, utilizing libGDX framework for graphics and custom physics engine for simulation.
- */
-public class GolfSimulator implements ApplicationListener, Disposable {
+public class GolfGameScreen implements Screen, Disposable {
+    private GolfGame game;  
     private PerspectiveCamera camera;
     private ModelBatch modelBatch;
-    private Model model;
     private Model ballModel;
     private ModelInstance ballInstance;
     private List<ModelInstance> terrainInstances;
@@ -50,17 +46,10 @@ public class GolfSimulator implements ApplicationListener, Disposable {
     private float cameraAngle = 0; 
     private float speed;
 
-    /**
-     * Creates and subdivides the terrain model based on a given height function.
-     * Each terrain piece is generated as a part of the whole grid to optimize performance.
-     *
-     * @param heightFunction The function to determine terrain height at any point.
-     * @param gridWidth      Total width of the terrain grid.
-     * @param gridHeight     Total height of the terrain grid.
-     * @param scale          Scale factor for terrain dimensions.
-     * @param parts          Number of subdivisions in both width and height.
-     * @return List of model instances representing the subdivided terrain.
-     */
+    public GolfGameScreen(GolfGame game) {
+        this.game = game;
+        create();
+    }
     private List<ModelInstance> createTerrainModels(Function heightFunction, int gridWidth, int gridHeight, float scale, int parts) {
         ModelBuilder modelBuilder = new ModelBuilder();
         List<ModelInstance> terrainInstances = new ArrayList<>();
@@ -105,25 +94,13 @@ public class GolfSimulator implements ApplicationListener, Disposable {
     
         return terrainInstances;
     }
-    
-    
-
-    /**
-     * Computes the height of the terrain at a specific (x, z) location using the height function.
-     *
-     * @param x The x-coordinate at which to calculate the height.
-     * @param z The z-coordinate at which to calculate the height.
-     * @return The computed height at the given coordinates.
-     */
     private float getTerrainHeight(float x, float z) {
         Map<String, Double> args = new HashMap<>();
         args.put("x", (double) x);
         args.put("y", (double) z);
         return (float) heightFunction.evaluate(args);
     }
-
-    @Override
-    public void create() {
+    private void create() {
         modelBatch = new ModelBatch();
         heightFunction = new Function("sin(x) * cos(y)", "x", "y");
         ODE solver = new RungeKutta();
@@ -151,43 +128,11 @@ public class GolfSimulator implements ApplicationListener, Disposable {
         Gdx.input.setInputProcessor(camController);
     }
 
-
     @Override
-    public void render() {
-        handleInput();
-        float deltaTime = Gdx.graphics.getDeltaTime();
-        ballState = physicsEngine.update(ballState, deltaTime);
-        float radius = 1f;
-        float ballZ = getTerrainHeight((float) ballState.getX(), (float) ballState.getY()) + radius;
-        ballInstance.transform.setToTranslation((float) ballState.getX(), ballZ, (float) ballState.getY());
-        float cameraX = (float) (ballState.getX() + cameraDistance * Math.cos(cameraAngle));
-        float cameraY = (float) (ballState.getY() + cameraDistance * Math.sin(cameraAngle));
-        camera.position.set(cameraX, ballZ + 5f, cameraY);
-        camera.lookAt((float) ballState.getX(), ballZ + 1f, (float) ballState.getY());
-        camera.up.set(Vector3.Y);
-        camera.update();
-        Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-        camController.update();
-        shadowLight.begin(Vector3.Zero, camera.direction);
-        shadowBatch.begin(shadowLight.getCamera());
-        for (ModelInstance terrainInstance : terrainInstances) {
-            shadowBatch.render(terrainInstance, environment);
-        }
-        shadowBatch.end();
-        shadowLight.end();
-        modelBatch.begin(camera);
-        for (ModelInstance terrainInstance : terrainInstances) {
-            modelBatch.render(terrainInstance, environment);
-        }
-        modelBatch.render(ballInstance, environment);
-        modelBatch.end();
+    public void show() {
+        // Setup the environment, load models, etc.
     }
 
-
-    /**
-     * Handles real-time user inputs to control camera movement and initiate actions like hitting the ball.
-     */
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             ballState.setVx(-speed * Math.cos(cameraAngle));
@@ -208,6 +153,46 @@ public class GolfSimulator implements ApplicationListener, Disposable {
     }
 
     @Override
+    public void render(float delta) {
+        handleInput();
+        update(delta);
+        draw();
+    }
+
+    private void update(float deltaTime) {
+        ballState = physicsEngine.update(ballState, deltaTime);
+        float radius = 1f;
+        float ballZ = getTerrainHeight((float) ballState.getX(), (float) ballState.getY()) + radius;
+        ballInstance.transform.setToTranslation((float) ballState.getX(), ballZ, (float) ballState.getY());
+        float cameraX = (float) (ballState.getX() + cameraDistance * Math.cos(cameraAngle));
+        float cameraY = (float) (ballState.getY() + cameraDistance * Math.sin(cameraAngle));
+        camera.position.set(cameraX, ballZ + 5f, cameraY);
+        camera.lookAt((float) ballState.getX(), ballZ + 1f, (float) ballState.getY());
+        camera.up.set(Vector3.Y);
+        camera.update();
+        camera.update();
+    }
+
+    private void draw() {
+        Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+        camController.update();
+        shadowLight.begin(Vector3.Zero, camera.direction);
+        shadowBatch.begin(shadowLight.getCamera());
+        for (ModelInstance terrainInstance : terrainInstances) {
+            shadowBatch.render(terrainInstance, environment);
+        }
+        shadowBatch.end();
+        shadowLight.end();
+        modelBatch.begin(camera);
+        for (ModelInstance terrainInstance : terrainInstances) {
+            modelBatch.render(terrainInstance, environment);
+        }
+        modelBatch.render(ballInstance, environment);
+        modelBatch.end();
+    }
+
+    @Override
     public void resize(int width, int height) {
         camera.viewportWidth = width;
         camera.viewportHeight = height;
@@ -223,9 +208,13 @@ public class GolfSimulator implements ApplicationListener, Disposable {
     }
 
     @Override
+    public void hide() {
+        dispose();
+    }
+
+    @Override
     public void dispose() {
         modelBatch.dispose();
-        model.dispose();
         shadowLight.dispose();
         shadowBatch.dispose();
         grassTexture.dispose();
