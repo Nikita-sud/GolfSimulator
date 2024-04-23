@@ -219,4 +219,8 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowBatch.dispose();
         grassTexture.dispose();
     }
+
+    public void setHeightFunction(Function heightFunction){
+        this.heightFunction = heightFunction;
+    }
 }

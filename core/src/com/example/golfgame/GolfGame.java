@@ -28,4 +28,8 @@ public class GolfGame extends Game {
     public void switchToMenu() {
         setScreen(mainScreen);
     }
+
+    public GolfGameScreen getGolfGameScreen(){
+        return (GolfGameScreen)gameScreen;
+    }
 }

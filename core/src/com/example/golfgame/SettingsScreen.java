@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -28,10 +29,21 @@ public class SettingsScreen implements Screen {
             }
         });
 
+        TextField heightFunction = new TextField("Enter height Function", skin);
+        TextButton enterHeightFunction = new TextButton("Enter", skin);
+        enterHeightFunction.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                game.getGolfGameScreen().setHeightFunction(new Function(heightFunction.getText(), new String[]{"x", "y"}));
+            }
+        });
         Table table = new Table();
         table.center();
         table.setFillParent(true);
         table.add(mainMenuButton).width(200).height(80).pad(20);
+        table.add(heightFunction).width(200).height(80).pad(20);
+        table.add(enterHeightFunction).width(100).height(50).pad(20);
+
         stage.addActor(table);
     }
 
