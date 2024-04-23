@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "InModuleLauncher",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.InModuleLauncher",
+            "projectName": "Golf-desktop"
+        },
+        {
+            "type": "java",
+            "name": "InModule",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.InModule",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "InModule",
             "request": "launch",
             "mainClass": "com.example.golfgame.InModule",

@@ -11,39 +11,28 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-public class MainMenuScreen implements Screen {
+public class SettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
-    private Skin skin;  // Store the skin at the class level to dispose it properly
+    private Skin skin;
 
-    public MainMenuScreen(GolfGame game) {
+    public SettingsScreen(GolfGame game){
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json"));  // Load the UI skin
-        TextButton startGameButton = new TextButton("Start Game", skin);
-        startGameButton.addListener(new ChangeListener() {
+        TextButton mainMenuButton = new TextButton("Back to Main Menu", skin);
+        mainMenuButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.switchToGame();;  // Change to the game screen
+                game.switchToMenu();  // Change to the game screen
             }
         });
 
-        TextButton settingsButton = new TextButton("Settings", skin);
-        settingsButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.switchToSettings();  // Change to the game screen
-            }
-        });
-
-        // Layout setup
         Table table = new Table();
         table.center();
         table.setFillParent(true);
-        table.add(startGameButton).width(200).height(80).pad(20);
-        table.add(settingsButton).width(200).height(80).pad(20);
+        table.add(mainMenuButton).width(200).height(80).pad(20);
         stage.addActor(table);
-        
     }
 
     @Override
@@ -84,3 +73,5 @@ public class MainMenuScreen implements Screen {
         skin.dispose();  // Make sure to dispose of the Skin to free up resources
     }
 }
+
+
