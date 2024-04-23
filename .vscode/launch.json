@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "InModule",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.InModule",
+            "projectName": "Golf-desktop"
+        },
+        {
+            "type": "java",
+            "name": "GolfSimulator",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.GolfSimulator",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "PhysicsEngine",
             "request": "launch",
             "mainClass": "com.example.golfgame.PhysicsEngine",
@@ -23,7 +37,6 @@
             "request": "launch",
             "mainClass": "com.example.golfgame.DesktopLauncher",
             "projectName": "Golf-desktop",
-            "vmArgs": "-XstartOnFirstThread",
             "args": ""
         }
     ]
