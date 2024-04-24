@@ -1,20 +1,22 @@
 package com.example.golfgame;
 
 /**
- * Represents the state of a ball in a golf simulation game, including its position and velocity.
- * The class stores four properties: x and y coordinates for position, and vx and vy for velocity components.
+ * Represents the state of a golf ball in a simulation game, encapsulating its position and velocity.
+ * The state includes the ball's coordinates (x, y) and the components of its velocity (vx, vy).
  */
 public class BallState {
-    private double x = 0, y = 0;
-    private double vx = 0, vy = 0;
+    private double x = 0;
+    private double y = 0;
+    private double vx = 0;
+    private double vy = 0;
 
     /**
-     * Constructs a new BallState with specified position and velocity.
+     * Initializes a new instance of {@code BallState} with specified position and velocity.
      *
-     * @param x  the initial x-coordinate of the ball.
-     * @param y  the initial y-coordinate of the ball.
-     * @param vx the initial x-component of the velocity of the ball.
-     * @param vy the initial y-component of the velocity of the ball.
+     * @param x  the initial x-coordinate of the ball in meters.
+     * @param y  the initial y-coordinate of the ball in meters.
+     * @param vx the initial horizontal component of the ball's velocity in meters per second.
+     * @param vy the initial vertical component of the ball's velocity in meters per second.
      */
     public BallState(double x, double y, double vx, double vy) {
         this.x = x;
@@ -23,16 +25,25 @@ public class BallState {
         this.vy = vy;
     }
 
-    public void setAllComponents(double x, double y, double vx, double vy){
+    /**
+     * Sets all state components of the ball at once.
+     *
+     * @param x  the new x-coordinate of the ball in meters.
+     * @param y  the new y-coordinate of the ball in meters.
+     * @param vx the new horizontal component of the ball's velocity in meters per second.
+     * @param vy the new vertical component of the ball's velocity in meters per second.
+     */
+    public void setAllComponents(double x, double y, double vx, double vy) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
     }
+
     /**
      * Sets the x-coordinate of the ball.
      *
-     * @param x the new x-coordinate of the ball.
+     * @param x the new x-coordinate of the ball in meters.
      */
     public void setX(double x) {
         this.x = x;
@@ -41,25 +52,25 @@ public class BallState {
     /**
      * Sets the y-coordinate of the ball.
      *
-     * @param y the new y-coordinate of the ball.
+     * @param y the new y-coordinate of the ball in meters.
      */
     public void setY(double y) {
         this.y = y;
     }
 
     /**
-     * Sets the x-component of the velocity of the ball.
+     * Sets the horizontal component of the ball's velocity.
      *
-     * @param vx the new x-component of the velocity.
+     * @param vx the new horizontal velocity in meters per second.
      */
     public void setVx(double vx) {
         this.vx = vx;
     }
 
     /**
-     * Sets the y-component of the velocity of the ball.
+     * Sets the vertical component of the ball's velocity.
      *
-     * @param vy the new y-component of the velocity.
+     * @param vy the new vertical velocity in meters per second.
      */
     public void setVy(double vy) {
         this.vy = vy;
@@ -68,7 +79,7 @@ public class BallState {
     /**
      * Returns the x-coordinate of the ball.
      *
-     * @return the x-coordinate of the ball.
+     * @return the x-coordinate of the ball in meters.
      */
     public double getX() {
         return x;
@@ -77,25 +88,25 @@ public class BallState {
     /**
      * Returns the y-coordinate of the ball.
      *
-     * @return the y-coordinate of the ball.
+     * @return the y-coordinate of the ball in meters.
      */
     public double getY() {
         return y;
     }
 
     /**
-     * Returns the x-component of the velocity of the ball.
+     * Returns the horizontal component of the ball's velocity.
      *
-     * @return the x-component of the velocity.
+     * @return the horizontal velocity component in meters per second.
      */
     public double getVx() {
         return vx;
     }
 
     /**
-     * Returns the y-component of the velocity of the ball.
+     * Returns the vertical component of the ball's velocity.
      *
-     * @return the y-component of the velocity.
+     * @return the vertical velocity component in meters per second.
      */
     public double getVy() {
         return vy;
