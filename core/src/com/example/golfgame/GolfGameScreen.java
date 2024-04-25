@@ -41,16 +41,18 @@ public class GolfGameScreen implements Screen, Disposable {
     private PhysicsEngine physicsEngine;
     private BallState ballState;
     private Texture grassTexture;
-    private Function heightFunction;
+    private Function heightFunction = new Function("0.1x", "x","y");
     private float cameraDistance = 10;
     private float cameraAngle = 0; 
     private float speed;
 
     public GolfGameScreen(GolfGame game) {
         this.game = game;
+
         create();
     }
     private List<ModelInstance> createTerrainModels(Function heightFunction, int gridWidth, int gridHeight, float scale, int parts) {
+
         ModelBuilder modelBuilder = new ModelBuilder();
         List<ModelInstance> terrainInstances = new ArrayList<>();
     
@@ -102,7 +104,6 @@ public class GolfGameScreen implements Screen, Disposable {
     }
     private void create() {
         modelBatch = new ModelBatch();
-        heightFunction = new Function("sin(x) * cos(y)", "x", "y");
         ODE solver = new RungeKutta();
         ballState = new BallState(0, 0, 0.01, 0.01);
         physicsEngine = new PhysicsEngine(solver, heightFunction, 0.1);
@@ -199,6 +200,9 @@ public class GolfGameScreen implements Screen, Disposable {
         camera.update();
     }
 
+    public void setHeightFunction(Function newHeightFunction){
+        this.heightFunction = newHeightFunction;
+    }
     @Override
     public void pause() {
     }
@@ -220,7 +224,4 @@ public class GolfGameScreen implements Screen, Disposable {
         grassTexture.dispose();
     }
 
-    public void setHeightFunction(Function heightFunction){
-        this.heightFunction = heightFunction;
-    }
 }
