@@ -10,14 +10,16 @@ public class GolfGame extends Game {
 
     @Override
     public void create() {
+        settingsScreen = new SettingsScreen(this);
         mainScreen = new MainMenuScreen(this);
         gameScreen = new GolfGameScreen(this);
-        settingsScreen = new SettingsScreen(this);
 
         this.setScreen(mainScreen);
     }
 
     public void switchToGame() {
+        ((GolfGameScreen)gameScreen).setHeightFunction(((SettingsScreen)settingsScreen).getCurHeightFunction());
+
         setScreen(gameScreen);
     }
 
@@ -31,5 +33,9 @@ public class GolfGame extends Game {
 
     public GolfGameScreen getGolfGameScreen(){
         return (GolfGameScreen)gameScreen;
+    }
+
+    public SettingsScreen getSettingsScreen(){
+        return (SettingsScreen)settingsScreen;
     }
 }

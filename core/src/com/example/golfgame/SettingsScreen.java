@@ -1,5 +1,7 @@
 package com.example.golfgame;
 
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -16,6 +18,7 @@ public class SettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
     private Skin skin;
+    private Function curHeightFunction = new Function("sin(x) * cos(y)", "x", "y");  
 
     public SettingsScreen(GolfGame game){
         this.game = game;
@@ -34,7 +37,7 @@ public class SettingsScreen implements Screen {
         enterHeightFunction.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
-                game.getGolfGameScreen().setHeightFunction(new Function(heightFunction.getText(), new String[]{"x", "y"}));
+                curHeightFunction = new Function(heightFunction.getText(), "x", "y");
             }
         });
         Table table = new Table();
@@ -83,6 +86,10 @@ public class SettingsScreen implements Screen {
     public void dispose() {
         stage.dispose();
         skin.dispose();  // Make sure to dispose of the Skin to free up resources
+    }
+
+    public Function getCurHeightFunction(){
+        return curHeightFunction;
     }
 }
 
