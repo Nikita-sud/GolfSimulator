@@ -1,24 +1,25 @@
 package com.example.golfgame;
 
-import javax.swing.filechooser.FileNameExtensionFilter;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 
 public class SettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
     private Skin skin;
-    private Function curHeightFunction = new Function("0.5x", "x", "y");  
+    private Function curHeightFunction = new Function("sin(0.3x)*cos(0.3y)", "x", "y");  
+    
 
     public SettingsScreen(GolfGame game){
         this.game = game;
@@ -32,7 +33,7 @@ public class SettingsScreen implements Screen {
             }
         });
 
-        TextField heightFunction = new TextField("Enter height Function", skin);
+        TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)", skin);
         TextButton enterHeightFunction = new TextButton("Enter", skin);
         enterHeightFunction.addListener(new ChangeListener() {
             @Override
@@ -40,13 +41,26 @@ public class SettingsScreen implements Screen {
                 curHeightFunction = new Function(heightFunction.getText(), "x", "y");
             }
         });
+
+        Slider windSlider = new Slider((float)0.0, (float)0.04, (float)0.0001, false, skin);
+        Label windLabel = new Label("Wind speed magnitude: "+String.format("%.2f", windSlider.getValue()), skin);
+        windSlider.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                float value = windSlider.getValue();
+                game.getGolfGameScreen().setWeather(new Weather(value));
+                windLabel.setText("Wind speed magnitude: "+String.format("%.2f", windSlider.getValue()));
+            }
+        });  
         Table table = new Table();
         table.center();
         table.setFillParent(true);
         table.add(mainMenuButton).width(200).height(80).pad(20);
         table.add(heightFunction).width(200).height(80).pad(20);
         table.add(enterHeightFunction).width(100).height(50).pad(20);
-
+        
+        table.add(windSlider).fillX().uniformX();
+        table.add(windLabel).padLeft(10);
         stage.addActor(table);
     }
 

@@ -1,6 +1,7 @@
 package com.example.golfgame;
 
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -16,6 +17,7 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.graphics.Color;
@@ -27,6 +29,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+
+import org.w3c.dom.Text;
+
 import com.example.golfgame.ODE.*;
 
 /**
@@ -50,6 +55,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private PhysicsEngine gamePhysicsEngine;
     private BallState currentBallState;
     private Texture grassTexture;
+    private Texture arrowTexture;
     private Function terrainHeightFunction;
     private float cameraDistance = 10;
     private float cameraViewAngle = 0;
@@ -57,6 +63,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private AssetManager assetManager;
     private float terrainCenterX = 0;
     private float terrainCenterZ = 0;
+    private Weather weather = new Weather(0);
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -80,6 +87,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private void loadAssets() {
         assetManager.load("textures/grassTexture.jpeg", Texture.class);
         assetManager.load("models/sphere.obj", Model.class);
+        assetManager.load("textures/arrow.png", Texture.class);
         assetManager.finishLoading();
     }
 
@@ -92,7 +100,8 @@ public class GolfGameScreen implements Screen, Disposable {
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
-        currentBallState = new BallState(0, 0, 0.01, 0.01);
+        currentBallState = new BallState(0, 0, 1000, 1000);
+        System.out.println(weather.getWind()[0]);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
@@ -255,6 +264,12 @@ public class GolfGameScreen implements Screen, Disposable {
      * @param deltaTime The time elapsed since the last frame, used for smooth animations and physics calculations.
      */
     private void update(float deltaTime) {
+        // With a certain probability, wind changes from time to time
+        if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
+            currentBallState.setVx(weather.getWind()[0]+currentBallState.getVx());
+            currentBallState.setVy( weather.getWind()[1]+currentBallState.getVy());
+        }
+    
         currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         checkAndReloadTerrainIfNeeded();
         float radius = 1f;
@@ -301,6 +316,7 @@ public class GolfGameScreen implements Screen, Disposable {
         Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         cameraController.update();
+        
         mainShadowLight.begin(Vector3.Zero, mainCamera.direction);
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
 
@@ -308,12 +324,14 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowModelBatch.end();
         mainShadowLight.end();
         mainModelBatch.begin(mainCamera);
+
         for (ModelInstance terrainInstance : golfCourseInstances) {
             shadowModelBatch.render(terrainInstance, gameEnvironment);
             mainModelBatch.render(terrainInstance, gameEnvironment);
         }
         mainModelBatch.render(golfBallInstance, gameEnvironment);
         mainModelBatch.end();
+        
     }
 
     @Override
@@ -326,6 +344,15 @@ public class GolfGameScreen implements Screen, Disposable {
     public void setHeightFunction(Function newHeightFunction){
         this.heightFunction = newHeightFunction;
     }
+
+    public void setWeather(Weather newWeather){
+        weather = newWeather;
+    }
+
+    public Weather getWeather(){
+        return weather;
+    }
+
     @Override
     public void pause() {
         // This method would contain logic to handle the game pausing.
