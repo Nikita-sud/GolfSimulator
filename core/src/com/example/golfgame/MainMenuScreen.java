@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public class MainMenuScreen implements Screen {
+    @SuppressWarnings("unused")
     private GolfGame game;
     private Stage stage;
     private Skin skin;  // Store the skin at the class level to dispose it properly

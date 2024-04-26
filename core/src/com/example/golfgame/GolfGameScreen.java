@@ -35,7 +35,7 @@ import com.example.golfgame.ODE.*;
  * dynamic lighting, and user input to create an interactive game experience.
  */
 public class GolfGameScreen implements Screen, Disposable {
-
+    @SuppressWarnings("unused")
     private GolfGame mainGame;
     private PerspectiveCamera mainCamera;
     private ModelBatch mainModelBatch;
