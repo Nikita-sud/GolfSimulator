@@ -36,6 +36,7 @@ import com.example.golfgame.ODE.*;
  */
 public class GolfGameScreen implements Screen, Disposable {
     @SuppressWarnings("unused")
+    private Function heightFunction;
     private GolfGame mainGame;
     private PerspectiveCamera mainCamera;
     private ModelBatch mainModelBatch;
@@ -71,7 +72,6 @@ public class GolfGameScreen implements Screen, Disposable {
         this.mainGame = game;
         this.assetManager = assetManager;
         loadAssets();
-        initializeComponents();
     }
 
     /**
@@ -86,11 +86,11 @@ public class GolfGameScreen implements Screen, Disposable {
     /**
      * Initializes game components such as models, environment, and camera settings.
      */
-    private void initializeComponents() {
+    protected void initializeComponents() {
         mainModelBatch = new ModelBatch();
         grassTexture = assetManager.get("textures/grassTexture.jpeg", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
-        terrainHeightFunction = new Function("sin(x) * cos(y)", "x", "y");
+        terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
         currentBallState = new BallState(0, 0, 0.01, 0.01);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);

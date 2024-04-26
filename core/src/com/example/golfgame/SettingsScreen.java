@@ -18,7 +18,7 @@ public class SettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
     private Skin skin;
-    private Function curHeightFunction = new Function("sin(x) * cos(y)", "x", "y");  
+    private Function curHeightFunction = new Function("0.5x", "x", "y");  
 
     public SettingsScreen(GolfGame game){
         this.game = game;
