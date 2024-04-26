@@ -42,14 +42,14 @@ public class SettingsScreen implements Screen {
             }
         });
 
-        Slider windSlider = new Slider((float)0.0, (float)0.04, (float)0.0001, false, skin);
-        Label windLabel = new Label("Wind speed magnitude: "+String.format("%.2f", windSlider.getValue()), skin);
+        Slider windSlider = new Slider((float)0.0, (float)0.005, (float)0.0001, false, skin);
+        Label windLabel = new Label("Wind speed magnitude: "+String.format("%.4f", windSlider.getValue()), skin);
         windSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
                 float value = windSlider.getValue();
                 game.getGolfGameScreen().setWeather(new Weather(value));
-                windLabel.setText("Wind speed magnitude: "+String.format("%.2f", windSlider.getValue()));
+                windLabel.setText("Wind speed magnitude: "+String.format("%.4f", windSlider.getValue()));
             }
         });  
         Table table = new Table();
