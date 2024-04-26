@@ -1,5 +1,7 @@
 package com.example.golfgame;
 
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -8,44 +10,44 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
-public class MainMenuScreen implements Screen {
-    @SuppressWarnings("unused")
+public class SettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
-    private Skin skin;  // Store the skin at the class level to dispose it properly
+    private Skin skin;
+    private Function curHeightFunction = new Function("0.5x", "x", "y");  
 
-    public MainMenuScreen(GolfGame game) {
+    public SettingsScreen(GolfGame game){
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json"));  // Load the UI skin
-        TextButton startGameButton = new TextButton("Start Game", skin);
-        startGameButton.addListener(new ChangeListener() {
+        TextButton mainMenuButton = new TextButton("Back to Main Menu", skin);
+        mainMenuButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.getGolfGameScreen().initializeComponents();
-                game.switchToGame();;  // Change to the game screen
+                game.switchToMenu();  // Change to the game screen
             }
         });
 
-        TextButton settingsButton = new TextButton("Settings", skin);
-        settingsButton.addListener(new ChangeListener() {
+        TextField heightFunction = new TextField("Enter height Function", skin);
+        TextButton enterHeightFunction = new TextButton("Enter", skin);
+        enterHeightFunction.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.switchToSettings();  // Change to the game screen
+            public void changed(ChangeEvent event, Actor actor){
+                curHeightFunction = new Function(heightFunction.getText(), "x", "y");
             }
         });
-
-        // Layout setup
         Table table = new Table();
         table.center();
         table.setFillParent(true);
-        table.add(startGameButton).width(200).height(80).pad(20);
-        table.add(settingsButton).width(200).height(80).pad(20);
+        table.add(mainMenuButton).width(200).height(80).pad(20);
+        table.add(heightFunction).width(200).height(80).pad(20);
+        table.add(enterHeightFunction).width(100).height(50).pad(20);
+
         stage.addActor(table);
-        
     }
 
     @Override
@@ -85,4 +87,10 @@ public class MainMenuScreen implements Screen {
         stage.dispose();
         skin.dispose();  // Make sure to dispose of the Skin to free up resources
     }
+
+    public Function getCurHeightFunction(){
+        return curHeightFunction;
+    }
 }
+
+
