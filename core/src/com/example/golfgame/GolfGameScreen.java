@@ -41,7 +41,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private PhysicsEngine physicsEngine;
     private BallState ballState;
     private Texture grassTexture;
-    private Function heightFunction = new Function("0.1x", "x","y");
+    private Function heightFunction = new Function("2", "x","y");
     private float cameraDistance = 10;
     private float cameraAngle = 0; 
     private float speed;
