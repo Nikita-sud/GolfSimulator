@@ -52,6 +52,8 @@ public class SettingsScreen implements Screen {
                 windLabel.setText("Wind speed magnitude: "+String.format("%.4f", windSlider.getValue()));
             }
         });  
+
+        
         Table table = new Table();
         table.center();
         table.setFillParent(true);

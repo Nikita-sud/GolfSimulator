@@ -27,7 +27,6 @@ public class MainMenuScreen implements Screen {
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                System.out.println("Wind: "+Arrays.toString(game.getGolfGameScreen().getWeather().getWind())+" "+game.getGolfGameScreen().getWeather().getWindMagnitude());
                 game.getGolfGameScreen().initializeComponents();
                 game.switchToGame();;  // Change to the game screen
             }

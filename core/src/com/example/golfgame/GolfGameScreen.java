@@ -101,7 +101,6 @@ public class GolfGameScreen implements Screen, Disposable {
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
         currentBallState = new BallState(0, 0, 1000, 1000);
-        System.out.println(weather.getWind()[0]);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
