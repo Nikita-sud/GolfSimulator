@@ -54,6 +54,7 @@ public class SettingsScreen implements Screen {
         });  
 
         Slider sunSlider = new Slider(0f, 1f, 0.01f, false, skin);
+        sunSlider.setValue(1f);
         Label sunLabel = new Label("Sunlight level: "+sunSlider.getValue(), skin);
         sunSlider.addListener(new ChangeListener() {
             @Override
