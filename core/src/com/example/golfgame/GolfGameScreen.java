@@ -18,11 +18,18 @@ import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -59,6 +66,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private float terrainCenterX = 0;
     private float terrainCenterZ = 0;
     private Weather weather = new Weather(0);
+    private Stage stage;
+    private TextButton button;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -205,6 +214,25 @@ public class GolfGameScreen implements Screen, Disposable {
             golfCourseInstances = createTerrainModels(terrainHeightFunction, 200, 200, 1.0f, 4, 0, 0);
         }
         resetGameState();
+
+        // Stage for settings button
+        stage = new Stage(new ScreenViewport());
+        Gdx.input.setInputProcessor(stage);
+        Table table = new Table();
+        table.setPosition(900, 430);
+        table.setFillParent(true);
+        stage.addActor(table);
+        Skin skin = new Skin(Gdx.files.internal("assets/uiskin.json"));  // Load the UI skin
+        button = new TextButton("Settings", skin);
+
+        button.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+                mainGame.setScreen(mainGame.getSettingsScreen());
+            }
+        });
+        table.add(button).pad(10);
+        Gdx.input.setInputProcessor(stage);
     }
 
     /**
@@ -250,6 +278,9 @@ public class GolfGameScreen implements Screen, Disposable {
         handleInput();
         update(delta);
         draw();
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+        
+        stage.draw();
     }
 
     /**
@@ -333,6 +364,7 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.viewportWidth = width;
         mainCamera.viewportHeight = height;
         mainCamera.update();
+        stage.getViewport().update(width, height, true);
     }
 
     public void setHeightFunction(Function newHeightFunction){

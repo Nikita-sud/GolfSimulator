@@ -3,6 +3,7 @@ package com.example.golfgame;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -11,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 
@@ -47,7 +49,7 @@ public class SettingsScreen implements Screen {
             }
         });
 
-        Slider windSlider = new Slider((float)0.0, (float)0.005, (float)0.0001, false, skin);
+        Slider windSlider = new Slider((float)0.0, (float)0.01, (float)0.0001, false, skin);
         Label windLabel = new Label("Wind speed magnitude: "+String.format("%.4f", windSlider.getValue()), skin);
         windSlider.addListener(new ChangeListener() {
             @Override
@@ -58,15 +60,15 @@ public class SettingsScreen implements Screen {
             }
         });  
 
-        Slider sunSlider = new Slider(0f, 1f, 0.01f, false, skin);
+        Slider sunSlider = new Slider(0f, 1f, 0.001f, false, skin);
         sunSlider.setValue(1f);
-        Label sunLabel = new Label("Sunlight level: "+sunSlider.getValue(), skin);
+        Label sunLabel = new Label("Sunlight level: "+String.format("%.3f", sunSlider.getValue()), skin);
         sunSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
                 float value = sunSlider.getValue();
                 game.getGolfGameScreen().getWeather().setSun(value);
-                sunLabel.setText("Sunlight level: "+sunSlider.getValue());
+                sunLabel.setText("Sunlight level: "+String.format("%.3f", sunSlider.getValue()));
             }
         });
 
@@ -74,6 +76,9 @@ public class SettingsScreen implements Screen {
         play.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
+                System.out.println("Wind in x Direction: "+game.getGolfGameScreen().getWeather().getWind()[0]);
+                System.out.println("Wind in y Direction: "+game.getGolfGameScreen().getWeather().getWind()[1]);
+                System.out.println("Wind in z Direction: "+game.getGolfGameScreen().getWeather().getWind()[2]);
                 game.getGolfGameScreen().initializeComponents();
                 game.switchToGame();
             }
@@ -81,6 +86,7 @@ public class SettingsScreen implements Screen {
         Table table = new Table();
         table.center();
         table.setFillParent(true);
+        table.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("textures/SettingsBackground.jpeg"))));
         table.add(mainMenuButton).width(200).height(80).pad(20);
         table.add(heightFunction).width(200).height(80).pad(20);
         
