@@ -49,7 +49,7 @@ public class SettingsScreen implements Screen {
             }
         });
 
-        Slider windSlider = new Slider((float)0.0, (float)0.01, (float)0.0001, false, skin);
+        Slider windSlider = new Slider((float)0.0, (float)0.001, (float)0.0001, false, skin);
         Label windLabel = new Label("Wind speed magnitude: "+String.format("%.4f", windSlider.getValue()), skin);
         windSlider.addListener(new ChangeListener() {
             @Override
