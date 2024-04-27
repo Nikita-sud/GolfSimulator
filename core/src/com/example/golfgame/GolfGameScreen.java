@@ -87,7 +87,6 @@ public class GolfGameScreen implements Screen, Disposable {
     private void loadAssets() {
         assetManager.load("textures/grassTexture.jpeg", Texture.class);
         assetManager.load("models/sphere.obj", Model.class);
-        assetManager.load("textures/arrow.png", Texture.class);
         assetManager.finishLoading();
     }
 
