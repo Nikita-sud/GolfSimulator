@@ -34,11 +34,16 @@ public class SettingsScreen implements Screen {
         });
 
         TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)", skin);
-        TextButton enterHeightFunction = new TextButton("Enter", skin);
-        enterHeightFunction.addListener(new ChangeListener() {
+    
+        heightFunction.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
-                curHeightFunction = new Function(heightFunction.getText(), "x", "y");
+                try{
+                    curHeightFunction = new Function(heightFunction.getText(), "x", "y");
+                }
+                catch (Exception e){
+                    curHeightFunction = new Function("sin(0.3x)*cos(0.3y)", "x", "y");
+                }
             }
         });
 
@@ -48,7 +53,7 @@ public class SettingsScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor){
                 float value = windSlider.getValue();
-                game.getGolfGameScreen().setWeather(new Weather(value));
+                game.getGolfGameScreen().getWeather().setWind(value);
                 windLabel.setText("Wind speed magnitude: "+String.format("%.4f", windSlider.getValue()));
             }
         });  
@@ -64,18 +69,27 @@ public class SettingsScreen implements Screen {
                 sunLabel.setText("Sunlight level: "+sunSlider.getValue());
             }
         });
+
+        TextButton play = new TextButton("Play!", skin);
+        play.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                game.getGolfGameScreen().initializeComponents();
+                game.switchToGame();
+            }
+        });
         Table table = new Table();
         table.center();
         table.setFillParent(true);
         table.add(mainMenuButton).width(200).height(80).pad(20);
         table.add(heightFunction).width(200).height(80).pad(20);
-        table.add(enterHeightFunction).width(100).height(50).pad(20);
         
         table.add(windSlider).fillX().uniformX();
         table.add(windLabel).padLeft(10);
 
         table.add(sunSlider).fillX().uniformX().padLeft(20);
         table.add(sunLabel).padLeft(10);
+        table.add(play).width(200).height(80).pad(20);
         stage.addActor(table);
     }
 

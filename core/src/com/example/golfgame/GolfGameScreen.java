@@ -1,7 +1,6 @@
 package com.example.golfgame;
 
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -17,7 +16,6 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.graphics.Color;
@@ -29,8 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-
-import org.w3c.dom.Text;
 
 import com.example.golfgame.ODE.*;
 
@@ -55,7 +51,6 @@ public class GolfGameScreen implements Screen, Disposable {
     private PhysicsEngine gamePhysicsEngine;
     private BallState currentBallState;
     private Texture grassTexture;
-    private Texture arrowTexture;
     private Function terrainHeightFunction;
     private float cameraDistance = 10;
     private float cameraViewAngle = 0;
