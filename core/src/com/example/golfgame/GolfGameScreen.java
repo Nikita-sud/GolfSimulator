@@ -27,6 +27,7 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -68,6 +69,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private Weather weather = new Weather(0);
     private Stage stage;
     private TextButton button;
+    private Label facingLabel;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -215,7 +217,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         resetGameState();
 
-        // Stage for settings button
+        // Stage for other elements
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
         Table table = new Table();
@@ -228,10 +230,18 @@ public class GolfGameScreen implements Screen, Disposable {
         button.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
+
                 mainGame.setScreen(mainGame.getSettingsScreen());
             }
         });
-        table.add(button).pad(10);
+
+        Label windLabel = new Label("vxWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0])+"\nvyWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1])+"\nvzWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
+        facingLabel = new Label("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y), skin);
+        table.add(button).pad(10).row();
+        table.add(windLabel).row();
+        facingLabel.setPosition(20, 910);
+        stage.addActor(facingLabel);
+
         Gdx.input.setInputProcessor(stage);
     }
 
@@ -261,15 +271,19 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             cameraViewAngle += 0.05; // Rotate camera left
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             cameraViewAngle -= 0.05; // Rotate camera right
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             cameraDistance = Math.max(5, cameraDistance - 0.1f); // Zoom in
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             cameraDistance = Math.min(15, cameraDistance + 0.1f); // Zoom out
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
     }
 
@@ -279,7 +293,6 @@ public class GolfGameScreen implements Screen, Disposable {
         update(delta);
         draw();
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
-        
         stage.draw();
     }
 
@@ -292,7 +305,7 @@ public class GolfGameScreen implements Screen, Disposable {
         // With a certain probability, wind changes from time to time
         if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
             currentBallState.setVx(weather.getWind()[0]+currentBallState.getVx());
-            currentBallState.setVy( weather.getWind()[1]+currentBallState.getVy());
+            currentBallState.setVy(weather.getWind()[1]+currentBallState.getVy());
         }
     
         currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
