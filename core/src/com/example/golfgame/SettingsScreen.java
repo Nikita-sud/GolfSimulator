@@ -53,7 +53,16 @@ public class SettingsScreen implements Screen {
             }
         });  
 
-        
+        Slider sunSlider = new Slider(0f, 1f, 0.01f, false, skin);
+        Label sunLabel = new Label("Sunlight level: "+sunSlider.getValue(), skin);
+        sunSlider.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                float value = sunSlider.getValue();
+                game.getGolfGameScreen().getWeather().setSun(value);
+                sunLabel.setText("Sunlight level: "+sunSlider.getValue());
+            }
+        });
         Table table = new Table();
         table.center();
         table.setFillParent(true);
@@ -63,6 +72,9 @@ public class SettingsScreen implements Screen {
         
         table.add(windSlider).fillX().uniformX();
         table.add(windLabel).padLeft(10);
+
+        table.add(sunSlider).fillX().uniformX().padLeft(20);
+        table.add(sunLabel).padLeft(10);
         stage.addActor(table);
     }
 

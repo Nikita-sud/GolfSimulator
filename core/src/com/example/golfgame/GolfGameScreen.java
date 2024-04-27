@@ -109,7 +109,8 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.far = 300.0f;
         mainCamera.update();
         mainShadowLight = new DirectionalShadowLight(2048*2, 2048*2, 500f, 500f, 0.01f, 1000f);
-        mainShadowLight.set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f);
+        Float sunlight = (float)mainGame.getGolfGameScreen().getWeather().getSun();
+        mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
         gameEnvironment = new Environment();
         gameEnvironment.add(mainShadowLight);
         gameEnvironment.shadowMap = mainShadowLight;

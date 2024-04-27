@@ -1,7 +1,5 @@
 package com.example.golfgame;
 
-import java.util.Arrays;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -27,6 +25,9 @@ public class MainMenuScreen implements Screen {
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                System.out.println("Wind in x Direction: "+game.getGolfGameScreen().getWeather().getWind()[0]);
+                System.out.println("Wind in y Direction: "+game.getGolfGameScreen().getWeather().getWind()[1]);
+                System.out.println("Wind in z Direction: "+game.getGolfGameScreen().getWeather().getWind()[2]);
                 game.getGolfGameScreen().initializeComponents();
                 game.switchToGame();;  // Change to the game screen
             }
