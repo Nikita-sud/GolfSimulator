@@ -18,15 +18,24 @@ import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+
 import com.example.golfgame.ODE.*;
 
 /**
@@ -57,6 +66,10 @@ public class GolfGameScreen implements Screen, Disposable {
     private AssetManager assetManager;
     private float terrainCenterX = 0;
     private float terrainCenterZ = 0;
+    private Weather weather = new Weather(0);
+    private Stage stage;
+    private TextButton button;
+    private Label facingLabel;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -92,7 +105,7 @@ public class GolfGameScreen implements Screen, Disposable {
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
-        currentBallState = new BallState(0, 0, 0.01, 0.01);
+        currentBallState = new BallState(0, 0, 1000, 1000);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
@@ -101,7 +114,8 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.far = 300.0f;
         mainCamera.update();
         mainShadowLight = new DirectionalShadowLight(2048*2, 2048*2, 500f, 500f, 0.01f, 1000f);
-        mainShadowLight.set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f);
+        Float sunlight = (float)mainGame.getGolfGameScreen().getWeather().getSun();
+        mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
         gameEnvironment = new Environment();
         gameEnvironment.add(mainShadowLight);
         gameEnvironment.shadowMap = mainShadowLight;
@@ -202,6 +216,33 @@ public class GolfGameScreen implements Screen, Disposable {
             golfCourseInstances = createTerrainModels(terrainHeightFunction, 200, 200, 1.0f, 4, 0, 0);
         }
         resetGameState();
+
+        // Stage for other elements
+        stage = new Stage(new ScreenViewport());
+        Gdx.input.setInputProcessor(stage);
+        Table table = new Table();
+        table.setPosition(900, 430);
+        table.setFillParent(true);
+        stage.addActor(table);
+        Skin skin = new Skin(Gdx.files.internal("assets/uiskin.json"));  // Load the UI skin
+        button = new TextButton("Settings", skin);
+
+        button.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y){
+
+                mainGame.setScreen(mainGame.getSettingsScreen());
+            }
+        });
+
+        Label windLabel = new Label("vxWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0])+"\nvyWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1])+"\nvzWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
+        facingLabel = new Label("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y), skin);
+        table.add(button).pad(10).row();
+        table.add(windLabel).row();
+        facingLabel.setPosition(20, 910);
+        stage.addActor(facingLabel);
+
+        Gdx.input.setInputProcessor(stage);
     }
 
     /**
@@ -230,15 +271,19 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             cameraViewAngle += 0.05; // Rotate camera left
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             cameraViewAngle -= 0.05; // Rotate camera right
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
         if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             cameraDistance = Math.max(5, cameraDistance - 0.1f); // Zoom in
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
         if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             cameraDistance = Math.min(15, cameraDistance + 0.1f); // Zoom out
+            facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
         }
     }
 
@@ -247,6 +292,8 @@ public class GolfGameScreen implements Screen, Disposable {
         handleInput();
         update(delta);
         draw();
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+        stage.draw();
     }
 
     /**
@@ -255,6 +302,12 @@ public class GolfGameScreen implements Screen, Disposable {
      * @param deltaTime The time elapsed since the last frame, used for smooth animations and physics calculations.
      */
     private void update(float deltaTime) {
+        // With a certain probability, wind changes from time to time
+        if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
+            currentBallState.setVx(weather.getWind()[0]+currentBallState.getVx());
+            currentBallState.setVy(weather.getWind()[1]+currentBallState.getVy());
+        }
+    
         currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         checkAndReloadTerrainIfNeeded();
         float radius = 1f;
@@ -301,6 +354,7 @@ public class GolfGameScreen implements Screen, Disposable {
         Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         cameraController.update();
+        
         mainShadowLight.begin(Vector3.Zero, mainCamera.direction);
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
 
@@ -308,12 +362,14 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowModelBatch.end();
         mainShadowLight.end();
         mainModelBatch.begin(mainCamera);
+
         for (ModelInstance terrainInstance : golfCourseInstances) {
             shadowModelBatch.render(terrainInstance, gameEnvironment);
             mainModelBatch.render(terrainInstance, gameEnvironment);
         }
         mainModelBatch.render(golfBallInstance, gameEnvironment);
         mainModelBatch.end();
+        
     }
 
     @Override
@@ -321,11 +377,21 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.viewportWidth = width;
         mainCamera.viewportHeight = height;
         mainCamera.update();
+        stage.getViewport().update(width, height, true);
     }
 
     public void setHeightFunction(Function newHeightFunction){
         this.heightFunction = newHeightFunction;
     }
+
+    public void setWeather(Weather newWeather){
+        weather = newWeather;
+    }
+
+    public Weather getWeather(){
+        return weather;
+    }
+
     @Override
     public void pause() {
         // This method would contain logic to handle the game pausing.
