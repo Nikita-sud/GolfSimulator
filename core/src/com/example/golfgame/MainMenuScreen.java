@@ -28,8 +28,7 @@ public class MainMenuScreen implements Screen {
                 System.out.println("Wind in x Direction: "+game.getGolfGameScreen().getWeather().getWind()[0]);
                 System.out.println("Wind in y Direction: "+game.getGolfGameScreen().getWeather().getWind()[1]);
                 System.out.println("Wind in z Direction: "+game.getGolfGameScreen().getWeather().getWind()[2]);
-                game.getGolfGameScreen().initializeComponents();
-                game.switchToGame();;  // Change to the game screen
+                game.switchToGame();  // Change to the game screen
             }
         });
 
@@ -43,22 +42,34 @@ public class MainMenuScreen implements Screen {
 
         // Layout setup
         Table table = new Table();
-        table.center();
-        table.setFillParent(true);
+        table.setFillParent(true);  // Fill the stage
+        table.center();  // Center everything in the table
+
+        // Add the Start Game button
         table.add(startGameButton).width(200).height(80).pad(20);
+        table.row();  // Move to the next row for the next button
+
+        // Add the Settings button
         table.add(settingsButton).width(200).height(80).pad(20);
+
+        // Add the table to the stage
         stage.addActor(table);
+
         
     }
 
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST); // Disable depth testing for 2D rendering
+        Gdx.gl.glClearColor(0, 0, 0, 1); // Ensure background is set to black
     }
+
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClearColor(0, 0, 0, 1); // Set clear color to black
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
     }

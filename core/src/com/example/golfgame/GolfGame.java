@@ -20,8 +20,8 @@ public class GolfGame extends Game {
     }
 
     public void switchToGame() {
+        getGolfGameScreen().initializeComponents();
         ((GolfGameScreen)gameScreen).setHeightFunction(((SettingsScreen)settingsScreen).getCurHeightFunction());
-
         setScreen(gameScreen);
     }
 
@@ -39,5 +39,9 @@ public class GolfGame extends Game {
 
     public SettingsScreen getSettingsScreen(){
         return (SettingsScreen)settingsScreen;
+    }
+    @Override
+    public void dispose() {
+        assetManager.dispose();
     }
 }
