@@ -28,6 +28,7 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -73,6 +74,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private Label facingLabel;
     private Float sunlight;
     private boolean isPaused = false;
+    private Dialog pauseDialog;
+    private Skin skin;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -103,6 +106,26 @@ public class GolfGameScreen implements Screen, Disposable {
      * Initializes game components such as models, environment, and camera settings.
      */
     protected void initializeComponents() {
+        if(isPaused){
+            pauseGame();
+        }
+        skin = new Skin(Gdx.files.internal("assets/uiskin.json")); // Initialize skin first
+    
+        pauseDialog = new Dialog("", skin, "dialog") { // Now use skin to initialize Dialog
+            public void result(Object obj) {
+                if ((Boolean) obj) {
+                    pauseGame(); // Toggle pause
+                } else {
+                    mainGame.setScreen(mainGame.getMenuScreen());
+                }
+            }
+        };
+        pauseDialog.text("Game Paused");
+        pauseDialog.button("Resume", true); // Resume button
+        pauseDialog.button("Back to Main Menu", false); // Go to main menu button
+        pauseDialog.hide(); // Hide the dialog initially
+    
+        // Rest of your component initialization...
         mainModelBatch = new ModelBatch();
         grassTexture = assetManager.get("textures/grassTexture.jpeg", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
@@ -110,25 +133,31 @@ public class GolfGameScreen implements Screen, Disposable {
         ODE solver = new RungeKutta();
         currentBallState = new BallState(0, 0, 1000, 1000);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
+    
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
         mainCamera.lookAt(0f, 0f, 0f);
         mainCamera.near = 0.1f;
         mainCamera.far = 300.0f;
         mainCamera.update();
+    
         mainShadowLight = new DirectionalShadowLight(2048*2, 2048*2, 500f, 500f, 0.01f, 1000f);
         sunlight = (float)mainGame.getGolfGameScreen().getWeather().getSun();
         mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
+    
         gameEnvironment = new Environment();
         gameEnvironment.add(mainShadowLight);
         gameEnvironment.shadowMap = mainShadowLight;
+    
         shadowModelBatch = new ModelBatch(new DepthShaderProvider());
         golfBallInstance = new ModelInstance(golfBallModel);
         golfCourseInstances = createTerrainModels(terrainHeightFunction, 200, 200, 1.0f, 4, 0, 0);
         waterSurface = createWaterSurface(0, 0, 200, 200);
+    
         cameraController = new CameraInputController(mainCamera);
         Gdx.input.setInputProcessor(cameraController);
     }
+    
 
     /**
      * Creates terrain models based on a specified height function to simulate varying terrain elevations.
@@ -236,13 +265,11 @@ public class GolfGameScreen implements Screen, Disposable {
     public void show() {
         // Create the stage and skin for UI elements
         stage = new Stage(new ScreenViewport());
-        Skin skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
 
         // Set up a table for organizing UI elements
         Table table = new Table();
         table.setFillParent(true); // Makes the table fill the parent container
         table.top().right(); // Aligns the contents of the table to the top right corner
-
         // Create the settings button
         TextButton settingsButton = new TextButton("Settings", skin);
         settingsButton.addListener(new ClickListener(){
@@ -471,11 +498,12 @@ public class GolfGameScreen implements Screen, Disposable {
     private void pauseGame() {
         isPaused = !isPaused; 
         if (isPaused) {
-            
+            pauseDialog.show(stage);
         } else {
-            
+            pauseDialog.hide();
         }
     }
+    
     
     @Override
     public void pause() {

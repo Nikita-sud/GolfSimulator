@@ -40,6 +40,10 @@ public class GolfGame extends Game {
     public SettingsScreen getSettingsScreen(){
         return (SettingsScreen)settingsScreen;
     }
+    public MainMenuScreen getMenuScreen(){
+        return (MainMenuScreen)mainScreen;
+    }
+
     @Override
     public void dispose() {
         assetManager.dispose();
