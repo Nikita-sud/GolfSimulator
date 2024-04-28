@@ -70,6 +70,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private Stage stage;
     private TextButton button;
     private Label facingLabel;
+    private Vector3 golfBallPosition;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -105,7 +106,7 @@ public class GolfGameScreen implements Screen, Disposable {
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
-        currentBallState = new BallState(0, 0, 1000, 1000);
+        currentBallState = new BallState(0, 0, 0.01, 0.01);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
@@ -230,13 +231,15 @@ public class GolfGameScreen implements Screen, Disposable {
         button.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y){
-
+                resetGameState();
                 mainGame.setScreen(mainGame.getSettingsScreen());
             }
         });
 
         Label windLabel = new Label("vxWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0])+"\nvyWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1])+"\nvzWind="+String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
         facingLabel = new Label("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y), skin);
+
+
         table.add(button).pad(10).row();
         table.add(windLabel).row();
         facingLabel.setPosition(20, 910);
