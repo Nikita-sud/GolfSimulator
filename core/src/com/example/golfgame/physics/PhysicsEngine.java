@@ -1,9 +1,12 @@
-package com.example.golfgame;
+package com.example.golfgame.physics;
 
-import com.example.golfgame.ODE.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.example.golfgame.physics.ODE.*;
+import com.example.golfgame.utils.BallState;
+import com.example.golfgame.utils.Function;
 
 /**
  * The PhysicsEngine class simulates the motion of a ball on a surface using

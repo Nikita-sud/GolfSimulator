@@ -1,4 +1,4 @@
-package com.example.golfgame;
+package com.example.golfgame.utils;
 
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;

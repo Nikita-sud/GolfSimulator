@@ -1,4 +1,4 @@
-package com.example.golfgame;
+package com.example.golfgame.screens;
 
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
@@ -7,23 +7,19 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -33,12 +29,14 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
 
-import com.example.golfgame.ODE.*;
+import com.example.golfgame.GolfGame;
+import com.example.golfgame.utils.*;
+import com.example.golfgame.physics.*;
+import com.example.golfgame.physics.ODE.*;
+
+
 
 /**
  * The GolfGameScreen class implements the game screen for a 3D golf game,
@@ -55,6 +53,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private ModelInstance golfBallInstance;
     private List<ModelInstance> golfCourseInstances;
     private ModelInstance waterSurface;
+    private TerrainManager terrainManager;
+    private WaterSurfaceManager waterSurfaceManager;
     private Environment gameEnvironment;
     private CameraInputController cameraController;
     private DirectionalShadowLight mainShadowLight;
@@ -105,7 +105,7 @@ public class GolfGameScreen implements Screen, Disposable {
     /**
      * Initializes game components such as models, environment, and camera settings.
      */
-    protected void initializeComponents() {
+    public void initializeComponents() {
         if(isPaused){
             pauseGame();
         }
@@ -124,8 +124,7 @@ public class GolfGameScreen implements Screen, Disposable {
         pauseDialog.button("Resume", true); // Resume button
         pauseDialog.button("Back to Main Menu", false); // Go to main menu button
         pauseDialog.hide(); // Hide the dialog initially
-    
-        // Rest of your component initialization...
+
         mainModelBatch = new ModelBatch();
         grassTexture = assetManager.get("textures/grassTexture.jpeg", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
@@ -134,6 +133,9 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState = new BallState(0, 0, 1000, 1000);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
     
+        terrainManager = new TerrainManager(terrainHeightFunction, grassTexture, 200, 200, 1.0f, 4);
+        waterSurfaceManager = new WaterSurfaceManager(200, 200);
+
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
         mainCamera.lookAt(0f, 0f, 0f);
@@ -151,114 +153,16 @@ public class GolfGameScreen implements Screen, Disposable {
     
         shadowModelBatch = new ModelBatch(new DepthShaderProvider());
         golfBallInstance = new ModelInstance(golfBallModel);
-        golfCourseInstances = createTerrainModels(terrainHeightFunction, 200, 200, 1.0f, 4, 0, 0);
-        waterSurface = createWaterSurface(0, 0, 200, 200);
+        for (Material material : golfBallInstance.materials) {
+            material.clear();
+            material.set(ColorAttribute.createDiffuse(Color.WHITE));
+        }
+        
+        golfCourseInstances = terrainManager.createTerrainModels(0, 0);
+        waterSurface = waterSurfaceManager.createWaterSurface(0, 0);
     
         cameraController = new CameraInputController(mainCamera);
         Gdx.input.setInputProcessor(cameraController);
-    }
-    
-
-    /**
-     * Creates terrain models based on a specified height function to simulate varying terrain elevations.
-     *
-     * @param heightFunction the mathematical function used to determine terrain elevation at any point
-     * @param gridWidth the number of horizontal divisions in the terrain mesh
-     * @param gridHeight the number of vertical divisions in the terrain mesh
-     * @param scale the scale factor for the size of the terrain
-     * @param parts the number of parts the terrain is divided into for rendering
-     * @param centerX the X coordinate at the center of the terrain grid
-     * @param centerZ the Z coordinate at the center of the terrain grid
-     * @return a list of model instances representing the terrain
-     */
-    private List<ModelInstance> createTerrainModels(Function heightFunction, int gridWidth, int gridHeight, float scale, int parts, float centerX, float centerZ) {
-        ModelBuilder modelBuilder = new ModelBuilder();
-        List<ModelInstance> golfCourseInstances = new ArrayList<>();
-    
-        int partWidth = gridWidth / parts;
-        int partHeight = gridHeight / parts;
-    
-        float halfTotalWidth = gridWidth * scale * 0.5f;
-        float halfTotalHeight = gridHeight * scale * 0.5f;
-    
-        for (int pz = 0; pz < parts; pz++) {
-            for (int px = 0; px < parts; px++) {
-                modelBuilder.begin();
-                MeshPartBuilder meshBuilder = modelBuilder.part("terrain_part_" + pz + "_" + px, GL20.GL_TRIANGLES, Usage.Position | Usage.Normal | Usage.TextureCoordinates, new Material(TextureAttribute.createDiffuse(grassTexture)));
-                MeshPartBuilder lineMeshBuilder = modelBuilder.part("terrain_lines_" + pz + "_" + px, GL20.GL_LINES, Usage.Position | Usage.Normal, new Material(new ColorAttribute(ColorAttribute.Diffuse, Color.WHITE)));
-    
-                for (int z = 0; z <= partHeight; z++) {
-                    for (int x = 0; x <= partWidth; x++) {
-                        float worldX = centerX + (x + px * partWidth) * scale - halfTotalWidth;
-                        float worldZ = centerZ + (z + pz * partHeight) * scale - halfTotalHeight;
-                        float height = getTerrainHeight(worldX, worldZ);
-                        float textureU = (worldX + gridWidth * scale / 2) / (gridWidth * scale);
-                        float textureV = (worldZ + gridHeight * scale / 2) / (gridHeight * scale);
-    
-                        meshBuilder.vertex(new float[]{worldX, height, worldZ, 0, 1, 0, textureU, textureV});
-                        lineMeshBuilder.vertex(new float[]{worldX, height, worldZ, 0, 1, 0});
-                    }
-                }
-    
-                for (int z = 0; z < partHeight; z++) {
-                    for (int x = 0; x < partWidth; x++) {
-                        int base = (partWidth + 1) * z + x;
-                        short index1 = (short) (base);
-                        short index2 = (short) (base + 1);
-                        short index3 = (short) (base + partWidth + 1);
-                        short index4 = (short) (base + partWidth + 2);
-    
-                        meshBuilder.index(index1, index3, index2);
-                        meshBuilder.index(index2, index3, index4);
-                        // Add line indices for wireframe
-                        lineMeshBuilder.index(index1, index2);
-                        lineMeshBuilder.index(index2, index4);
-                        lineMeshBuilder.index(index4, index3);
-                        lineMeshBuilder.index(index3, index1);
-                    }
-                }
-    
-                Model partModel = modelBuilder.end();
-                ModelInstance partInstance = new ModelInstance(partModel);
-                golfCourseInstances.add(partInstance);
-            }
-        }
-    
-        return golfCourseInstances;
-    }
-
-    private ModelInstance createWaterSurface(float centerX, float centerZ, float width, float depth) {
-        ModelBuilder modelBuilder = new ModelBuilder();
-        modelBuilder.begin();
-        MeshPartBuilder builder = modelBuilder.part("water", GL20.GL_TRIANGLES, Usage.Position | Usage.Normal, new Material(ColorAttribute.createDiffuse(new Color(0, 0, 1, 0.5f)))); 
-        float halfWidth = width / 2;
-        float halfDepth = depth / 2;
-        builder.rect(
-            centerX - halfWidth, 0, centerZ + halfDepth,
-            centerX + halfWidth, 0, centerZ + halfDepth,
-            centerX + halfWidth, 0, centerZ - halfDepth,
-            centerX - halfWidth, 0, centerZ - halfDepth,
-            0, 1, 0
-        );
-        Model waterModel = modelBuilder.end();
-        return new ModelInstance(waterModel);
-    }
-    
-    
-    
-
-    /**
-     * Calculates the height of the terrain at a given coordinate based on the defined height function.
-     *
-     * @param x the x-coordinate of the location
-     * @param z the z-coordinate of the location
-     * @return the height at the given location
-     */
-    private float getTerrainHeight(float x, float z) {
-        Map<String, Double> args = new HashMap<>();
-        args.put("x", (double) x);
-        args.put("y", (double) z);
-        return (float) terrainHeightFunction.evaluate(args);
     }
 
     @Override
@@ -329,7 +233,7 @@ public class GolfGameScreen implements Screen, Disposable {
 
         // Check and initialize game components
         if (golfCourseInstances == null || golfCourseInstances.isEmpty()) {
-            golfCourseInstances = createTerrainModels(terrainHeightFunction, 200, 200, 1.0f, 4, 0, 0);
+            golfCourseInstances = terrainManager.createTerrainModels(0, 0);
         }
         resetGameState();
     }
@@ -342,7 +246,6 @@ public class GolfGameScreen implements Screen, Disposable {
     protected void resetGameState() {
         currentBallState.setAllComponents(0,0,0.001,0.001);
         reloadTerrain(terrainCenterX, terrainCenterZ); 
-        mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
         cameraViewAngle = 0;
         cameraDistance = 10;
         mainCamera.position.set(1f, 1f, 1f);
@@ -403,12 +306,16 @@ public class GolfGameScreen implements Screen, Disposable {
             currentBallState.setVx(weather.getWind()[0]+currentBallState.getVx());
             currentBallState.setVy(weather.getWind()[1]+currentBallState.getVy());
         }
-    
+
         currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         checkAndReloadTerrainAndWaterSurafceIfNeeded();
-        float radius = 1f;
-        float ballZ = getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + radius;
+        float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
+        updateCameraPosition(deltaTime);
+    }
+
+    private void updateCameraPosition(float delta) {
+        float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         float cameraX = (float) (currentBallState.getX() + cameraDistance * Math.cos(cameraViewAngle));
         float cameraY = (float) (currentBallState.getY() + cameraDistance * Math.sin(cameraViewAngle));
         mainCamera.position.set(cameraX, ballZ + 5f, cameraY);
@@ -426,7 +333,7 @@ public class GolfGameScreen implements Screen, Disposable {
 
         if (ballPosition.dst(terrainCenter) > 20) { // Threshold distance to trigger terrain reload
             reloadTerrain(ballPosition.x, ballPosition.y);
-            waterSurface = createWaterSurface(terrainCenterX, terrainCenterZ, 200, 200);
+            waterSurface = waterSurfaceManager.createWaterSurface(terrainCenterX, terrainCenterZ);
         }
     }
 
@@ -440,7 +347,7 @@ public class GolfGameScreen implements Screen, Disposable {
         terrainCenterX = x;
         terrainCenterZ = y;
         golfCourseInstances.clear();
-        golfCourseInstances = createTerrainModels(terrainHeightFunction, 200, 200, 1.0f, 4, x, y);
+        golfCourseInstances = terrainManager.createTerrainModels(x, y);;
         System.out.println("Terrain reloaded around position: " + x + ", " + y);
     }
 
