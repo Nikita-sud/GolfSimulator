@@ -48,16 +48,36 @@ public class PhysicsEngine {
      * @return the derivative value along the x-axis
      */
     private double derivativeX(double x, double y) {
-        Map<String, Double> valuesPlus = new HashMap<>();
-        Map<String, Double> valuesMinus = new HashMap<>();
+        Map<String, Double> valuesOneStepAhead = new HashMap<>();
+        Map<String, Double> valuesOneStepBehind = new HashMap<>();
+        Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
+        Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         
-        valuesPlus.put("x", x + deltaX);
-        valuesPlus.put("y", y);
-        valuesMinus.put("x", x - deltaX);
-        valuesMinus.put("y", y);
-
-        return (surfaceFunction.evaluate(valuesPlus) - surfaceFunction.evaluate(valuesMinus)) / (2 * deltaX);
+        double h = deltaX; // Assuming deltaX is your small step for the derivative
+    
+        // Setting values for function evaluation at x + h and x - h
+        valuesOneStepAhead.put("x", x + h);
+        valuesOneStepAhead.put("y", y);
+        valuesOneStepBehind.put("x", x - h);
+        valuesOneStepBehind.put("y", y);
+    
+        // Setting values for function evaluation at x + 2h and x - 2h
+        valuesTwoStepsAhead.put("x", x + 2 * h);
+        valuesTwoStepsAhead.put("y", y);
+        valuesTwoStepsBehind.put("x", x - 2 * h);
+        valuesTwoStepsBehind.put("y", y);
+    
+        // Five-point central difference formula:
+        // f'(x) ≈ (−f(x+2h) + 8f(x+h) − 8f(x−h) + f(x−2h)) / 12h
+        double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
+                             + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
+                             - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
+                             + surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+                            / (12 * h);
+    
+        return derivative;
     }
+    
 
     /**
      * Calculates the derivative of the surface function along the y-axis at a given point.
@@ -67,16 +87,36 @@ public class PhysicsEngine {
      * @return the derivative value along the y-axis
      */
     private double derivativeY(double x, double y) {
-        Map<String, Double> valuesPlus = new HashMap<>();
-        Map<String, Double> valuesMinus = new HashMap<>();
+        Map<String, Double> valuesOneStepAhead = new HashMap<>();
+        Map<String, Double> valuesOneStepBehind = new HashMap<>();
+        Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
+        Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         
-        valuesPlus.put("x", x);
-        valuesPlus.put("y", y + deltaY);
-        valuesMinus.put("x", x);
-        valuesMinus.put("y", y - deltaY);
-
-        return (surfaceFunction.evaluate(valuesPlus) - surfaceFunction.evaluate(valuesMinus)) / (2 * deltaY);
+        double h = deltaY; // Assuming deltaY is your small step for the derivative
+    
+        // Setting values for function evaluation at y + h and y - h
+        valuesOneStepAhead.put("x", x);
+        valuesOneStepAhead.put("y", y + h);
+        valuesOneStepBehind.put("x", x);
+        valuesOneStepBehind.put("y", y - h);
+    
+        // Setting values for function evaluation at y + 2h and y - 2h
+        valuesTwoStepsAhead.put("x", x);
+        valuesTwoStepsAhead.put("y", y + 2 * h);
+        valuesTwoStepsBehind.put("x", x);
+        valuesTwoStepsBehind.put("y", y - 2 * h);
+    
+        // Five-point central difference formula for the derivative with respect to y:
+        // f'(y) ≈ (−f(y+2h) + 8f(y+h) − 8f(y−h) + f(y−2h)) / 12h
+        double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
+                             + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
+                             - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
+                             + surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+                            / (12 * h);
+    
+        return derivative;
     }
+    
 
     /**
      * Generates a map of differential equations representing the dynamics of the ball based on its current state.
