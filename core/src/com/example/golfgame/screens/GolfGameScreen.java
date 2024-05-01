@@ -29,6 +29,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+
 import java.util.List;
 
 import com.example.golfgame.GolfGame;
@@ -52,6 +53,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private Model golfBallModel;
     private ModelInstance golfBallInstance;
     private List<ModelInstance> golfCourseInstances;
+    private List<ModelInstance> sandInstances;
     private ModelInstance waterSurface;
     private TerrainManager terrainManager;
     private WaterSurfaceManager waterSurfaceManager;
@@ -62,6 +64,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private PhysicsEngine gamePhysicsEngine;
     private BallState currentBallState;
     private Texture grassTexture;
+    private Texture sandTexture;
     private Function terrainHeightFunction;
     private float cameraDistance = 10;
     private float cameraViewAngle = 0;
@@ -76,6 +79,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private boolean isPaused = false;
     private Dialog pauseDialog;
     private Skin skin;
+    private double grassFriction;
+    private double sandFriction;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -98,6 +103,7 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void loadAssets() {
         assetManager.load("textures/grassTexture.jpeg", Texture.class);
+        assetManager.load("textures/sandTexture.jpeg", Texture.class);
         assetManager.load("models/sphere.obj", Model.class);
         assetManager.finishLoading();
     }
@@ -127,13 +133,17 @@ public class GolfGameScreen implements Screen, Disposable {
 
         mainModelBatch = new ModelBatch();
         grassTexture = assetManager.get("textures/grassTexture.jpeg", Texture.class);
+        sandTexture = assetManager.get("textures/sandTexture.jpeg", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
-        currentBallState = new BallState(0, 0, 1000, 1000);
-        gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction, 0.1);
+        currentBallState = new BallState(0, 0, 0.001, 0.001);
+        gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
+
+        grassFriction = 0.1;
+        sandFriction = 1;
     
-        terrainManager = new TerrainManager(terrainHeightFunction, grassTexture, 200, 200, 1.0f, 4);
+        terrainManager = new TerrainManager(terrainHeightFunction, grassTexture,sandTexture, 200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200, 200);
 
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -146,6 +156,9 @@ public class GolfGameScreen implements Screen, Disposable {
         mainShadowLight = new DirectionalShadowLight(2048*2, 2048*2, 500f, 500f, 0.01f, 1000f);
         sunlight = (float)mainGame.getGolfGameScreen().getWeather().getSun();
         mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
+
+        terrainManager.addSandArea(new float[] {0f,0f,40f,40f});
+        terrainManager.addSandArea(new float[] {-100f,-50f,0f,0f});
     
         gameEnvironment = new Environment();
         gameEnvironment.add(mainShadowLight);
@@ -158,7 +171,8 @@ public class GolfGameScreen implements Screen, Disposable {
             material.set(ColorAttribute.createDiffuse(Color.WHITE));
         }
         
-        golfCourseInstances = terrainManager.createTerrainModels(0, 0);
+        golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
+        sandInstances = terrainManager.createSandTerrainModels(0, 0);
         waterSurface = waterSurfaceManager.createWaterSurface(0, 0);
     
         cameraController = new CameraInputController(mainCamera);
@@ -233,7 +247,8 @@ public class GolfGameScreen implements Screen, Disposable {
 
         // Check and initialize game components
         if (golfCourseInstances == null || golfCourseInstances.isEmpty()) {
-            golfCourseInstances = terrainManager.createTerrainModels(0, 0);
+            golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
+            sandInstances = terrainManager.createSandTerrainModels(0, 0);
         }
         resetGameState();
     }
@@ -301,18 +316,35 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void update(float deltaTime) {
         if (isPaused) return;
-        // With a certain probability, wind changes from time to time
-        if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
-            currentBallState.setVx(weather.getWind()[0]+currentBallState.getVx());
-            currentBallState.setVy(weather.getWind()[1]+currentBallState.getVy());
+    
+        // Update wind effects
+        if (Math.abs(currentBallState.getVx()) > 0.01 || Math.abs(currentBallState.getVy()) > 0.01) {
+            currentBallState.setVx(weather.getWind()[0] + currentBallState.getVx());
+            currentBallState.setVy(weather.getWind()[1] + currentBallState.getVy());
         }
-
+    
+        // Update physics engine state
         currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         checkAndReloadTerrainAndWaterSurafceIfNeeded();
+    
+        // Update ball's graphical position
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
         updateCameraPosition(deltaTime);
+
+        // Check if the ball is on sand
+        Vector3 ballPosition = new Vector3((float) currentBallState.getX(), (float) currentBallState.getY(), 0);
+        ballPosition.z = terrainManager.getTerrainHeight(ballPosition.x, ballPosition.y);  // Correcting the use of Y as Z
+        boolean onSand = terrainManager.isBallOnSand(ballPosition);
+    
+        // Adjust friction based on terrain
+        if (onSand) {
+            gamePhysicsEngine.setFriction(sandFriction); // Ensure this method properly adjusts physics
+        } else {
+            gamePhysicsEngine.setFriction(grassFriction);
+        }
     }
+    
 
     private void updateCameraPosition(float delta) {
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
@@ -347,7 +379,8 @@ public class GolfGameScreen implements Screen, Disposable {
         terrainCenterX = x;
         terrainCenterZ = y;
         golfCourseInstances.clear();
-        golfCourseInstances = terrainManager.createTerrainModels(x, y);;
+        golfCourseInstances = terrainManager.createGrassTerrainModels(x, y);
+        sandInstances = terrainManager.createSandTerrainModels(x, y);
         System.out.println("Terrain reloaded around position: " + x + ", " + y);
     }
 
@@ -366,6 +399,9 @@ public class GolfGameScreen implements Screen, Disposable {
         for (ModelInstance terrainInstance : golfCourseInstances) {
             shadowModelBatch.render(terrainInstance, gameEnvironment);
         }
+        for (ModelInstance sandInstance : sandInstances) {
+            shadowModelBatch.render(sandInstance, gameEnvironment);
+        }
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
         
         shadowModelBatch.end();
@@ -375,6 +411,9 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.begin(mainCamera);
         for (ModelInstance terrainInstance : golfCourseInstances) {
             mainModelBatch.render(terrainInstance, gameEnvironment);
+        }
+        for (ModelInstance sandInstance : sandInstances) {
+            mainModelBatch.render(sandInstance, gameEnvironment);
         }
         mainModelBatch.render(golfBallInstance, gameEnvironment);
         mainModelBatch.render(waterSurface, gameEnvironment);

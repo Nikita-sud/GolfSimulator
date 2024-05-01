@@ -16,24 +16,28 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector3;
 
 public class TerrainManager {
     private Function heightFunction;
-    private Texture grassTexture;
+    private Texture grassTexture, sandTexture;
     private int gridWidth, gridHeight;
+    private List<float[]> sandAreas;
     private float scale;
     private int parts;
 
-    public TerrainManager(Function heightFunction, Texture grassTexture, int gridWidth, int gridHeight, float scale, int parts) {
+    public TerrainManager(Function heightFunction, Texture grassTexture, Texture sandTexture, int gridWidth, int gridHeight, float scale, int parts) {
         this.heightFunction = heightFunction;
         this.grassTexture = grassTexture;
+        this.sandTexture = sandTexture;
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.scale = scale;
         this.parts = parts;
+        sandAreas = new ArrayList<>();
     }
 
-    public List<ModelInstance> createTerrainModels(float centerX, float centerZ) {
+    public List<ModelInstance> createGrassTerrainModels(float centerX, float centerZ) {
         ModelBuilder modelBuilder = new ModelBuilder();
         List<ModelInstance> golfCourseInstances = new ArrayList<>();
     
@@ -89,11 +93,102 @@ public class TerrainManager {
         return golfCourseInstances;
     }
 
+    public List<ModelInstance> createSandTerrainModels(float centerX, float centerZ) {
+        ModelBuilder modelBuilder = new ModelBuilder();
+        List<ModelInstance> sandInstances = new ArrayList<>();
+    
+        float scale = this.scale;  // Adjust based on your scene's scale
+    
+        // Define terrain boundaries
+        float minX = centerX - gridWidth * scale * 0.5f;
+        float maxX = centerX + gridWidth * scale * 0.5f;
+        float minZ = centerZ - gridHeight * scale * 0.5f;
+        float maxZ = centerZ + gridHeight * scale * 0.5f;
+    
+        for (float[] area : sandAreas) {
+            // Clipping the sand area to terrain boundaries
+            float x1 = Math.max(minX, area[0]);
+            float z1 = Math.max(minZ, area[1]);
+            float x2 = Math.min(maxX, area[2]);
+            float z2 = Math.min(maxZ, area[3]);
+    
+            // Skip this sand area if it is completely outside the terrain boundaries
+            if (x1 >= x2 || z1 >= z2) {
+                continue;
+            }
+    
+            modelBuilder.begin();
+            sandTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+            Material sandMaterial = new Material(TextureAttribute.createDiffuse(sandTexture), ColorAttribute.createSpecular(1, 1, 1, 1));
+            MeshPartBuilder meshBuilder = modelBuilder.part("sand_terrain", GL20.GL_TRIANGLES, Usage.Position | Usage.Normal | Usage.TextureCoordinates, sandMaterial);
+    
+            // Calculate grid dimensions based on clipped coordinates
+            int numX = (int)((x2 - x1) / scale) + 1;
+            int numZ = (int)((z2 - z1) / scale) + 1;
+    
+            // Generate vertices and store heights for indexing
+            for (int ix = 0; ix < numX; ix++) {
+                for (int iz = 0; iz < numZ; iz++) {
+                    float x = x1 + ix * scale;
+                    float z = z1 + iz * scale;
+                    float height = getTerrainHeight(x, z) + 0.1f;
+                    float u = (float)(x - x1) / (x2 - x1);  // Adjusted to use relative position within clipped area
+                    float v = (float)(z - z1) / (z2 - z1);
+                    meshBuilder.vertex(new float[]{x, height, z, 0, 1, 0, u, v});
+                }
+            }
+    
+            // Add indices to form triangles
+            for (int ix = 0; ix < numX - 1; ix++) {
+                for (int iz = 0; iz < numZ - 1; iz++) {
+                    int bl = ix * numZ + iz;
+                    int br = bl + 1;
+                    int tl = bl + numZ;
+                    int tr = tl + 1;
+                    meshBuilder.index((short)tl, (short)bl, (short)br); // Triangle 1
+                    meshBuilder.index((short)tl, (short)br, (short)tr); // Triangle 2
+                }
+            }
+    
+            Model sandModel = modelBuilder.end();
+            ModelInstance sandInstance = new ModelInstance(sandModel);
+            sandInstances.add(sandInstance);
+        }
+    
+        return sandInstances;
+    }
+    
+    public boolean isBallOnSand(Vector3 ballPosition) {
+        boolean onSand = false;
+        for (float[] area : sandAreas) {
+            float minX = area[0];
+            float maxX = area[2];
+            float minY = area[1];
+            float maxY = area[3];
+    
+            if (ballPosition.x >= minX && ballPosition.x <= maxX &&
+                ballPosition.y >= minY && ballPosition.y <= maxY) {
+                onSand = true;
+                break;
+            }
+        }
+        return onSand;
+    }
+    
+
     public float getTerrainHeight(float x, float z) {
         Map<String, Double> args = new HashMap<>();
         args.put("x", (double) x);
         args.put("y", (double) z);
         return (float) heightFunction.evaluate(args);
     }
+
+    public void addSandArea(float[] sandArea){
+        sandAreas.add(sandArea);
+    }
+
+    public List<float[]> getSandAreasList(){
+        return sandAreas;
+    } 
 }
 

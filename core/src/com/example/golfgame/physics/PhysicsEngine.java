@@ -28,6 +28,12 @@ public class PhysicsEngine {
      * @param surfaceFunction the function representing the surface's height as a function of x and y
      * @param mu_k the coefficient of kinetic friction
      */
+
+    public PhysicsEngine(ODE solver, Function surfaceFunction) {
+        this.solver = solver;
+        this.surfaceFunction = surfaceFunction;
+    }
+
     public PhysicsEngine(ODE solver, Function surfaceFunction, double mu_k) {
         this.solver = solver;
         this.surfaceFunction = surfaceFunction;
@@ -127,5 +133,9 @@ public class PhysicsEngine {
         ballState.setVx(finalState.get("vx"));
         ballState.setVy(finalState.get("vy"));
         return ballState;
+    }
+
+    public void setFriction(double mu_k){
+        this.mu_k = mu_k;
     }
 }
