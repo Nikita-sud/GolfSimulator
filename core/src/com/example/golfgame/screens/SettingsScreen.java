@@ -101,11 +101,11 @@ public class SettingsScreen implements Screen {
 
         Label sandbox = new Label("Enter sandbox boundaries", skin);
         TextField xLowBound = new TextField("", skin);
-        Label xSandboxBoundLabel = new Label("<x<", skin);
+        Label xSandboxBoundLabel = new Label("<X<", skin);
         TextField xHighBound = new TextField("", skin);
 
         TextField yLowBound = new TextField("", skin);
-        Label ySandboxBoundLabel = new Label("<y<", skin);
+        Label ySandboxBoundLabel = new Label("<Y<", skin);
         TextField yHighBound = new TextField("", skin);
 
         TextButton addSandbox = new TextButton("Add Sandbox", skin);
@@ -135,7 +135,7 @@ public class SettingsScreen implements Screen {
             @Override public void changed(ChangeEvent event, Actor actor){
                 try{
                     Sandbox newSandbox = new Sandbox(Float.parseFloat(xLowBound.getText()), Float.parseFloat(xHighBound.getText()), Float.parseFloat(yLowBound.getText()), Float.parseFloat(yHighBound.getText()));
-                    middleTable.add(new Label("Box: "+xLowBound.getText()+"<x<"+xHighBound.getText()+" || "+yLowBound.getText()+"<y<"+yHighBound.getText(), skin));
+                    middleTable.add(new Label("Box: "+xLowBound.getText()+"<X<"+xHighBound.getText()+" || "+yLowBound.getText()+"<Y<"+yHighBound.getText(), skin)).row();;
                     game.addSandbox(newSandbox);
                     xLowBound.setText("");
                     xHighBound.setText("");
