@@ -1,5 +1,8 @@
 package com.example.golfgame;
 
+import java.util.ArrayList;
+import java.util.List;
+import com.example.golfgame.utils.Sandbox;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
@@ -17,7 +20,7 @@ public class GolfGame extends Game {
     private Screen gameScreen;
     private Screen settingsScreen;
     private AssetManager assetManager;
-
+    private List<Sandbox> sandboxes = new ArrayList<>();
     /**
      * Initializes the game, creating and setting up the main menu, game, and settings screens.
      * It also initializes the {@link AssetManager} for managing game assets.
@@ -80,6 +83,24 @@ public class GolfGame extends Game {
      */
     public MainMenuScreen getMenuScreen(){
         return (MainMenuScreen) mainScreen;
+    }
+
+    /**
+     * Retrieves the games {@link sandboxes} instance.
+     * 
+     * @return the current games' sandbox representations.
+     */
+    public List<Sandbox> getSandboxes(){
+        return sandboxes;
+    }
+
+    /**
+     * Add new sandbox to current GolfGame instance.
+     * 
+     * @param newSandbox representation of new sandbox to be added.
+     */
+    public void addSandbox(Sandbox newSandbox){
+        sandboxes.add(newSandbox);
     }
 
     /**

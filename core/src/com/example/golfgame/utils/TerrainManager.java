@@ -97,7 +97,7 @@ public class TerrainManager {
         ModelBuilder modelBuilder = new ModelBuilder();
         List<ModelInstance> sandInstances = new ArrayList<>();
     
-        float scale = this.scale;  // Adjust based on your scene's scale
+        float scale = this.scale;
     
         // Define terrain boundaries
         float minX = centerX - gridWidth * scale * 0.5f;

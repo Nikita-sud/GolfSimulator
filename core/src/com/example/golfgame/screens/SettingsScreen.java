@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
@@ -15,8 +16,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-
 import com.example.golfgame.utils.Function;
+import com.example.golfgame.utils.Sandbox;
 import com.example.golfgame.GolfGame;
 
 /**
@@ -98,6 +99,34 @@ public class SettingsScreen implements Screen {
             }
         });
 
+        Label sandbox = new Label("Enter sandbox boundaries", skin);
+        TextField xLowBound = new TextField("", skin);
+        Label xSandboxBoundLabel = new Label("<x<", skin);
+        TextField xHighBound = new TextField("", skin);
+
+        TextField yLowBound = new TextField("", skin);
+        Label ySandboxBoundLabel = new Label("<y<", skin);
+        TextField yHighBound = new TextField("", skin);
+
+        TextButton addSandbox = new TextButton("Add Sandbox", skin);
+        addSandbox.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent event, Actor actor){
+                try{
+                    Sandbox newSandbox = new Sandbox(Float.parseFloat(xLowBound.getText()), Float.parseFloat(xHighBound.getText()), Float.parseFloat(yLowBound.getText()), Float.parseFloat(yHighBound.getText()));
+                    game.addSandbox(newSandbox);
+                    xLowBound.setText("");
+                    xHighBound.setText("");
+                    yLowBound.setText("");
+                    yHighBound.setText("");
+
+                }
+                catch (Exception e){
+                    sandbox.setText("Invalid sandbox Boundaries");
+                }
+
+            }
+        });
+
         Table rootTable = new Table();
         rootTable.setFillParent(true);
         rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("textures/SettingsBackground.jpeg"))));
@@ -109,9 +138,23 @@ public class SettingsScreen implements Screen {
         middleTable.add(sunSlider).width(400).pad(10).row();
         middleTable.add(sunLabel).pad(10).row();
 
+        middleTable.add(sandbox).pad(10).row();
+        middleTable.add(xLowBound).width(50).height(50).pad(10).left();
+        middleTable.add(xSandboxBoundLabel).pad(10);
+        middleTable.add(xHighBound).width(50).height(50).pad(10).row();;
+        middleTable.add(yLowBound).width(50).height(50).pad(10);
+        middleTable.add(ySandboxBoundLabel).pad(10);
+        middleTable.add(yHighBound).width(50).height(50).pad(10).row();
+        middleTable.add(addSandbox);
+
+        
+
+
+
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(10);
         rootTable.add(middleTable).expand().center();
         rootTable.add(playButton).width(150).height(50).pad(20).bottom().right();
+
 
         stage.addActor(rootTable);
     }
