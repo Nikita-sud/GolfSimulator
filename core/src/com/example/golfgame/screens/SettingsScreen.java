@@ -109,23 +109,6 @@ public class SettingsScreen implements Screen {
         TextField yHighBound = new TextField("", skin);
 
         TextButton addSandbox = new TextButton("Add Sandbox", skin);
-        addSandbox.addListener(new ChangeListener() {
-            @Override public void changed(ChangeEvent event, Actor actor){
-                try{
-                    Sandbox newSandbox = new Sandbox(Float.parseFloat(xLowBound.getText()), Float.parseFloat(xHighBound.getText()), Float.parseFloat(yLowBound.getText()), Float.parseFloat(yHighBound.getText()));
-                    game.addSandbox(newSandbox);
-                    xLowBound.setText("");
-                    xHighBound.setText("");
-                    yLowBound.setText("");
-                    yHighBound.setText("");
-
-                }
-                catch (Exception e){
-                    sandbox.setText("Invalid sandbox Boundaries");
-                }
-
-            }
-        });
 
         Table rootTable = new Table();
         rootTable.setFillParent(true);
@@ -139,16 +122,33 @@ public class SettingsScreen implements Screen {
         middleTable.add(sunLabel).pad(10).row();
 
         middleTable.add(sandbox).pad(10).row();
-        middleTable.add(xLowBound).width(50).height(50).pad(10).left();
+        middleTable.add(xLowBound).width(50).height(50).pad(10);
         middleTable.add(xSandboxBoundLabel).pad(10);
         middleTable.add(xHighBound).width(50).height(50).pad(10).row();;
         middleTable.add(yLowBound).width(50).height(50).pad(10);
         middleTable.add(ySandboxBoundLabel).pad(10);
         middleTable.add(yHighBound).width(50).height(50).pad(10).row();
-        middleTable.add(addSandbox);
+        middleTable.add(addSandbox).row();;
 
-        
+        // Just putting this here to be inside the scope of the table definition
+        addSandbox.addListener(new ChangeListener() {
+            @Override public void changed(ChangeEvent event, Actor actor){
+                try{
+                    Sandbox newSandbox = new Sandbox(Float.parseFloat(xLowBound.getText()), Float.parseFloat(xHighBound.getText()), Float.parseFloat(yLowBound.getText()), Float.parseFloat(yHighBound.getText()));
+                    middleTable.add(new Label("Box: "+xLowBound.getText()+"<x<"+xHighBound.getText()+" || "+yLowBound.getText()+"<y<"+yHighBound.getText(), skin));
+                    game.addSandbox(newSandbox);
+                    xLowBound.setText("");
+                    xHighBound.setText("");
+                    yLowBound.setText("");
+                    yHighBound.setText("");
 
+                }
+                catch (Exception e){
+                    sandbox.setText("Invalid sandbox Boundaries");
+                }
+
+            }
+        });
 
 
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(10);
