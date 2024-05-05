@@ -15,7 +15,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-
 import com.example.golfgame.utils.Function;
 import com.example.golfgame.GolfGame;
 
@@ -54,7 +53,7 @@ public class SettingsScreen implements Screen {
                 game.switchToMenu();  // Change to the main menu screen
             }
         });
-
+    
         TextButton playButton = new TextButton("Play!", skin);
         playButton.addListener(new ChangeListener() {
             @Override
@@ -62,7 +61,7 @@ public class SettingsScreen implements Screen {
                 game.switchToGame();  // Change to the game screen
             }
         });
-
+    
         TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)+1", skin);
         heightFunction.addListener(new ChangeListener() {
             @Override
@@ -74,7 +73,7 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
-
+    
         Slider windSlider = new Slider(0f, 0.001f, 0.0001f, false, skin);
         Label windLabel = new Label("Wind speed magnitude: " + String.format("%.4f", windSlider.getValue()), skin);
         windSlider.addListener(new ChangeListener() {
@@ -85,7 +84,7 @@ public class SettingsScreen implements Screen {
                 windLabel.setText("Wind speed magnitude: " + String.format("%.4f", value));
             }
         });
-
+    
         Slider sunSlider = new Slider(0.2f, 1f, 0.001f, false, skin);
         sunSlider.setValue(1);
         Label sunLabel = new Label("Sunlight level: " + String.format("%.3f", sunSlider.getValue()), skin);
@@ -97,24 +96,35 @@ public class SettingsScreen implements Screen {
                 sunLabel.setText("Sunlight level: " + String.format("%.3f", value));
             }
         });
-
+    
+        // Button to open the SandboxSettingsScreen
+        TextButton sandboxSettingsButton = new TextButton("Sandbox Settings", skin);
+        sandboxSettingsButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new SandboxSettingsScreen(game));  // Switch to SandboxSettingsScreen
+            }
+        });
+    
         Table rootTable = new Table();
         rootTable.setFillParent(true);
-        rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("textures/SettingsBackground.jpeg"))));
-
+        rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("backgrounds/settingsBackground.jpeg"))));
+    
         Table middleTable = new Table();
         middleTable.add(heightFunction).width(200).height(50).pad(10).row();
         middleTable.add(windSlider).width(400).pad(10).row();
         middleTable.add(windLabel).pad(10).row();
         middleTable.add(sunSlider).width(400).pad(10).row();
         middleTable.add(sunLabel).pad(10).row();
-
-        rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(10);
+        middleTable.add(sandboxSettingsButton).pad(20).row();  // Add the sandbox settings button here
+    
+        rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);
         rootTable.add(middleTable).expand().center();
         rootTable.add(playButton).width(150).height(50).pad(20).bottom().right();
-
+    
         stage.addActor(rootTable);
     }
+    
 
     @Override
     public void show() {

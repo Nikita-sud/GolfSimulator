@@ -157,8 +157,10 @@ public class GolfGameScreen implements Screen, Disposable {
         sunlight = (float)mainGame.getGolfGameScreen().getWeather().getSun();
         mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
 
-        terrainManager.addSandArea(new float[] {0f,0f,40f,40f});
-        terrainManager.addSandArea(new float[] {-100f,-50f,0f,0f});
+        // Put sandboxes to specified locations
+        for (Sandbox box: mainGame.getSandboxes()){
+            terrainManager.addSandArea(new float[]{box.getXLowBound(), box.getXLowBound(), box.getXHighBound(), box.getYHighBound()});
+        }
     
         gameEnvironment = new Environment();
         gameEnvironment.add(mainShadowLight);

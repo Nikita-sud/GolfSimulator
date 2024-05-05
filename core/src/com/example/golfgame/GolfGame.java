@@ -1,9 +1,13 @@
 package com.example.golfgame;
 
+import java.util.ArrayList;
+import java.util.List;
+import com.example.golfgame.utils.Sandbox;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
 import com.example.golfgame.screens.MainMenuScreen;
+import com.example.golfgame.screens.SandboxSettingsScreen;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.screens.SettingsScreen;
 
@@ -16,8 +20,9 @@ public class GolfGame extends Game {
     private Screen mainScreen;
     private Screen gameScreen;
     private Screen settingsScreen;
+    private Screen sandboxSettingScreen;
     private AssetManager assetManager;
-
+    private List<Sandbox> sandboxes = new ArrayList<>();
     /**
      * Initializes the game, creating and setting up the main menu, game, and settings screens.
      * It also initializes the {@link AssetManager} for managing game assets.
@@ -26,6 +31,7 @@ public class GolfGame extends Game {
     public void create() {
         assetManager = new AssetManager();
         settingsScreen = new SettingsScreen(this);
+        sandboxSettingScreen = new SandboxSettingsScreen(this);
         mainScreen = new MainMenuScreen(this);
         gameScreen = new GolfGameScreen(this, assetManager);
         this.setScreen(mainScreen);
@@ -46,6 +52,13 @@ public class GolfGame extends Game {
      */
     public void switchToSettings() {
         setScreen(settingsScreen);
+    }
+
+    /**
+     * Switches the current screen to the sandbox settings screen.
+     */
+    public void switchToSandBoxSettings() {
+        setScreen(sandboxSettingScreen);
     }
 
     /**
@@ -80,6 +93,31 @@ public class GolfGame extends Game {
      */
     public MainMenuScreen getMenuScreen(){
         return (MainMenuScreen) mainScreen;
+    }
+
+    /**
+     * Retrieves the games {@link sandboxes} instance.
+     * 
+     * @return the current games' sandbox representations.
+     */
+    public List<Sandbox> getSandboxes(){
+        return sandboxes;
+    }
+
+    /**
+     * Resets the games {@link sandboxes} instance.
+     */
+    public void resetSandboxes(){
+        sandboxes.clear();
+    }
+
+    /**
+     * Add new sandbox to current GolfGame instance.
+     * 
+     * @param newSandbox representation of new sandbox to be added.
+     */
+    public void addSandbox(Sandbox newSandbox){
+        sandboxes.add(newSandbox);
     }
 
     /**
