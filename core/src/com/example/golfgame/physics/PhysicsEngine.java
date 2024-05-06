@@ -18,6 +18,7 @@ public class PhysicsEngine {
     private Function surfaceFunction;
     private double g = 9.81; // Acceleration due to gravity, m/s^2
     private double mu_k = 0.1; // Coefficient of kinetic friction
+    private double mu_s = 0.2; // Coefficient of static friction
     private double deltaX = 0.01; // Increment for numerical derivative in x-direction
     private double deltaY = 0.01; // Increment for numerical derivative in y-direction
 
@@ -34,10 +35,16 @@ public class PhysicsEngine {
         this.surfaceFunction = surfaceFunction;
     }
 
-    public PhysicsEngine(ODE solver, Function surfaceFunction, double mu_k) {
+    public PhysicsEngine(ODE solver, Function surfaceFunction, double mu_k, double mu_s) {
         this.solver = solver;
         this.surfaceFunction = surfaceFunction;
         this.mu_k = mu_k;
+        this.mu_s = mu_s;
+    }
+
+    public void setFriction(double mu_k, double mu_s) {
+        this.mu_k = mu_k;
+        this.mu_s = mu_s;
     }
 
     /**
@@ -151,7 +158,35 @@ public class PhysicsEngine {
      * @param duration the total time duration for the simulation
      * @return the final state of the ball after simulation
      */
+
     public BallState update(BallState ballState, double stepSize) {
+        if (isAtRest(ballState)) {
+            // Check if the force exceeds static friction threshold to start moving
+            if (canOvercomeStaticFriction(ballState)) {
+                return updateWithKineticFriction(ballState, stepSize);
+            }
+            // No movement, return current state
+            return ballState;
+        } else {
+            return updateWithKineticFriction(ballState, stepSize);
+        }
+    }
+
+    private boolean isAtRest(BallState ballState) {
+        return Math.abs(ballState.getVx()) < 0.001 && Math.abs(ballState.getVy()) < 0.001;
+    }
+    
+    private boolean canOvercomeStaticFriction(BallState ballState) {
+        double dx = derivativeX(ballState.getX(), ballState.getY());
+        double dy = derivativeY(ballState.getX(), ballState.getY());
+        double normalForce = g * (1 + Math.pow(dx, 2) + Math.pow(dy, 2));
+        double staticFrictionForce = mu_s * normalForce;
+        double gravitationalComponent = g * Math.sqrt(dx*dx + dy*dy);
+    
+        return gravitationalComponent > staticFrictionForce;
+    }
+
+    private BallState updateWithKineticFriction(BallState ballState, double stepSize) {
         Map<String, Function> differentials = getDifferentialEquations(ballState);
         Map<String, Double> initialState = new HashMap<>();
         initialState.put("x", ballState.getX());
@@ -159,14 +194,14 @@ public class PhysicsEngine {
         initialState.put("vx", ballState.getVx());
         initialState.put("vy", ballState.getVy());
         initialState.put("t", 0.0);
-
-        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, stepSize, "t");
-
+    
+        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, stepSize,"t");
+    
         if (results.isEmpty()) {
             System.err.println("No states were returned by the ODE solver.");
             return ballState;
         }
-
+    
         Map<String, Double> finalState = results.get(results.size() - 1);
         ballState.setX(finalState.get("x"));
         ballState.setY(finalState.get("y"));
@@ -175,7 +210,4 @@ public class PhysicsEngine {
         return ballState;
     }
 
-    public void setFriction(double mu_k){
-        this.mu_k = mu_k;
-    }
 }

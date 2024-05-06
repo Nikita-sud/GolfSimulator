@@ -112,4 +112,32 @@ public class BallState {
     public double getVy() {
         return vy;
     }
+
+    /**
+     * Checks if the state of this ball is approximately equal to another state, within a given tolerance.
+     *
+     * @param other the BallState to compare with.
+     * @param epsilon the tolerance for the comparison of each double value.
+     * @return true if the states are considered equal within the given tolerance, otherwise false.
+     */
+    public boolean epsilonEquals(BallState other, double epsilon) {
+        return Math.abs(this.x - other.x) <= epsilon &&
+               Math.abs(this.y - other.y) <= epsilon &&
+               Math.abs(this.vx - other.vx) <= epsilon &&
+               Math.abs(this.vy - other.vy) <= epsilon;
+    }
+
+    public BallState copy(){
+        return new BallState(x, y, vx, vy);
+    }
+
+    @Override
+    public String toString() {
+        return "BallState{" +
+               "x=" + x +
+               ", y=" + y +
+               ", vx=" + vx +
+               ", vy=" + vy +
+               '}';
+    }
 }

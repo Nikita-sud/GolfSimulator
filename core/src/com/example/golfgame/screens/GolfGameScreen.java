@@ -30,6 +30,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.example.golfgame.GolfGame;
@@ -79,8 +80,15 @@ public class GolfGameScreen implements Screen, Disposable {
     private boolean isPaused = false;
     private Dialog pauseDialog;
     private Skin skin;
-    private double grassFriction;
-    private double sandFriction;
+    private double grassFrictionKinetic;
+    private double grassFrictionStatic;
+    private double sandFrictionKinetic;
+    private double sandFrictionStatic;
+    private float lowSpeedThreshold = 0.005f;
+    private List<BallState> ballPositionsWhenSlow = new ArrayList<BallState>();
+    private Label scoreLabel;
+    private BallState lastValidState;
+
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -140,8 +148,14 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState = new BallState(0, 0, 0.001, 0.001);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
 
-        grassFriction = 0.1;
-        sandFriction = 1;
+        scoreLabel = new Label("Score: 0", skin);
+        ballPositionsWhenSlow.clear();
+        lastValidState = currentBallState.copy();
+
+        grassFrictionKinetic = 0.1;
+        grassFrictionStatic = 0.2;
+        sandFrictionKinetic = 0.7;
+        sandFrictionStatic = 1;
     
         terrainManager = new TerrainManager(terrainHeightFunction, grassTexture,sandTexture, 200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200, 200);
@@ -230,6 +244,8 @@ public class GolfGameScreen implements Screen, Disposable {
         Table labelTable = new Table();
         labelTable.setFillParent(true); // Make the table fill the parent container
         labelTable.top().left(); // Align the table content to the top left corner for the facing label
+
+        labelTable.add(scoreLabel).pad(10);
 
         // Add the facing label in the top left
         labelTable.add(facingLabel).pad(10).top().left();
@@ -338,12 +354,47 @@ public class GolfGameScreen implements Screen, Disposable {
         Vector3 ballPosition = new Vector3((float) currentBallState.getX(), (float) currentBallState.getY(), 0);
         ballPosition.z = terrainManager.getTerrainHeight(ballPosition.x, ballPosition.y);  // Correcting the use of Y as Z
         boolean onSand = terrainManager.isBallOnSand(ballPosition);
+
+        // Check if the ball is not moving significantly
+        if (Math.abs(currentBallState.getVx()) <= lowSpeedThreshold && Math.abs(currentBallState.getVy()) <= lowSpeedThreshold) {
+            boolean shouldAdd = true;
+
+            // Check if the last position is the same as the current position within a small tolerance
+            if (!ballPositionsWhenSlow.isEmpty()) {
+                BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
+                if (currentBallState.epsilonEquals(lastPosition, 0.1)) {
+                    shouldAdd = false; // Do not add if positions are the same within the tolerance
+                }
+            }
+
+            // Add the current state if it is distinct enough to be considered a stop
+            if (shouldAdd) {
+                ballPositionsWhenSlow.add(new BallState(currentBallState.getX(), currentBallState.getY(), currentBallState.getVx(), currentBallState.getVy()));
+                scoreLabel.setText("Score: " + ballPositionsWhenSlow.size());
+            }
+        }
+
+        // Check if the ball has fallen below ground level
+        System.out.println(ballZ-1);
+        if (ballZ-1 < 0) {
+            // Reset to the last valid position
+            currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
+            System.out.println("Ball has fallen below ground level. Resetting to last valid position.");
+        } else {
+            if (!ballPositionsWhenSlow.isEmpty()) {
+                BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
+                lastValidState.setAllComponents(lastPosition.getX(), lastPosition.getY(), lastPosition.getVx(), lastPosition.getVy());
+            }else{
+                lastValidState.setAllComponents(currentBallState.getX(), currentBallState.getY(), currentBallState.getVx(), currentBallState.getVy());
+            }
+        }
+
     
         // Adjust friction based on terrain
         if (onSand) {
-            gamePhysicsEngine.setFriction(sandFriction); // Ensure this method properly adjusts physics
+            gamePhysicsEngine.setFriction(sandFrictionKinetic,sandFrictionStatic);
         } else {
-            gamePhysicsEngine.setFriction(grassFriction);
+            gamePhysicsEngine.setFriction(grassFrictionKinetic,grassFrictionStatic);
         }
     }
     
