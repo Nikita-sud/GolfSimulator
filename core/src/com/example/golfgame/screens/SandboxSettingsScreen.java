@@ -2,6 +2,8 @@ package com.example.golfgame.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -21,17 +23,20 @@ public class SandboxSettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
     private Skin skin;
+    private Music music;
 
-    public SandboxSettingsScreen(GolfGame game) {
+    public SandboxSettingsScreen(GolfGame game,AssetManager assetManager) {
         this.game = game;
         this.stage = new Stage(new ScreenViewport());
         this.skin = new Skin(Gdx.files.internal("uiskin.json"));  // Make sure you have a 'uiskin.json' in your assets
+        music = assetManager.get("assets/music/settings.mp3", Music.class);
     }
 
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
-
+        music.setLooping(true);
+        music.play();
         // Setup the UI for Sandbox settings
         setupUI();
     }
@@ -151,6 +156,7 @@ public class SandboxSettingsScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+        music.stop();
     }
 
     @Override

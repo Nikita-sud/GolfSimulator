@@ -2,6 +2,7 @@ package com.example.golfgame.screens;
 
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
@@ -90,6 +91,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private BallState lastValidState;
     private int score;
     private boolean isBallAllowedToMove = false;
+    private Music music;
 
 
 
@@ -146,6 +148,7 @@ public class GolfGameScreen implements Screen, Disposable {
         grassTexture = assetManager.get("textures/grassTexture.jpeg", Texture.class);
         sandTexture = assetManager.get("textures/sandTexture.jpeg", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
+        music = assetManager.get("assets/music/game-screen.mp3");
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
         currentBallState = new BallState(0, 0, 0.001, 0.001);
@@ -203,6 +206,9 @@ public class GolfGameScreen implements Screen, Disposable {
     public void show() {
         // Create the stage and skin for UI elements
         stage = new Stage(new ScreenViewport());
+
+        music.setLooping(true);
+        music.play();
 
         // Set up a table for organizing UI elements
         Table table = new Table();
@@ -538,6 +544,7 @@ public class GolfGameScreen implements Screen, Disposable {
     @Override
     public void hide() {
         dispose();
+        music.stop();
     }
 
     @Override

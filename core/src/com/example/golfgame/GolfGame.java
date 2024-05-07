@@ -32,16 +32,22 @@ public class GolfGame extends Game {
     @Override
     public void create() {
         assetManager = new AssetManager();
-        assetManager.load("core/src/com/example/golfgame/Music/goodbadugly-whistle-long.mp3", Music.class);
-        settingsScreen = new SettingsScreen(this);
-        sandboxSettingScreen = new SandboxSettingsScreen(this);
-        mainScreen = new MainMenuScreen(this);
+
+        // Загрузка музыкальных файлов
+        assetManager.load("assets/music/main-menu.mp3", Music.class);
+        assetManager.load("assets/music/game-screen.mp3", Music.class);
+        assetManager.load("assets/music/settings.mp3", Music.class);
+
+        assetManager.finishLoading(); // Убедитесь, что все ассеты загружены перед их использованием
+
+        // Создание экранов после загрузки ассетов
+        settingsScreen = new SettingsScreen(this, assetManager);
+        sandboxSettingScreen = new SandboxSettingsScreen(this, assetManager);
+        mainScreen = new MainMenuScreen(this, assetManager);
         gameScreen = new GolfGameScreen(this, assetManager);
         this.setScreen(mainScreen);
-        backgroundMusic = assetManager.get("core/src/com/example/golfgame/Music/goodbadugly-whistle-long.mp3", Music.class);
-        backgroundMusic.setLooping(true);
-        backgroundMusic.play();
     }
+
 
     /**
      * Switches the current screen to the game screen and initializes game components.
@@ -132,6 +138,9 @@ public class GolfGame extends Game {
     @Override
     public void dispose() {
         assetManager.dispose();
-        backgroundMusic.dispose();
+        if (backgroundMusic != null) {
+            backgroundMusic.dispose();
+        }
     }
+
 }

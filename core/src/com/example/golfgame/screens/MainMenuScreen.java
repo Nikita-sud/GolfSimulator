@@ -2,6 +2,8 @@ package com.example.golfgame.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -23,16 +25,18 @@ public class MainMenuScreen implements Screen {
     private GolfGame game;
     private Stage stage;
     private Skin skin;
+    private Music music;
 
     /**
      * Constructs the main menu screen with buttons for starting the game and accessing settings.
      *
      * @param game The instance of {@link GolfGame} which this screen is a part of.
      */
-    public MainMenuScreen(GolfGame game) {
+    public MainMenuScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json")); // Load the UI skin
+        music = assetManager.get("assets/music/main-menu.mp3", Music.class);
 
         // Setup buttons and add them to the stage
         setupButtons();
@@ -76,6 +80,8 @@ public class MainMenuScreen implements Screen {
     public void show() {
         Gdx.input.setInputProcessor(stage);
         Gdx.gl.glClearColor(0, 0, 0, 1); // Set clear color to black
+        music.setLooping(true);
+        music.play();
     }
 
     /**
@@ -123,6 +129,7 @@ public class MainMenuScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+        music.stop();
     }
 
     /**

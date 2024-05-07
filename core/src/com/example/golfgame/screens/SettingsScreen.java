@@ -2,6 +2,8 @@ package com.example.golfgame.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -27,17 +29,19 @@ public class SettingsScreen implements Screen {
     private Stage stage;
     private Skin skin;
     private Function curHeightFunction;
+    private Music music;
 
     /**
      * Initializes a new settings screen with default or specified parameters for terrain, wind, and sunlight.
      *
      * @param game The main game control to allow navigation between screens.
      */
-    public SettingsScreen(GolfGame game) {
+    public SettingsScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
         curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+1", "x", "y");  // Default height function
+        music = assetManager.get("assets/music/settings.mp3", Music.class);
 
         setupUI();
     }
@@ -102,7 +106,7 @@ public class SettingsScreen implements Screen {
         sandboxSettingsButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                game.setScreen(new SandboxSettingsScreen(game));  // Switch to SandboxSettingsScreen
+                game.switchToSandBoxSettings();  // Switch to SandboxSettingsScreen
             }
         });
     
@@ -131,6 +135,8 @@ public class SettingsScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST); // Disable depth testing for 2D rendering
         Gdx.gl.glClearColor(0, 0, 0, 1); // Ensure background is set to black
+        music.setLooping(true);
+        music.play();
     }
 
     @Override
@@ -158,6 +164,7 @@ public class SettingsScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+        music.stop();
     }
 
     @Override
