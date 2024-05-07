@@ -88,6 +88,9 @@ public class GolfGameScreen implements Screen, Disposable {
     private List<BallState> ballPositionsWhenSlow = new ArrayList<BallState>();
     private Label scoreLabel;
     private BallState lastValidState;
+    private int score;
+    private boolean isBallAllowedToMove = false;
+
 
 
     /**
@@ -148,7 +151,8 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState = new BallState(0, 0, 0.001, 0.001);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
 
-        scoreLabel = new Label("Score: 0", skin);
+        score =0;
+        scoreLabel = new Label("Score: "+score, skin);
         ballPositionsWhenSlow.clear();
         lastValidState = currentBallState.copy();
 
@@ -295,9 +299,17 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         if(!isPaused){
             if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                currentBallState.setVx(-ballSpeed * Math.cos(cameraViewAngle));
-                currentBallState.setVy(-ballSpeed * Math.sin(cameraViewAngle));
+                if (!isBallAllowedToMove) {
+                    isBallAllowedToMove = true; // Allow the ball to move
+                    currentBallState.setVx(-ballSpeed * Math.cos(cameraViewAngle));
+                    currentBallState.setVy(-ballSpeed * Math.sin(cameraViewAngle));
+                } else {
+                    isBallAllowedToMove = false; // Prevent the ball from moving
+                    currentBallState.setVx(0);
+                    currentBallState.setVy(0);
+                }
             }
+            
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
                 cameraViewAngle += 0.05; // Rotate camera left
                 facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
@@ -334,6 +346,12 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void update(float deltaTime) {
         if (isPaused) return;
+
+        // Only allow ball physics update if it is allowed to move
+        if (isBallAllowedToMove) {
+            // Update physics engine state
+            currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
+        }
     
         // Update wind effects
         if (Math.abs(currentBallState.getVx()) > 0.01 || Math.abs(currentBallState.getVy()) > 0.01) {
@@ -341,8 +359,6 @@ public class GolfGameScreen implements Screen, Disposable {
             currentBallState.setVy(weather.getWind()[1] + currentBallState.getVy());
         }
     
-        // Update physics engine state
-        currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         checkAndReloadTerrainAndWaterSurafceIfNeeded();
     
         // Update ball's graphical position
@@ -362,7 +378,7 @@ public class GolfGameScreen implements Screen, Disposable {
             // Check if the last position is the same as the current position within a small tolerance
             if (!ballPositionsWhenSlow.isEmpty()) {
                 BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
-                if (currentBallState.epsilonEquals(lastPosition, 0.1)) {
+                if (onSand? currentBallState.epsilonEquals(lastPosition, 1):currentBallState.epsilonEquals(lastPosition, 0.1)) {
                     shouldAdd = false; // Do not add if positions are the same within the tolerance
                 }
             }
@@ -370,12 +386,12 @@ public class GolfGameScreen implements Screen, Disposable {
             // Add the current state if it is distinct enough to be considered a stop
             if (shouldAdd) {
                 ballPositionsWhenSlow.add(new BallState(currentBallState.getX(), currentBallState.getY(), currentBallState.getVx(), currentBallState.getVy()));
-                scoreLabel.setText("Score: " + ballPositionsWhenSlow.size());
+                scoreLabel.setText("Score: " + score++);
+                isBallAllowedToMove = false;
             }
         }
 
         // Check if the ball has fallen below ground level
-        System.out.println(ballZ-1);
         if (ballZ-1 < 0) {
             // Reset to the last valid position
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
