@@ -84,7 +84,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private double grassFrictionStatic;
     private double sandFrictionKinetic;
     private double sandFrictionStatic;
-    private float lowSpeedThreshold = 0.001f;
+    private float lowSpeedThreshold = 0.005f;
     private List<BallState> ballPositionsWhenSlow = new ArrayList<BallState>();
     private Label scoreLabel;
     private BallState lastValidState;
@@ -299,15 +299,12 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         if(!isPaused){
             if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                if (!isBallAllowedToMove) {
-                    isBallAllowedToMove = true; // Allow the ball to move
+                if (!isBallAllowedToMove) { 
+                    isBallAllowedToMove = true; 
                     currentBallState.setVx(-ballSpeed * Math.cos(cameraViewAngle));
                     currentBallState.setVy(-ballSpeed * Math.sin(cameraViewAngle));
-                } else {
-                    isBallAllowedToMove = false; // Prevent the ball from moving
-                    currentBallState.setVx(0);
-                    currentBallState.setVy(0);
                 }
+                
             }
             
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
@@ -374,7 +371,7 @@ public class GolfGameScreen implements Screen, Disposable {
         if(onSand){
             lowSpeedThreshold=0.05f;
         }else{
-            lowSpeedThreshold=0.001f;
+            lowSpeedThreshold=0.005f;
         }
 
         // Check if the ball is not moving significantly
@@ -400,6 +397,8 @@ public class GolfGameScreen implements Screen, Disposable {
         // Check if the ball has fallen below ground level
         if (ballZ-1 < 0) {
             // Reset to the last valid position
+            scoreLabel.setText("Score: " + score++);
+            isBallAllowedToMove = false;
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
             System.out.println("Ball has fallen below ground level. Resetting to last valid position.");
         } else {
