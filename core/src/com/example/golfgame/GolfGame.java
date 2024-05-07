@@ -6,6 +6,7 @@ import com.example.golfgame.utils.Sandbox;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.example.golfgame.screens.MainMenuScreen;
 import com.example.golfgame.screens.SandboxSettingsScreen;
 import com.example.golfgame.screens.GolfGameScreen;
@@ -22,6 +23,7 @@ public class GolfGame extends Game {
     private Screen settingsScreen;
     private Screen sandboxSettingScreen;
     private AssetManager assetManager;
+    private Music backgroundMusic;
     private List<Sandbox> sandboxes = new ArrayList<>();
     /**
      * Initializes the game, creating and setting up the main menu, game, and settings screens.
@@ -30,11 +32,15 @@ public class GolfGame extends Game {
     @Override
     public void create() {
         assetManager = new AssetManager();
+        assetManager.load("core/src/com/example/golfgame/Music/goodbadugly-whistle-long.mp3", Music.class);
         settingsScreen = new SettingsScreen(this);
         sandboxSettingScreen = new SandboxSettingsScreen(this);
         mainScreen = new MainMenuScreen(this);
         gameScreen = new GolfGameScreen(this, assetManager);
         this.setScreen(mainScreen);
+        backgroundMusic = assetManager.get("core/src/com/example/golfgame/Music/goodbadugly-whistle-long.mp3", Music.class);
+        backgroundMusic.setLooping(true);
+        backgroundMusic.play();
     }
 
     /**
@@ -126,5 +132,6 @@ public class GolfGame extends Game {
     @Override
     public void dispose() {
         assetManager.dispose();
+        backgroundMusic.dispose();
     }
 }
