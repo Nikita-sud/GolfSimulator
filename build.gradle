@@ -48,12 +48,12 @@ project(":desktop") {
         }
         archiveBaseName = "${project.name}-all"
         duplicatesStrategy = 'exclude'
-        from {
-            configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-        }
+        
+        from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+        from 'assets' 
+        
         with jar
     }
-
 
     dependencies {
         implementation project(":core")
@@ -62,6 +62,7 @@ project(":desktop") {
         api "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop"
     }
 }
+
 
 
 
