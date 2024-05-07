@@ -84,7 +84,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private double grassFrictionStatic;
     private double sandFrictionKinetic;
     private double sandFrictionStatic;
-    private float lowSpeedThreshold = 0.005f;
+    private float lowSpeedThreshold = 0.001f;
     private List<BallState> ballPositionsWhenSlow = new ArrayList<BallState>();
     private Label scoreLabel;
     private BallState lastValidState;
@@ -371,6 +371,12 @@ public class GolfGameScreen implements Screen, Disposable {
         ballPosition.z = terrainManager.getTerrainHeight(ballPosition.x, ballPosition.y);  // Correcting the use of Y as Z
         boolean onSand = terrainManager.isBallOnSand(ballPosition);
 
+        if(onSand){
+            lowSpeedThreshold=0.05f;
+        }else{
+            lowSpeedThreshold=0.001f;
+        }
+
         // Check if the ball is not moving significantly
         if (Math.abs(currentBallState.getVx()) <= lowSpeedThreshold && Math.abs(currentBallState.getVy()) <= lowSpeedThreshold) {
             boolean shouldAdd = true;
@@ -378,7 +384,7 @@ public class GolfGameScreen implements Screen, Disposable {
             // Check if the last position is the same as the current position within a small tolerance
             if (!ballPositionsWhenSlow.isEmpty()) {
                 BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
-                if (onSand? currentBallState.epsilonEquals(lastPosition, 1):currentBallState.epsilonEquals(lastPosition, 0.1)) {
+                if (onSand? currentBallState.epsilonEquals(lastPosition, 0.5):currentBallState.epsilonEquals(lastPosition, 0.1)) {
                     shouldAdd = false; // Do not add if positions are the same within the tolerance
                 }
             }
