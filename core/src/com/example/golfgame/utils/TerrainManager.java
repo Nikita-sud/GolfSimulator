@@ -17,19 +17,22 @@ import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
+import com.example.golfgame.screens.GolfGameScreen;
 
 public class TerrainManager {
     private Function heightFunction;
-    private Texture grassTexture, sandTexture;
+    private Texture grassTexture, sandTexture, holeTexture;
     private int gridWidth, gridHeight;
     private List<float[]> sandAreas;
+    private float[] holeArea;
     private float scale;
     private int parts;
 
-    public TerrainManager(Function heightFunction, Texture grassTexture, Texture sandTexture, int gridWidth, int gridHeight, float scale, int parts) {
+    public TerrainManager(Function heightFunction, Texture grassTexture, Texture sandTexture, Texture holeTexture, int gridWidth, int gridHeight, float scale, int parts) {
         this.heightFunction = heightFunction;
         this.grassTexture = grassTexture;
         this.sandTexture = sandTexture;
+        this.holeTexture = holeTexture;
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.scale = scale;
@@ -91,6 +94,58 @@ public class TerrainManager {
         }
     
         return golfCourseInstances;
+    }
+
+    public ModelInstance createHoleTerrainModel(float centerX, float centerZ){
+        ModelBuilder modelBuilder = new ModelBuilder();
+
+        // Define terrain boundaries
+        float minX = centerX - gridWidth * scale * 0.5f;
+        float maxX = centerX + gridWidth * scale * 0.5f;
+        float minZ = centerZ - gridHeight * scale * 0.5f;
+        float maxZ = centerZ + gridHeight * scale * 0.5f;
+
+        // Clipping the hole area to terrain boundaries (drawing it bigger than 1, to rescale for a small picture)
+        float x1 = Math.max(minX, (float)(holeArea[0]-GolfGameScreen.getGoalTolerance()));
+        float z1 = Math.max(minZ, (float)(holeArea[1]-GolfGameScreen.getGoalTolerance()));
+        float x2 = Math.min(maxX, (float)(holeArea[0]+GolfGameScreen.getGoalTolerance()));
+        float z2 = Math.min(maxZ, (float)(holeArea[1]+GolfGameScreen.getGoalTolerance()));
+        
+        modelBuilder.begin();
+        holeTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        Material holeMaterial = new Material(TextureAttribute.createDiffuse(holeTexture), ColorAttribute.createSpecular(1, 1, 1, 1));
+        MeshPartBuilder meshBuilder = modelBuilder.part("hole_terrain", GL20.GL_TRIANGLES, Usage.Position | Usage.Normal | Usage.TextureCoordinates, holeMaterial);
+
+        // Calculate grid dimensions based on clipped coordinates
+        int numX = (int)((x2 - x1) / scale) + 1;
+        int numZ = (int)((z2 - z1) / scale) + 1;
+
+        // Generate vertices and store heights for indexing
+        for (int ix = 0; ix < numX; ix++) {
+            for (int iz = 0; iz < numZ; iz++) {
+                float x = x1 + ix * scale;
+                float z = z1 + iz * scale;
+                float height = getTerrainHeight(x, z) + 0.1f;
+                float u = (float)(x - x1) / (x2 - x1);  // Adjusted to use relative position within clipped area
+                float v = (float)(z - z1) / (z2 - z1);
+                meshBuilder.vertex(new float[]{x, height, z, 0, 1, 0, u, v});
+            }
+        }
+
+        // Add indices to form triangles
+        for (int ix = 0; ix < numX - 1; ix++) {
+            for (int iz = 0; iz < numZ - 1; iz++) {
+                int bl = ix * numZ + iz;
+                int br = bl + 1;
+                int tl = bl + numZ;
+                int tr = tl + 1;
+                meshBuilder.index((short)tl, (short)bl, (short)br); // Triangle 1
+                meshBuilder.index((short)tl, (short)br, (short)tr); // Triangle 2
+            }
+        }
+
+        Model holeModel = modelBuilder.end();
+        return new ModelInstance(holeModel);
     }
 
     public List<ModelInstance> createSandTerrainModels(float centerX, float centerZ) {
@@ -190,5 +245,10 @@ public class TerrainManager {
     public List<float[]> getSandAreasList(){
         return sandAreas;
     } 
+
+    public void setHoleArea(float[] newHoleArea){
+        holeArea = newHoleArea;
+    }
+
 }
 

@@ -77,6 +77,32 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
+
+        Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
+        TextField goalXPosition = new TextField("10", skin);
+        TextField goalYPosition = new TextField("10", skin);
+        goalXPosition.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                try{
+                    game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText())});
+                }
+                catch(Exception e){
+                    goalPositionLabel.setText("Invalid X Position");
+                }
+            }
+        });
+        goalYPosition.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                try{
+                    game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText())});
+                }
+                catch(Exception e){
+                    goalPositionLabel.setText("Invalid Y Position");
+                }
+            }
+        });
     
         Slider windSlider = new Slider(0f, 0.001f, 0.0001f, false, skin);
         Label windLabel = new Label("Wind speed magnitude: " + String.format("%.4f", windSlider.getValue()), skin);
@@ -115,7 +141,9 @@ public class SettingsScreen implements Screen {
         rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("backgrounds/settingsBackground.jpeg"))));
     
         Table middleTable = new Table();
-        middleTable.add(heightFunction).width(200).height(50).pad(10).row();
+        middleTable.add(heightFunction).width(200).height(50).pad(10);
+        middleTable.add(goalXPosition).width(50).height(50).pad(10);
+        middleTable.add(goalYPosition).width(50).height(50).pad(10).row();;
         middleTable.add(windSlider).width(400).pad(10).row();
         middleTable.add(windLabel).pad(10).row();
         middleTable.add(sunSlider).width(400).pad(10).row();

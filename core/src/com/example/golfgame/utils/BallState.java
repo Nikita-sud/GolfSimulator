@@ -127,6 +127,11 @@ public class BallState {
                Math.abs(this.vy - other.vy) <= epsilon;
     }
 
+    public boolean epsilonPositionEquals(BallState other, double epsilon){
+        return Math.abs(this.x - other.x) <= epsilon &&
+               Math.abs(this.y - other.y) <= epsilon;
+    }
+
     public BallState copy(){
         return new BallState(x, y, vx, vy);
     }
