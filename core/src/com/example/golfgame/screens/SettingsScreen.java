@@ -85,7 +85,8 @@ public class SettingsScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor){
                 try{
-                    game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText())});
+                    game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText()), Float.parseFloat(goalYPosition.getText())});
+                    goalPositionLabel.setText("Goal Position (X, Y):");
                 }
                 catch(Exception e){
                     goalPositionLabel.setText("Invalid X Position");
@@ -96,7 +97,8 @@ public class SettingsScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor){
                 try{
-                    game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText())});
+                    game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText()), Float.parseFloat(goalYPosition.getText())});
+                    goalPositionLabel.setText("Goal Position (X, Y):");
                 }
                 catch(Exception e){
                     goalPositionLabel.setText("Invalid Y Position");
