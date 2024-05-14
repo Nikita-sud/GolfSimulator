@@ -142,6 +142,7 @@ public class SettingsScreen implements Screen {
     
         Table middleTable = new Table();
         middleTable.add(heightFunction).width(200).height(50).pad(10);
+        middleTable.add(goalPositionLabel).width(200).height(50).pad(10);
         middleTable.add(goalXPosition).width(50).height(50).pad(10);
         middleTable.add(goalYPosition).width(50).height(50).pad(10).row();;
         middleTable.add(windSlider).width(400).pad(10).row();
