@@ -102,7 +102,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private int lastScore;
     private boolean isBallAllowedToMove = false;
     private Music music;
-    private BallState goalState = new BallState(10, 10, 0, 0);
+    private BallState goalState = new BallState(20, -20, 0, 0);
     private static final float GOAL_TOLERANCE = 1f;
 
 

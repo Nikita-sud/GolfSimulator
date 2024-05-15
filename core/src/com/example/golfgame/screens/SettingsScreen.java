@@ -40,7 +40,7 @@ public class SettingsScreen implements Screen {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
-        curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+1", "x", "y");  // Default height function
+        curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+0.8", "x", "y");  // Default height function
         music = assetManager.get("assets/music/settings.mp3", Music.class);
 
         setupUI();
@@ -73,14 +73,14 @@ public class SettingsScreen implements Screen {
                 try {
                     curHeightFunction = new Function(heightFunction.getText(), "x", "y");
                 } catch (Exception e) {
-                    curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+1", "x", "y");
+                    curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+0.8", "x", "y");
                 }
             }
         });
 
         Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
-        TextField goalXPosition = new TextField("10", skin);
-        TextField goalYPosition = new TextField("10", skin);
+        TextField goalXPosition = new TextField("20", skin);
+        TextField goalYPosition = new TextField("-20", skin);
         goalXPosition.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
