@@ -56,8 +56,10 @@ public class GolfGameScreen implements Screen, Disposable {
     private ModelBatch mainModelBatch;
     private Model golfBallModel;
     private Model flagModel;
+    private Model flagStemModel;
     private ModelInstance golfBallInstance;
     private ModelInstance flagInstance;
+    private ModelInstance flagStemInstance;
     private List<ModelInstance> golfCourseInstances;
     private List<ModelInstance> sandInstances;
     private ModelInstance holeInstance;
@@ -130,6 +132,7 @@ public class GolfGameScreen implements Screen, Disposable {
         assetManager.load("textures/holeTexture.png", Texture.class);
         assetManager.load("models/sphere.obj", Model.class);
         assetManager.load("models/flag.obj", Model.class);
+        assetManager.load("models/flagStem.obj", Model.class);
         assetManager.finishLoading();
     }
 
@@ -162,6 +165,7 @@ public class GolfGameScreen implements Screen, Disposable {
         holeTexture = assetManager.get("textures/holeTexture.png", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
         flagModel = assetManager.get("models/flag.obj", Model.class);
+        flagStemModel = assetManager.get("models/flagStem.obj", Model.class);
         music = assetManager.get("assets/music/game-screen.mp3");
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
@@ -208,6 +212,7 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowModelBatch = new ModelBatch(new DepthShaderProvider());
         golfBallInstance = new ModelInstance(golfBallModel);
         flagInstance = new ModelInstance(flagModel);
+        flagStemInstance = new ModelInstance(flagStemModel);
         for (Material material : golfBallInstance.materials) {
             material.clear();
             material.set(ColorAttribute.createDiffuse(Color.WHITE));
@@ -217,9 +222,18 @@ public class GolfGameScreen implements Screen, Disposable {
         for (Material material: flagInstance.materials){
             material.clear();
             material.set(cullFaceAttribute);
+            material.set(ColorAttribute.createDiffuse(Color.RED));
+
         }
+
         flagInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
-        
+        for (Material material: flagStemInstance.materials){
+            material.clear();
+            material.set(ColorAttribute.createDiffuse(Color.WHITE));
+
+        }
+        flagStemInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
+
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
@@ -524,7 +538,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         shadowModelBatch.render(holeInstance, gameEnvironment);
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
-        
+        shadowModelBatch.render(flagStemInstance, gameEnvironment);
         shadowModelBatch.end();
         mainShadowLight.end();
     
@@ -538,6 +552,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         mainModelBatch.render(holeInstance, gameEnvironment);
         mainModelBatch.render(golfBallInstance, gameEnvironment);
+        mainModelBatch.render(flagStemInstance, gameEnvironment);
         mainModelBatch.render(flagInstance, gameEnvironment);
         mainModelBatch.render(waterSurface, gameEnvironment);
         mainModelBatch.end();
@@ -568,7 +583,7 @@ public class GolfGameScreen implements Screen, Disposable {
         goalState.setX(coords[0]);
         goalState.setY(coords[1]);
         flagInstance.transform.setToTranslation(coords[0],(float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", (double)coords[0]); put("y", (double)coords[1]);}}), coords[1]);
-
+        flagStemInstance.transform.setToTranslation(coords[0],(float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", (double)coords[0]); put("y", (double)coords[1]);}}), coords[1]);
     }
 
     public static float getGoalTolerance(){
