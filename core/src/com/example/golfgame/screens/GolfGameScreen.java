@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
@@ -32,6 +33,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.example.golfgame.GolfGame;
@@ -53,7 +55,9 @@ public class GolfGameScreen implements Screen, Disposable {
     private PerspectiveCamera mainCamera;
     private ModelBatch mainModelBatch;
     private Model golfBallModel;
+    private Model flagModel;
     private ModelInstance golfBallInstance;
+    private ModelInstance flagInstance;
     private List<ModelInstance> golfCourseInstances;
     private List<ModelInstance> sandInstances;
     private ModelInstance holeInstance;
@@ -125,6 +129,7 @@ public class GolfGameScreen implements Screen, Disposable {
         assetManager.load("textures/sandTexture.jpeg", Texture.class);
         assetManager.load("textures/holeTexture.png", Texture.class);
         assetManager.load("models/sphere.obj", Model.class);
+        assetManager.load("models/flag.obj", Model.class);
         assetManager.finishLoading();
     }
 
@@ -156,6 +161,7 @@ public class GolfGameScreen implements Screen, Disposable {
         sandTexture = assetManager.get("textures/sandTexture.jpeg", Texture.class);
         holeTexture = assetManager.get("textures/holeTexture.png", Texture.class);
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
+        flagModel = assetManager.get("models/flag.obj", Model.class);
         music = assetManager.get("assets/music/game-screen.mp3");
         terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
         ODE solver = new RungeKutta();
@@ -201,10 +207,18 @@ public class GolfGameScreen implements Screen, Disposable {
     
         shadowModelBatch = new ModelBatch(new DepthShaderProvider());
         golfBallInstance = new ModelInstance(golfBallModel);
+        flagInstance = new ModelInstance(flagModel);
         for (Material material : golfBallInstance.materials) {
             material.clear();
             material.set(ColorAttribute.createDiffuse(Color.WHITE));
         }
+        IntAttribute cullFaceAttribute = new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE);
+
+        for (Material material: flagInstance.materials){
+            material.clear();
+            material.set(cullFaceAttribute);
+        }
+        flagInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
         
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
@@ -524,6 +538,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         mainModelBatch.render(holeInstance, gameEnvironment);
         mainModelBatch.render(golfBallInstance, gameEnvironment);
+        mainModelBatch.render(flagInstance, gameEnvironment);
         mainModelBatch.render(waterSurface, gameEnvironment);
         mainModelBatch.end();
     }
@@ -552,6 +567,8 @@ public class GolfGameScreen implements Screen, Disposable {
     public void setGoalCoords(float[] coords){
         goalState.setX(coords[0]);
         goalState.setY(coords[1]);
+        flagInstance.transform.setToTranslation(coords[0],(float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", (double)coords[0]); put("y", (double)coords[1]);}}), coords[1]);
+
     }
 
     public static float getGoalTolerance(){
