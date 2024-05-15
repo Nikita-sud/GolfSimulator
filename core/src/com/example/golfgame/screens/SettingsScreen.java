@@ -79,8 +79,8 @@ public class SettingsScreen implements Screen {
         });
 
         Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
-        TextField goalXPosition = new TextField("20", skin);
-        TextField goalYPosition = new TextField("-20", skin);
+        TextField goalXPosition = new TextField("-20", skin);
+        TextField goalYPosition = new TextField("20", skin);
         goalXPosition.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor){
