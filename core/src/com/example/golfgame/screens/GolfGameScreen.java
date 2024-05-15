@@ -104,6 +104,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private Music music;
     private BallState goalState = new BallState(-20, 20, 0, 0);
     private static final float GOAL_TOLERANCE = 1f;
+    private FlagAnimation flagAnimation;
 
 
 
@@ -183,7 +184,7 @@ public class GolfGameScreen implements Screen, Disposable {
         grassFrictionStatic = 0.2;
         sandFrictionKinetic = 0.7;
         sandFrictionStatic = 1;
-    
+
         terrainManager = new TerrainManager(terrainHeightFunction, grassTexture,sandTexture,holeTexture, 200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200, 200);
 
@@ -213,6 +214,7 @@ public class GolfGameScreen implements Screen, Disposable {
         golfBallInstance = new ModelInstance(golfBallModel);
         flagInstance = new ModelInstance(flagModel);
         flagStemInstance = new ModelInstance(flagStemModel);
+
         for (Material material : golfBallInstance.materials) {
             material.clear();
             material.set(ColorAttribute.createDiffuse(Color.WHITE));
@@ -234,6 +236,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         flagStemInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
 
+        flagAnimation = new FlagAnimation(flagInstance,goalState.getX(),goalState.getY());
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
@@ -417,6 +420,8 @@ public class GolfGameScreen implements Screen, Disposable {
         }
     
         checkAndReloadTerrainAndWaterSurafceIfNeeded();
+
+        flagAnimation.update(deltaTime);
     
         // Update ball's graphical position
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
@@ -539,6 +544,7 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowModelBatch.render(holeInstance, gameEnvironment);
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
         shadowModelBatch.render(flagStemInstance, gameEnvironment);
+        shadowModelBatch.render(flagInstance, gameEnvironment);
         shadowModelBatch.end();
         mainShadowLight.end();
     
