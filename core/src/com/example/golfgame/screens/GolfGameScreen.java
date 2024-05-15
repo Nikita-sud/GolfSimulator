@@ -34,8 +34,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.print.attribute.standard.MediaSize.NA;
-
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.physics.*;
