@@ -236,7 +236,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         flagStemInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
 
-        flagAnimation = new FlagAnimation(flagInstance,goalState.getX(),goalState.getY());
+        flagAnimation = new FlagAnimation(flagInstance);
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
