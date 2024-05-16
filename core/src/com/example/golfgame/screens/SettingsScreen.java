@@ -66,7 +66,7 @@ public class SettingsScreen implements Screen {
             }
         });
     
-        TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)+1", skin);
+        TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)+0.8", skin);
         heightFunction.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -77,30 +77,28 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
-
+    
         Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
         TextField goalXPosition = new TextField("-20", skin);
         TextField goalYPosition = new TextField("20", skin);
         goalXPosition.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor){
-                try{
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
                     game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText()), Float.parseFloat(goalYPosition.getText())});
                     goalPositionLabel.setText("Goal Position (X, Y):");
-                }
-                catch(Exception e){
+                } catch (Exception e) {
                     goalPositionLabel.setText("Invalid X Position");
                 }
             }
         });
         goalYPosition.addListener(new ChangeListener() {
             @Override
-            public void changed(ChangeEvent event, Actor actor){
-                try{
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
                     game.getGolfGameScreen().setGoalCoords(new float[]{Float.parseFloat(goalXPosition.getText()), Float.parseFloat(goalYPosition.getText())});
                     goalPositionLabel.setText("Goal Position (X, Y):");
-                }
-                catch(Exception e){
+                } catch (Exception e) {
                     goalPositionLabel.setText("Invalid Y Position");
                 }
             }
@@ -143,14 +141,19 @@ public class SettingsScreen implements Screen {
         rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("backgrounds/settingsBackground.jpeg"))));
     
         Table middleTable = new Table();
-        middleTable.add(heightFunction).width(200).height(50).pad(10);
-        middleTable.add(goalPositionLabel).width(200).height(50).pad(10);
-        middleTable.add(goalXPosition).width(50).height(50).pad(10);
-        middleTable.add(goalYPosition).width(50).height(50).pad(10).row();;
+        middleTable.add(heightFunction).width(200).height(50).pad(10).row();
         middleTable.add(windSlider).width(400).pad(10).row();
         middleTable.add(windLabel).pad(10).row();
         middleTable.add(sunSlider).width(400).pad(10).row();
         middleTable.add(sunLabel).pad(10).row();
+    
+        // Create a table for goal position settings
+        Table goalPositionTable = new Table();
+        goalPositionTable.add(goalPositionLabel).pad(10);
+        goalPositionTable.add(goalXPosition).width(50).height(50).pad(10);
+        goalPositionTable.add(goalYPosition).width(50).height(50).pad(10);
+        middleTable.add(goalPositionTable).pad(10).row(); // Add goal position table to middle table
+    
         middleTable.add(sandboxSettingsButton).pad(20).row();  // Add the sandbox settings button here
     
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);
@@ -159,6 +162,9 @@ public class SettingsScreen implements Screen {
     
         stage.addActor(rootTable);
     }
+    
+    
+    
     
 
     @Override

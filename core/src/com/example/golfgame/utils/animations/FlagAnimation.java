@@ -9,9 +9,9 @@ public class FlagAnimation {
     private ModelInstance flagInstance;
     private float elapsedTime = 0;
     private float waveSpeed = 1.0f;
-    private float waveAmplitude = 0.2f;
-    private float crossWaveSpeed = 0.8f; // Speed for cross wave
-    private float crossWaveAmplitude = 0.1f; // Amplitude for cross wave
+    private float waveAmplitude = 0.1f;
+    private float crossWaveSpeed = 0.9f; // Speed for cross wave
+    private float crossWaveAmplitude = 0.3f; // Amplitude for cross wave
     private Array<Vector3> originalVertices;
 
     public FlagAnimation(ModelInstance flagInstance) {

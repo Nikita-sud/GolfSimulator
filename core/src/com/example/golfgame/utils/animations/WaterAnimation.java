@@ -9,7 +9,7 @@ public class WaterAnimation {
     private ModelInstance waterInstance;
     private float elapsedTime = 0;
     private float waveSpeed = 1.0f;
-    private float waveAmplitude = 0.07f;
+    private float waveAmplitude = 0.01f;
     private float crossWaveSpeed = 0.8f; // Speed for cross wave
     private float crossWaveAmplitude = 5.5f; // Amplitude for cross wave
     private float spatialFrequencyMultiplier = 5.0f; // Higher value means shorter wavelength
