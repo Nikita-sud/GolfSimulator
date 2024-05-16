@@ -38,16 +38,11 @@ import java.util.List;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.utils.*;
+import com.example.golfgame.utils.animations.FlagAnimation;
+import com.example.golfgame.utils.animations.WaterAnimation;
 import com.example.golfgame.physics.*;
 import com.example.golfgame.physics.ODE.*;
 
-
-
-/**
- * The GolfGameScreen class implements the game screen for a 3D golf game,
- * handling rendering, input, and game state management. It integrates a physics engine,
- * dynamic lighting, and user input to create an interactive game experience.
- */
 public class GolfGameScreen implements Screen, Disposable {
     @SuppressWarnings("unused")
     private Function heightFunction;
@@ -63,7 +58,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private List<ModelInstance> golfCourseInstances;
     private List<ModelInstance> sandInstances;
     private ModelInstance holeInstance;
-    private ModelInstance waterSurface;
+    private List<ModelInstance> waterSurfaces; // Change from a single instance to a list
     private TerrainManager terrainManager;
     private WaterSurfaceManager waterSurfaceManager;
     private Environment gameEnvironment;
@@ -105,8 +100,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private BallState goalState = new BallState(-20, 20, 0, 0);
     private static final float GOAL_TOLERANCE = 1f;
     private FlagAnimation flagAnimation;
-
-
+    private List<WaterAnimation> waterAnimations; // Change from a single instance to a list
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -173,10 +167,10 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState = new BallState(0, 0, 0.001, 0.001);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
 
-        score =0;
+        score = 0;
         lastScore = -1;
-        scoreLabel = new Label("Score: "+score, skin);
-        lastScoreLabel = new Label("Last Score: "+lastScore, skin);
+        scoreLabel = new Label("Score: " + score, skin);
+        lastScoreLabel = new Label("Last Score: " + lastScore, skin);
         ballPositionsWhenSlow.clear();
         lastValidState = currentBallState.copy();
 
@@ -185,8 +179,8 @@ public class GolfGameScreen implements Screen, Disposable {
         sandFrictionKinetic = 0.7;
         sandFrictionStatic = 1;
 
-        terrainManager = new TerrainManager(terrainHeightFunction, grassTexture,sandTexture,holeTexture, 200, 200, 1.0f, 4);
-        waterSurfaceManager = new WaterSurfaceManager(200, 200);
+        terrainManager = new TerrainManager(terrainHeightFunction, grassTexture, sandTexture, holeTexture, 200, 200, 1.0f, 4);
+        waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50); // Initialize without texture
 
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
@@ -195,16 +189,16 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.far = 300.0f;
         mainCamera.update();
     
-        mainShadowLight = new DirectionalShadowLight(2048*2, 2048*2, 500f, 500f, 0.01f, 1000f);
-        sunlight = (float)mainGame.getGolfGameScreen().getWeather().getSun();
-        mainShadowLight.set(0.8f*sunlight, 0.8f*sunlight, 0.8f*sunlight, -1f, -0.8f, -0.2f);
+        mainShadowLight = new DirectionalShadowLight(2048 * 2, 2048 * 2, 500f, 500f, 0.01f, 1000f);
+        sunlight = (float) mainGame.getGolfGameScreen().getWeather().getSun();
+        mainShadowLight.set(0.8f * sunlight, 0.8f * sunlight, 0.8f * sunlight, -1f, -0.8f, -0.2f);
 
         // Put sandboxes to specified locations
-        for (Sandbox box: mainGame.getSandboxes()){
+        for (Sandbox box : mainGame.getSandboxes()) {
             terrainManager.addSandArea(new float[]{box.getXLowBound(), box.getXLowBound(), box.getXHighBound(), box.getYHighBound()});
         }
 
-        terrainManager.setHoleArea(new float[]{(float)goalState.getX(), (float)goalState.getY()});
+        terrainManager.setHoleArea(new float[]{(float) goalState.getX(), (float) goalState.getY()});
     
         gameEnvironment = new Environment();
         gameEnvironment.add(mainShadowLight);
@@ -221,27 +215,35 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         IntAttribute cullFaceAttribute = new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE);
 
-        for (Material material: flagInstance.materials){
+        for (Material material : flagInstance.materials) {
             material.clear();
             material.set(cullFaceAttribute);
             material.set(ColorAttribute.createDiffuse(Color.RED));
-
         }
 
-        flagInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
-        for (Material material: flagStemInstance.materials){
+        flagInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
+            put("x", goalState.getX());
+            put("y", goalState.getY());
+        }}), (float) goalState.getY());
+        for (Material material : flagStemInstance.materials) {
             material.clear();
             material.set(ColorAttribute.createDiffuse(Color.WHITE));
-
         }
-        flagStemInstance.transform.setToTranslation((float)goalState.getX(), (float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", goalState.getX()); put("y", goalState.getY());}}),(float) goalState.getY());
+        flagStemInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
+            put("x", goalState.getX());
+            put("y", goalState.getY());
+        }}), (float) goalState.getY());
 
         flagAnimation = new FlagAnimation(flagInstance);
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
-        waterSurface = waterSurfaceManager.createWaterSurface(0, 0);
 
+        waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0); // Create multiple water surface parts
+        waterAnimations = new ArrayList<>();
+        for (ModelInstance waterSurface : waterSurfaces) {
+            waterAnimations.add(new WaterAnimation(waterSurface));
+        }
     
         cameraController = new CameraInputController(mainCamera);
         Gdx.input.setInputProcessor(cameraController);
@@ -261,10 +263,10 @@ public class GolfGameScreen implements Screen, Disposable {
         table.top().right(); // Aligns the contents of the table to the top right corner
         // Create the settings button
         TextButton settingsButton = new TextButton("Settings", skin);
-        settingsButton.addListener(new ClickListener(){
+        settingsButton.addListener(new ClickListener() {
             @Override
-            public void clicked(InputEvent event, float x, float y){
-                if(isPaused){
+            public void clicked(InputEvent event, float x, float y) {
+                if (isPaused) {
                     pauseGame();
                 }
                 mainGame.setScreen(mainGame.getSettingsScreen()); // Switch to settings screen
@@ -289,11 +291,11 @@ public class GolfGameScreen implements Screen, Disposable {
 
         // Create labels for displaying wind information and camera direction
         Label windLabel = new Label("Wind: vx=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0]) +
-                                    ", vy=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1]) +
-                                    ", vz=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
+                ", vy=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1]) +
+                ", vz=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
 
         facingLabel = new Label("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " +
-                                String.format("%.2f", mainCamera.direction.y) + ", " + String.format("%.2f", mainCamera.direction.z), skin);
+                String.format("%.2f", mainCamera.direction.y) + ", " + String.format("%.2f", mainCamera.direction.z), skin);
 
         // Add labels to the stage
         Table labelTable = new Table();
@@ -312,7 +314,6 @@ public class GolfGameScreen implements Screen, Disposable {
 
         stage.addActor(labelTable);
 
-
         // Set up input processing for the stage and the camera controller
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage);
@@ -328,14 +329,13 @@ public class GolfGameScreen implements Screen, Disposable {
         resetGameState();
     }
 
-
     /**
-    * Resets the game state to initial conditions, setting the position and velocity of the golf ball,
-    * camera position, and view angles to their starting values.
-    */
+     * Resets the game state to initial conditions, setting the position and velocity of the golf ball,
+     * camera position, and view angles to their starting values.
+     */
     protected void resetGameState() {
-        currentBallState.setAllComponents(0,0,0.001,0.001);
-        reloadTerrain(terrainCenterX, terrainCenterZ); 
+        currentBallState.setAllComponents(0, 0, 0.001, 0.001);
+        reloadTerrain(terrainCenterX, terrainCenterZ);
         cameraViewAngle = 0;
         cameraDistance = 10;
         mainCamera.position.set(1f, 1f, 1f);
@@ -350,34 +350,34 @@ public class GolfGameScreen implements Screen, Disposable {
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             pauseGame();
         }
-        if(!isPaused){
+        if (!isPaused) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                if (!isBallAllowedToMove) { 
-                    isBallAllowedToMove = true; 
+                if (!isBallAllowedToMove) {
+                    isBallAllowedToMove = true;
                     currentBallState.setVx(-ballSpeed * Math.cos(cameraViewAngle));
                     currentBallState.setVy(-ballSpeed * Math.sin(cameraViewAngle));
                 }
-                
+
             }
-            
+
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
                 cameraViewAngle += 0.05; // Rotate camera left
-                facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
+                facingLabel.setText("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " + String.format("%.2f", mainCamera.direction.z) + ", " + String.format("%.2f", mainCamera.direction.y));
             }
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
                 cameraViewAngle -= 0.05; // Rotate camera right
-                facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
+                facingLabel.setText("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " + String.format("%.2f", mainCamera.direction.z) + ", " + String.format("%.2f", mainCamera.direction.y));
             }
             if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
                 cameraDistance = Math.max(5, cameraDistance - 0.1f); // Zoom in
-                facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
+                facingLabel.setText("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " + String.format("%.2f", mainCamera.direction.z) + ", " + String.format("%.2f", mainCamera.direction.y));
             }
             if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
                 cameraDistance = Math.min(15, cameraDistance + 0.1f); // Zoom out
-                facingLabel.setText("Facing(x,y,z): "+String.format("%.2f", mainCamera.direction.x)+", "+String.format("%.2f", mainCamera.direction.z)+", "+String.format("%.2f", mainCamera.direction.y));
+                facingLabel.setText("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " + String.format("%.2f", mainCamera.direction.z) + ", " + String.format("%.2f", mainCamera.direction.y));
             }
         }
-        
+
     }
 
     @Override
@@ -398,11 +398,11 @@ public class GolfGameScreen implements Screen, Disposable {
         if (isPaused) return;
 
         // check for collision with the goal
-        if(currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)){
+        if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
             lastScore = score;
             score = 0;
-            scoreLabel.setText("Score: "+score);
-            lastScoreLabel.setText("Last Score: "+lastScore);
+            scoreLabel.setText("Score: " + score);
+            lastScoreLabel.setText("Last Score: " + lastScore);
             // Reset Ball State to beginning
             isBallAllowedToMove = false;
             resetGameState();
@@ -412,17 +412,20 @@ public class GolfGameScreen implements Screen, Disposable {
             // Update physics engine state
             currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         }
-    
+
         // Update wind effects
         if (Math.abs(currentBallState.getVx()) > 0.01 || Math.abs(currentBallState.getVy()) > 0.01) {
             currentBallState.setVx(weather.getWind()[0] + currentBallState.getVx());
             currentBallState.setVy(weather.getWind()[1] + currentBallState.getVy());
         }
-    
-        checkAndReloadTerrainAndWaterSurafceIfNeeded();
+
+        checkAndReloadTerrainAndWaterSurfaceIfNeeded();
 
         flagAnimation.update(deltaTime);
-    
+        for (WaterAnimation waterAnimation : waterAnimations) {
+            waterAnimation.update(deltaTime);
+        }
+
         // Update ball's graphical position
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
@@ -433,10 +436,10 @@ public class GolfGameScreen implements Screen, Disposable {
         ballPosition.z = terrainManager.getTerrainHeight(ballPosition.x, ballPosition.y);  // Correcting the use of Y as Z
         boolean onSand = terrainManager.isBallOnSand(ballPosition);
 
-        if(onSand){
-            lowSpeedThreshold=0.05f;
-        }else{
-            lowSpeedThreshold=0.005f;
+        if (onSand) {
+            lowSpeedThreshold = 0.05f;
+        } else {
+            lowSpeedThreshold = 0.005f;
         }
 
         // Check if the ball is not moving significantly
@@ -446,7 +449,7 @@ public class GolfGameScreen implements Screen, Disposable {
             // Check if the last position is the same as the current position within a small tolerance
             if (!ballPositionsWhenSlow.isEmpty()) {
                 BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
-                if (onSand? currentBallState.epsilonEquals(lastPosition, 0.5):currentBallState.epsilonEquals(lastPosition, 0.1)) {
+                if (onSand ? currentBallState.epsilonEquals(lastPosition, 0.5) : currentBallState.epsilonEquals(lastPosition, 0.1)) {
                     shouldAdd = false; // Do not add if positions are the same within the tolerance
                 }
             }
@@ -460,7 +463,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
 
         // Check if the ball has fallen below ground level
-        if (ballZ-1 < 0) {
+        if (ballZ - 1 < 0) {
             // Reset to the last valid position
             scoreLabel.setText("Score: " + score++);
             isBallAllowedToMove = false;
@@ -470,20 +473,18 @@ public class GolfGameScreen implements Screen, Disposable {
             if (!ballPositionsWhenSlow.isEmpty()) {
                 BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
                 lastValidState.setAllComponents(lastPosition.getX(), lastPosition.getY(), lastPosition.getVx(), lastPosition.getVy());
-            }else{
+            } else {
                 lastValidState.setAllComponents(currentBallState.getX(), currentBallState.getY(), currentBallState.getVx(), currentBallState.getVy());
             }
         }
 
-    
         // Adjust friction based on terrain
         if (onSand) {
-            gamePhysicsEngine.setFriction(sandFrictionKinetic,sandFrictionStatic);
+            gamePhysicsEngine.setFriction(sandFrictionKinetic, sandFrictionStatic);
         } else {
-            gamePhysicsEngine.setFriction(grassFrictionKinetic,grassFrictionStatic);
+            gamePhysicsEngine.setFriction(grassFrictionKinetic, grassFrictionStatic);
         }
     }
-    
 
     private void updateCameraPosition(float delta) {
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
@@ -498,13 +499,17 @@ public class GolfGameScreen implements Screen, Disposable {
     /**
      * Checks if the terrain needs to be reloaded based on the ball's position to ensure the playing area remains centered on the ball.
      */
-    private void checkAndReloadTerrainAndWaterSurafceIfNeeded() {
+    private void checkAndReloadTerrainAndWaterSurfaceIfNeeded() {
         Vector3 ballPosition = new Vector3((float) currentBallState.getX(), (float) currentBallState.getY(), 0);
         Vector3 terrainCenter = new Vector3(terrainCenterX, terrainCenterZ, 0);
 
         if (ballPosition.dst(terrainCenter) > 20) { // Threshold distance to trigger terrain reload
             reloadTerrain(ballPosition.x, ballPosition.y);
-            waterSurface = waterSurfaceManager.createWaterSurface(terrainCenterX, terrainCenterZ);
+            waterSurfaces = waterSurfaceManager.createWaterSurface(terrainCenterX, terrainCenterZ); // Recreate the water surface parts
+            waterAnimations.clear();
+            for (ModelInstance waterSurface : waterSurfaces) {
+                waterAnimations.add(new WaterAnimation(waterSurface));
+            }
         }
     }
 
@@ -530,10 +535,10 @@ public class GolfGameScreen implements Screen, Disposable {
         Gdx.gl.glClearColor(0.5f, 0.7f, 1.0f, 1.0f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         cameraController.update();
-        
+
         mainShadowLight.begin(Vector3.Zero, mainCamera.direction);
         shadowModelBatch.begin(mainShadowLight.getCamera());
-        
+
         // Render all shadows here
         for (ModelInstance terrainInstance : golfCourseInstances) {
             shadowModelBatch.render(terrainInstance, gameEnvironment);
@@ -547,7 +552,7 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowModelBatch.render(flagInstance, gameEnvironment);
         shadowModelBatch.end();
         mainShadowLight.end();
-    
+
         // Render all visible models here
         mainModelBatch.begin(mainCamera);
         for (ModelInstance terrainInstance : golfCourseInstances) {
@@ -560,10 +565,11 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.render(golfBallInstance, gameEnvironment);
         mainModelBatch.render(flagStemInstance, gameEnvironment);
         mainModelBatch.render(flagInstance, gameEnvironment);
-        mainModelBatch.render(waterSurface, gameEnvironment);
+        for (ModelInstance waterSurface : waterSurfaces) {
+            mainModelBatch.render(waterSurface, gameEnvironment);
+        }
         mainModelBatch.end();
     }
-    
 
     @Override
     public void resize(int width, int height) {
@@ -573,38 +579,44 @@ public class GolfGameScreen implements Screen, Disposable {
         stage.getViewport().update(width, height, true);
     }
 
-    public void setHeightFunction(Function newHeightFunction){
+    public void setHeightFunction(Function newHeightFunction) {
         this.heightFunction = newHeightFunction;
     }
 
-    public void setWeather(Weather newWeather){
+    public void setWeather(Weather newWeather) {
         weather = newWeather;
     }
 
-    public Weather getWeather(){
+    public Weather getWeather() {
         return weather;
     }
 
-    public void setGoalCoords(float[] coords){
+    public void setGoalCoords(float[] coords) {
         goalState.setX(coords[0]);
         goalState.setY(coords[1]);
-        flagInstance.transform.setToTranslation(coords[0],(float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", (double)coords[0]); put("y", (double)coords[1]);}}), coords[1]);
-        flagStemInstance.transform.setToTranslation(coords[0],(float)terrainHeightFunction.evaluate(new HashMap<String, Double>(){{put("x", (double)coords[0]); put("y", (double)coords[1]);}}), coords[1]);
+        flagInstance.transform.setToTranslation(coords[0], (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
+            put("x", (double) coords[0]);
+            put("y", (double) coords[1]);
+        }}), coords[1]);
+        flagStemInstance.transform.setToTranslation(coords[0], (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
+            put("x", (double) coords[0]);
+            put("y", (double) coords[1]);
+        }}), coords[1]);
     }
 
-    public static float getGoalTolerance(){
+    public static float getGoalTolerance() {
         return GOAL_TOLERANCE;
     }
+
     private void pauseGame() {
-        isPaused = !isPaused; 
+        isPaused = !isPaused;
         if (isPaused) {
             pauseDialog.show(stage);
         } else {
             pauseDialog.hide();
         }
     }
-    
-    
+
     @Override
     public void pause() {
         // This method would contain logic to handle the game pausing.
@@ -628,5 +640,4 @@ public class GolfGameScreen implements Screen, Disposable {
         mainShadowLight.dispose();
         shadowModelBatch.dispose();
     }
-
 }
