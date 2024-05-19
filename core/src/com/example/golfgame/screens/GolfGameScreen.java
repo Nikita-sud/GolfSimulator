@@ -28,6 +28,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -101,6 +102,13 @@ public class GolfGameScreen implements Screen, Disposable {
     private static final float GOAL_TOLERANCE = 1f;
     private FlagAnimation flagAnimation;
     private List<WaterAnimation> waterAnimations; // Change from a single instance to a list
+    private boolean isAdjustingSpeed = false;
+    private float minSpeed = 0.01f;
+    private float maxSpeed = 10.0f;
+    private float speedAdjustmentRate = 10.0f;
+    private float currentSpeed = 0.01f;
+
+    private ProgressBar speedProgressBar;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -115,8 +123,10 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         this.mainGame = game;
         this.assetManager = assetManager;
+        this.stage = new Stage(new ScreenViewport()); // Инициализация сцены
         loadAssets();
     }
+    
 
     /**
      * Loads necessary textures and models from assets, ensuring all graphical assets are ready before use.
@@ -135,7 +145,7 @@ public class GolfGameScreen implements Screen, Disposable {
      * Initializes game components such as models, environment, and camera settings.
      */
     public void initializeComponents() {
-        if(isPaused){
+        if (isPaused) {
             pauseGame();
         }
         skin = new Skin(Gdx.files.internal("assets/uiskin.json")); // Initialize skin first
@@ -153,7 +163,7 @@ public class GolfGameScreen implements Screen, Disposable {
         pauseDialog.button("Resume", true); // Resume button
         pauseDialog.button("Back to Main Menu", false); // Go to main menu button
         pauseDialog.hide(); // Hide the dialog initially
-
+    
         mainModelBatch = new ModelBatch();
         grassTexture = assetManager.get("textures/grassTexture.jpeg", Texture.class);
         sandTexture = assetManager.get("textures/sandTexture.jpeg", Texture.class);
@@ -166,22 +176,22 @@ public class GolfGameScreen implements Screen, Disposable {
         ODE solver = new RungeKutta();
         currentBallState = new BallState(0, 0, 0.001, 0.001);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
-
+    
         score = 0;
         lastScore = -1;
         scoreLabel = new Label("Score: " + score, skin);
         lastScoreLabel = new Label("Last Score: " + lastScore, skin);
         ballPositionsWhenSlow.clear();
         lastValidState = currentBallState.copy();
-
+    
         grassFrictionKinetic = 0.1;
         grassFrictionStatic = 0.2;
         sandFrictionKinetic = 0.7;
         sandFrictionStatic = 1;
-
+    
         terrainManager = new TerrainManager(terrainHeightFunction, grassTexture, sandTexture, holeTexture, 200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50); // Initialize without texture
-
+    
         mainCamera = new PerspectiveCamera(100, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         mainCamera.position.set(1f, 1f, 1f);
         mainCamera.lookAt(0f, 0f, 0f);
@@ -192,12 +202,12 @@ public class GolfGameScreen implements Screen, Disposable {
         mainShadowLight = new DirectionalShadowLight(2048 * 2, 2048 * 2, 500f, 500f, 0.01f, 1000f);
         sunlight = (float) mainGame.getGolfGameScreen().getWeather().getSun();
         mainShadowLight.set(0.8f * sunlight, 0.8f * sunlight, 0.8f * sunlight, -1f, -0.8f, -0.2f);
-
+    
         // Put sandboxes to specified locations
         for (Sandbox box : mainGame.getSandboxes()) {
             terrainManager.addSandArea(new float[]{box.getXLowBound(), box.getXLowBound(), box.getXHighBound(), box.getYHighBound()});
         }
-
+    
         terrainManager.setHoleArea(new float[]{(float) goalState.getX(), (float) goalState.getY()});
     
         gameEnvironment = new Environment();
@@ -208,19 +218,19 @@ public class GolfGameScreen implements Screen, Disposable {
         golfBallInstance = new ModelInstance(golfBallModel);
         flagInstance = new ModelInstance(flagModel);
         flagStemInstance = new ModelInstance(flagStemModel);
-
+    
         for (Material material : golfBallInstance.materials) {
             material.clear();
             material.set(ColorAttribute.createDiffuse(Color.WHITE));
         }
         IntAttribute cullFaceAttribute = new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE);
-
+    
         for (Material material : flagInstance.materials) {
             material.clear();
             material.set(cullFaceAttribute);
             material.set(ColorAttribute.createDiffuse(Color.RED));
         }
-
+    
         flagInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
             put("x", goalState.getX());
             put("y", goalState.getY());
@@ -233,26 +243,36 @@ public class GolfGameScreen implements Screen, Disposable {
             put("x", goalState.getX());
             put("y", goalState.getY());
         }}), (float) goalState.getY());
-
+    
         flagAnimation = new FlagAnimation(flagInstance);
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
-
+    
         waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0); // Create multiple water surface parts
         waterAnimations = new ArrayList<>();
         for (ModelInstance waterSurface : waterSurfaces) {
             waterAnimations.add(new WaterAnimation(waterSurface));
         }
+
+        speedProgressBar = new ProgressBar(minSpeed, maxSpeed, 0.1f, true, skin,"progress-bar");
+        speedProgressBar.setValue(currentSpeed);
+        speedProgressBar.setVisible(true); 
+    
+        Table uiTable = new Table();
+        uiTable.setFillParent(true);
+        uiTable.right().padRight(20); // Размещаем справа
+        uiTable.add(speedProgressBar).width(40).height(600).pad(10);
+        stage.addActor(uiTable);
     
         cameraController = new CameraInputController(mainCamera);
         Gdx.input.setInputProcessor(cameraController);
     }
+    
 
     @Override
     public void show() {
-        // Create the stage and skin for UI elements
-        stage = new Stage(new ScreenViewport());
+        initializeComponents();
 
         music.setLooping(true);
         music.play();
@@ -329,6 +349,7 @@ public class GolfGameScreen implements Screen, Disposable {
         resetGameState();
     }
 
+
     /**
      * Resets the game state to initial conditions, setting the position and velocity of the golf ball,
      * camera position, and view angles to their starting values.
@@ -351,13 +372,19 @@ public class GolfGameScreen implements Screen, Disposable {
             pauseGame();
         }
         if (!isPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                if (!isBallAllowedToMove) {
-                    isBallAllowedToMove = true;
-                    currentBallState.setVx(-ballSpeed * Math.cos(cameraViewAngle));
-                    currentBallState.setVy(-ballSpeed * Math.sin(cameraViewAngle));
+            if (!isBallAllowedToMove) {
+                if (Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
+                    isAdjustingSpeed = true;
+                } else {
+                    if (isAdjustingSpeed) {
+                        isAdjustingSpeed = false;
+                        if (!isBallAllowedToMove) {
+                            isBallAllowedToMove = true;
+                            currentBallState.setVx(-currentSpeed * Math.cos(cameraViewAngle));
+                            currentBallState.setVy(-currentSpeed * Math.sin(cameraViewAngle));
+                        }
+                    }
                 }
-
             }
 
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
@@ -396,6 +423,19 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void update(float deltaTime) {
         if (isPaused) return;
+
+
+        if (isAdjustingSpeed) {
+            currentSpeed += speedAdjustmentRate * deltaTime;
+            if (currentSpeed > maxSpeed) {
+                currentSpeed = maxSpeed;
+                speedAdjustmentRate = -speedAdjustmentRate; // Reverse direction
+            } else if (currentSpeed < minSpeed) {
+                currentSpeed = minSpeed;
+                speedAdjustmentRate = -speedAdjustmentRate; // Reverse direction
+            }
+            speedProgressBar.setValue(currentSpeed);
+        }
 
         // check for collision with the goal
         if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
@@ -577,6 +617,9 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.viewportHeight = height;
         mainCamera.update();
         stage.getViewport().update(width, height, true);
+
+        speedProgressBar.setWidth(width * 0.001f); 
+        speedProgressBar.setHeight(height * 0.05f);
     }
 
     public void setHeightFunction(Function newHeightFunction) {
