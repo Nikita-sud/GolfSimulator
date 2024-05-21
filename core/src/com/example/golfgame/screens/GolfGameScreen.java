@@ -16,12 +16,15 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
+import com.badlogic.gdx.maps.Map;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -36,8 +39,10 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import com.example.golfgame.GolfGame;
+import com.example.golfgame.WallE;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -112,6 +117,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private float speedAdjustmentRate = 10.0f;
     private float currentSpeed = 0.01f;
     private ProgressBar speedProgressBar;
+    private WallE wallE;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -150,6 +156,7 @@ public class GolfGameScreen implements Screen, Disposable {
         if (isPaused) {
             pauseGame();
         }
+        wallE = new WallE(mainGame);
         skin = new Skin(Gdx.files.internal("assets/uiskin.json")); 
     
         pauseDialog = new Dialog("", skin, "dialog") { 
@@ -480,7 +487,9 @@ public class GolfGameScreen implements Screen, Disposable {
         for (WaterAnimation waterAnimation : waterAnimations) {
             waterAnimation.update(deltaTime);
         }
-
+        if(!cameraCorrectlyPut()){
+            wallE.setDirection();
+        }
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
         updateCameraPosition(deltaTime);
@@ -652,10 +661,40 @@ public class GolfGameScreen implements Screen, Disposable {
         }}), coords[1]);
     }
 
+    public void setCameraAngel(float newCameraAngel){
+        cameraViewAngle = newCameraAngel;
+    }
+
+    public float getCameraAngel(){
+        return cameraViewAngle;
+    }
     public static float getGoalTolerance() {
         return GOAL_TOLERANCE;
     }
 
+    public BallState getBallState(){
+        return currentBallState;
+    }
+
+    public BallState getGoalState(){
+        return goalState;
+    }
+
+    public Camera getMainCamera(){
+        return mainCamera;
+    }
+    
+    public boolean cameraCorrectlyPut(){
+        // if the ball is rolling, camera position does not matter
+        if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
+            return true;
+        }
+        Vector2 ballToGoal = new Vector2((float)(goalState.getX()-currentBallState.getX()), (float)(goalState.getY()-currentBallState.getY())).nor();
+        Vector2 camVector2 = new Vector2(mainCamera.direction.x, mainCamera.direction.z).nor();
+        System.out.println(ballToGoal+" "+camVector2);
+        return (Math.abs(ballToGoal.x-camVector2.x)<0.001)&&(Math.abs(ballToGoal.y-camVector2.y)<0.001);
+    }
+    
     private void pauseGame() {
         isPaused = !isPaused;
         if (isPaused) {
