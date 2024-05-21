@@ -514,7 +514,6 @@ public class GolfGameScreen implements Screen, Disposable {
         }
 
         if (ballZ - 1 < 0) {
-            scoreLabel.clear();
             scoreLabel.setText("Score: " + score++);
             isBallAllowedToMove = false;
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
