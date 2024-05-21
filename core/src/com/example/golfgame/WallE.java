@@ -3,12 +3,23 @@ package com.example.golfgame;
 import com.badlogic.gdx.graphics.Camera;
 import com.example.golfgame.utils.BallState;
 
+import java.awt.Robot;
+import java.awt.AWTException;
+import java.awt.event.KeyEvent;
+
 public class WallE {
 
     private GolfGame game;
+    private Robot robot;
 
     public WallE(GolfGame game){
         this.game = game;
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            System.out.println("Issue in Robot creation.");
+            e.printStackTrace();
+        }
     }
 
     public void setDirection() {
@@ -53,7 +64,23 @@ public class WallE {
     }
     
     public void hit(){
-
+        Thread keyPressThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                    while (game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f) {
+                        robot.keyPress(KeyEvent.VK_SPACE);
+                        Thread.sleep(10); // Adding sleep to prevent excessive CPU usage
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    robot.keyRelease(KeyEvent.VK_SPACE);
+                }
+            }
+        });
+        keyPressThread.start();
     }
     
 }

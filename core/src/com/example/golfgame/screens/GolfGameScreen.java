@@ -118,6 +118,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private float currentSpeed = 0.01f;
     private ProgressBar speedProgressBar;
     private WallE wallE;
+    private boolean botActive = false;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -487,8 +488,9 @@ public class GolfGameScreen implements Screen, Disposable {
         for (WaterAnimation waterAnimation : waterAnimations) {
             waterAnimation.update(deltaTime);
         }
-        if(!cameraCorrectlyPut()){
+        if(botActive&&!cameraCorrectlyPut()){
             wallE.setDirection();
+            wallE.hit();
         }
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
@@ -661,6 +663,10 @@ public class GolfGameScreen implements Screen, Disposable {
         }}), coords[1]);
     }
 
+    public void toggleBotActiveness(){
+        botActive = !botActive;
+    }
+    
     public void setCameraAngel(float newCameraAngel){
         cameraViewAngle = newCameraAngel;
     }
@@ -668,6 +674,7 @@ public class GolfGameScreen implements Screen, Disposable {
     public float getCameraAngel(){
         return cameraViewAngle;
     }
+    
     public static float getGoalTolerance() {
         return GOAL_TOLERANCE;
     }
@@ -682,6 +689,10 @@ public class GolfGameScreen implements Screen, Disposable {
 
     public Camera getMainCamera(){
         return mainCamera;
+    }
+    
+    public float getCurrentSpeedBar(){
+        return currentSpeed;
     }
     
     public boolean cameraCorrectlyPut(){
@@ -703,6 +714,7 @@ public class GolfGameScreen implements Screen, Disposable {
             pauseDialog.hide();
         }
     }
+
 
     @Override
     public void pause() {

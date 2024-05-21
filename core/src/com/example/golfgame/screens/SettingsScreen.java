@@ -126,6 +126,21 @@ public class SettingsScreen implements Screen {
                 sunLabel.setText("Sunlight level: " + String.format("%.3f", value));
             }
         });
+
+        Label botStatus = new Label("Bot turned off", skin);
+        TextButton toggleBot = new TextButton("Toggle bot", skin);
+        toggleBot.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor){
+                game.getGolfGameScreen().toggleBotActiveness();
+                if (botStatus.getText().toString().equals("Bot turned off")){
+                    botStatus.setText("Bot turned on");
+                }
+                else{
+                    botStatus.setText("Bot turned off");
+                }
+            }
+        });
     
         // Button to open the SandboxSettingsScreen
         TextButton sandboxSettingsButton = new TextButton("Sandbox Settings", skin);
@@ -153,11 +168,14 @@ public class SettingsScreen implements Screen {
         goalPositionTable.add(goalXPosition).width(50).height(50).pad(10);
         goalPositionTable.add(goalYPosition).width(50).height(50).pad(10);
         middleTable.add(goalPositionTable).pad(10).row(); // Add goal position table to middle table
-    
+        
+        
         middleTable.add(sandboxSettingsButton).pad(20).row();  // Add the sandbox settings button here
     
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);
         rootTable.add(middleTable).expand().center();
+        rootTable.add(botStatus);
+        rootTable.add(toggleBot);
         rootTable.add(playButton).width(150).height(50).pad(20).bottom().right();
     
         stage.addActor(rootTable);
