@@ -272,14 +272,37 @@ public class GolfGameScreen implements Screen, Disposable {
 
     @Override
     public void show() {
-        initializeComponents();
+        // Stop any previously playing music to prevent overlapping
+        if (music.isPlaying()) {
+            music.stop();
+        }
 
+        // Reset the stage to clear any previously added actors to avoid overlays
+        stage.clear();
+
+        // Initialize UI components
+        initializeUIComponents();
+
+        // Play background music
         music.setLooping(true);
         music.play();
 
+        // Initialize input processors
+        InputMultiplexer multiplexer = new InputMultiplexer();
+        multiplexer.addProcessor(stage);
+        multiplexer.addProcessor(cameraController);
+        Gdx.input.setInputProcessor(multiplexer);
+
+        // Reload terrain and reset game state if necessary
+        if (golfCourseInstances == null || golfCourseInstances.isEmpty()) {
+            reloadTerrainAndResetState();
+        }
+    }
+
+    private void initializeUIComponents() {
         Table table = new Table();
-        table.setFillParent(true); 
-        table.top().right(); 
+        table.setFillParent(true);
+        table.top().right();
         TextButton settingsButton = new TextButton("Settings", skin);
         settingsButton.addListener(new ClickListener() {
             @Override
@@ -287,7 +310,7 @@ public class GolfGameScreen implements Screen, Disposable {
                 if (isPaused) {
                     pauseGame();
                 }
-                mainGame.setScreen(mainGame.getSettingsScreen()); 
+                mainGame.setScreen(mainGame.getSettingsScreen());
             }
         });
 
@@ -295,13 +318,12 @@ public class GolfGameScreen implements Screen, Disposable {
         pauseButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                pauseGame(); 
+                pauseGame();
             }
         });
 
         table.add(settingsButton).width(100).height(50).pad(10);
         table.add(pauseButton).width(100).height(50).pad(10);
-
         stage.addActor(table);
 
         Label windLabel = new Label("Wind: vx=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0]) +
@@ -311,38 +333,44 @@ public class GolfGameScreen implements Screen, Disposable {
         facingLabel = new Label("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " +
                 String.format("%.2f", mainCamera.direction.y) + ", " + String.format("%.2f", mainCamera.direction.z), skin);
 
-        Table labelTable = new Table();
-        labelTable.setFillParent(true); 
-        labelTable.top().left(); 
+        scoreLabel = new Label("Score: " + score, skin);
+        lastScoreLabel = new Label("Last Score: " + lastScore, skin);
 
+        Table labelTable = new Table();
+        labelTable.setFillParent(true);
+        labelTable.top().left();
         labelTable.add(scoreLabel).pad(10);
         labelTable.add(lastScoreLabel).pad(10);
-
         labelTable.add(facingLabel).pad(10).top().left();
-        labelTable.row(); 
-
-        labelTable.add(windLabel).pad(10).bottom().left().expandY(); 
-
+        labelTable.row();
+        labelTable.add(windLabel).pad(10).bottom().left().expandY();
         stage.addActor(labelTable);
 
-        InputMultiplexer multiplexer = new InputMultiplexer();
-        multiplexer.addProcessor(stage);
-        multiplexer.addProcessor(cameraController);
-        Gdx.input.setInputProcessor(multiplexer);
+        Table uiTable = new Table();
+        uiTable.setFillParent(true);
+        uiTable.right().padRight(20);
+        uiTable.add(speedProgressBar).width(40).height(600).pad(10);
+        stage.addActor(uiTable);
+    }
 
-        if (golfCourseInstances == null || golfCourseInstances.isEmpty()) {
-            golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
-            sandInstances = terrainManager.createSandTerrainModels(0, 0);
-            holeInstance = terrainManager.createHoleTerrainModel(0, 0);
+    private void reloadTerrainAndResetState() {
+        golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
+        sandInstances = terrainManager.createSandTerrainModels(0, 0);
+        holeInstance = terrainManager.createHoleTerrainModel(0, 0);
+        waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
+        waterAnimations.clear();
+        for (ModelInstance waterSurface : waterSurfaces) {
+            waterAnimations.add(new WaterAnimation(waterSurface));
         }
         resetGameState();
     }
+
 
     /**
      * Resets the game state to initial conditions, setting the position and velocity of the golf ball,
      * camera position, and view angles to their starting values.
      */
-    protected void resetGameState() {
+    public void resetGameState() {
         currentBallState.setAllComponents(0, 0, 0.001, 0.001);
         reloadTerrain(terrainCenterX, terrainCenterZ);
         cameraViewAngle = 0;
@@ -350,6 +378,9 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.position.set(1f, 1f, 1f);
         mainCamera.lookAt(0f, 0f, 0f);
         mainCamera.update();
+        score = 0;
+        scoreLabel.clear();
+        scoreLabel.setText("Score: " + score);
     }
 
     /**
@@ -428,6 +459,7 @@ public class GolfGameScreen implements Screen, Disposable {
         if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
             lastScore = score;
             score = 0;
+            scoreLabel.clear();
             scoreLabel.setText("Score: " + score);
             lastScoreLabel.setText("Last Score: " + lastScore);
             isBallAllowedToMove = false;
@@ -475,12 +507,14 @@ public class GolfGameScreen implements Screen, Disposable {
 
             if (shouldAdd) {
                 ballPositionsWhenSlow.add(new BallState(currentBallState.getX(), currentBallState.getY(), currentBallState.getVx(), currentBallState.getVy()));
+                scoreLabel.clear();
                 scoreLabel.setText("Score: " + score++);
                 isBallAllowedToMove = false;
             }
         }
 
         if (ballZ - 1 < 0) {
+            scoreLabel.clear();
             scoreLabel.setText("Score: " + score++);
             isBallAllowedToMove = false;
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
