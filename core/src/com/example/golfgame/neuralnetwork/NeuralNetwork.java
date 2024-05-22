@@ -1,11 +1,14 @@
 package com.example.golfgame.neuralnetwork;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class NeuralNetwork {
+public class NeuralNetwork implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private int numLayers;
     @SuppressWarnings("unused")
     private int[] sizes;
@@ -208,16 +211,39 @@ public class NeuralNetwork {
         return result;
     }
 
+    public void saveNetwork(String filePath) throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(this);
+        }
+    }
+
+    public static NeuralNetwork loadNetwork(String filePath) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            return (NeuralNetwork) ois.readObject();
+        }
+    }
+
     public static void main(String[] args) {
-        // Пример использования нейронной сети
-        NeuralNetwork network = new NeuralNetwork(new int[]{4, 10, 2});
+        try {
 
-        double[] state = new double[]{0.5, 0.2, 0.1, 0.4};
-        double[] target = new double[]{1.0, 0.0};
+            NeuralNetwork network = new NeuralNetwork(new int[]{4, 10, 2});
 
-        network.trainSingle(state, target);
+            double[] state = new double[]{0.5, 0.2, 0.1, 0.4};
+            double[] target = new double[]{1.0, 0.0};
 
-        double[] prediction = network.predict(state);
-        System.out.println("Prediction: " + Arrays.toString(prediction));
+            network.trainSingle(state, target);
+
+            double[] prediction = network.predict(state);
+            System.out.println("Prediction: " + Arrays.toString(prediction));
+
+            network.saveNetwork("neuralnetworkinformation/neuralNetwork.ser");
+
+            NeuralNetwork loadedNetwork = NeuralNetwork.loadNetwork("neuralnetworkinformation/neuralNetwork.ser");
+
+            double[] loadedPrediction = loadedNetwork.predict(state);
+            System.out.println("Loaded Prediction: " + Arrays.toString(loadedPrediction));
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }

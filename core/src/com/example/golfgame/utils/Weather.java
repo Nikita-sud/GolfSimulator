@@ -8,10 +8,10 @@ import java.util.Random;
  */
 public class Weather {
 
-    private double[] wind;
-    private double rain;
-    private double sun;
-    private double windMagnitude;
+    private float[] wind;
+    private float rain;
+    private float sun;
+    private float windMagnitude;
     private static final Random windRandom = new Random(2024);
 
     /**
@@ -21,7 +21,7 @@ public class Weather {
      * @param rain the initial rain intensity, where higher values indicate heavier rain.
      * @param sun the initial level of sunlight, where higher values indicate brighter sunlight.
      */
-    public Weather(double wind, double rain, double sun) {
+    public Weather(float wind, float rain, float sun) {
         this.rain = rain;
         this.wind = generateWind(wind);
         this.sun = sun;
@@ -34,7 +34,7 @@ public class Weather {
      *
      * @param wind the initial magnitude of the wind in any direction.
      */
-    public Weather(double wind) {
+    public Weather(float wind) {
         this(wind, 0, 1);
     }
 
@@ -43,52 +43,52 @@ public class Weather {
      * The direction is randomized and normalized to distribute the total wind magnitude evenly across the x, y, and z components.
      *
      * @param magnitude the desired magnitude of the wind.
-     * @return a double array representing the wind vector with components [x, y, z].
+     * @return a float array representing the wind vector with components [x, y, z].
      */
-    private double[] generateWind(double magnitude) {
-        double x = windRandom.nextDouble(-1, 1);
-        double y = windRandom.nextDouble(-1, 1);
-        double z = windRandom.nextDouble(-1, 1);
-        double total = x + y + z;
+    private float[] generateWind(float magnitude) {
+        float x = windRandom.nextFloat() * 2 - 1; // Generate a random float between -1 and 1
+        float y = windRandom.nextFloat() * 2 - 1; // Generate a random float between -1 and 1
+        float z = windRandom.nextFloat() * 2 - 1; // Generate a random float between -1 and 1
+        float total = Math.abs(x) + Math.abs(y) + Math.abs(z);
         x *= (magnitude / total);
         y *= (magnitude / total);
         z *= (magnitude / total);
-        return new double[]{x, y, z};
+        return new float[]{x, y, z};
     }
 
     /**
      * Retrieves the current wind vector.
      *
-     * @return the current wind vector as a double array [x, y, z].
+     * @return the current wind vector as a float array [x, y, z].
      */
-    public double[] getWind() {
+    public float[] getWind() {
         return wind;
     }
 
     /**
      * Retrieves the current rain intensity.
      *
-     * @return the current rain intensity as a double.
+     * @return the current rain intensity as a float.
      */
-    public double getRain() {
+    public float getRain() {
         return rain;
     }
 
     /**
      * Retrieves the current level of sunlight.
      *
-     * @return the current level of sunlight as a double.
+     * @return the current level of sunlight as a float.
      */
-    public double getSun() {
+    public float getSun() {
         return sun;
     }
 
     /**
      * Retrieves the magnitude of the wind.
      *
-     * @return the magnitude of the wind as a double.
+     * @return the magnitude of the wind as a float.
      */
-    public double getWindMagnitude() {
+    public float getWindMagnitude() {
         return windMagnitude;
     }
 
@@ -106,7 +106,7 @@ public class Weather {
      *
      * @param newWind the new wind magnitude.
      */
-    public void setWind(double newWind) {
+    public void setWind(float newWind) {
         wind = generateWind(newWind);
     }
 
@@ -115,7 +115,7 @@ public class Weather {
      *
      * @param newRain the new rain intensity.
      */
-    public void setRain(double newRain) {
+    public void setRain(float newRain) {
         rain = newRain;
     }
 
@@ -124,7 +124,7 @@ public class Weather {
      *
      * @param newSun the new level of sunlight.
      */
-    public void setSun(double newSun) {
+    public void setSun(float newSun) {
         sun = newSun;
     }
 }
