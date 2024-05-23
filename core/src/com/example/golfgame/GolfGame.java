@@ -23,8 +23,9 @@ public class GolfGame extends Game {
     private Screen settingsScreen;
     private Screen sandboxSettingScreen;
     private AssetManager assetManager;
-    private Music backgroundMusic;
     private List<Sandbox> sandboxes = new ArrayList<>();
+    private boolean keepSettingsMusic = false;
+
     /**
      * Initializes the game, creating and setting up the main menu, game, and settings screens.
      * It also initializes the {@link AssetManager} for managing game assets.
@@ -33,14 +34,14 @@ public class GolfGame extends Game {
     public void create() {
         assetManager = new AssetManager();
 
-        // Загрузка музыкальных файлов
+        // Load music files
         assetManager.load("assets/music/main-menu.mp3", Music.class);
         assetManager.load("assets/music/game-screen.mp3", Music.class);
         assetManager.load("assets/music/settings.mp3", Music.class);
 
-        assetManager.finishLoading(); // Убедитесь, что все ассеты загружены перед их использованием
+        assetManager.finishLoading(); // Ensure all assets are loaded before using them
 
-        // Создание экранов после загрузки ассетов
+        // Create screens after loading assets
         settingsScreen = new SettingsScreen(this, assetManager);
         sandboxSettingScreen = new SandboxSettingsScreen(this, assetManager);
         mainScreen = new MainMenuScreen(this, assetManager);
@@ -48,14 +49,14 @@ public class GolfGame extends Game {
         this.setScreen(mainScreen);
     }
 
-
     /**
      * Switches the current screen to the game screen and initializes game components.
      * It also updates the game screen with the current height function settings.
      */
     public void switchToGame() {
+        keepSettingsMusic = false;
         getGolfGameScreen().initializeComponents();
-        ((GolfGameScreen)gameScreen).setHeightFunction(((SettingsScreen)settingsScreen).getCurHeightFunction());
+        ((GolfGameScreen) gameScreen).setHeightFunction(((SettingsScreen) settingsScreen).getCurHeightFunction());
         setScreen(gameScreen);
     }
 
@@ -63,6 +64,7 @@ public class GolfGame extends Game {
      * Switches the current screen to the settings screen.
      */
     public void switchToSettings() {
+        keepSettingsMusic = true;
         setScreen(settingsScreen);
     }
 
@@ -70,6 +72,7 @@ public class GolfGame extends Game {
      * Switches the current screen to the sandbox settings screen.
      */
     public void switchToSandBoxSettings() {
+        keepSettingsMusic = true;
         setScreen(sandboxSettingScreen);
     }
 
@@ -77,6 +80,7 @@ public class GolfGame extends Game {
      * Switches the current screen back to the main menu screen.
      */
     public void switchToMenu() {
+        keepSettingsMusic = false;
         setScreen(mainScreen);
     }
 
@@ -85,7 +89,7 @@ public class GolfGame extends Game {
      *
      * @return The currently configured {@link GolfGameScreen}.
      */
-    public GolfGameScreen getGolfGameScreen(){
+    public GolfGameScreen getGolfGameScreen() {
         return (GolfGameScreen) gameScreen;
     }
 
@@ -94,8 +98,8 @@ public class GolfGame extends Game {
      *
      * @return The currently configured {@link SettingsScreen}.
      */
-    public SettingsScreen getSettingsScreen(){
-        return (SettingsScreen)settingsScreen;
+    public SettingsScreen getSettingsScreen() {
+        return (SettingsScreen) settingsScreen;
     }
 
     /**
@@ -103,7 +107,7 @@ public class GolfGame extends Game {
      *
      * @return The currently configured {@link MainMenuScreen}.
      */
-    public MainMenuScreen getMenuScreen(){
+    public MainMenuScreen getMenuScreen() {
         return (MainMenuScreen) mainScreen;
     }
 
@@ -112,14 +116,14 @@ public class GolfGame extends Game {
      * 
      * @return the current games' sandbox representations.
      */
-    public List<Sandbox> getSandboxes(){
+    public List<Sandbox> getSandboxes() {
         return sandboxes;
     }
 
     /**
      * Resets the games {@link sandboxes} instance.
      */
-    public void resetSandboxes(){
+    public void resetSandboxes() {
         sandboxes.clear();
     }
 
@@ -128,7 +132,7 @@ public class GolfGame extends Game {
      * 
      * @param newSandbox representation of new sandbox to be added.
      */
-    public void addSandbox(Sandbox newSandbox){
+    public void addSandbox(Sandbox newSandbox) {
         sandboxes.add(newSandbox);
     }
 
@@ -138,9 +142,9 @@ public class GolfGame extends Game {
     @Override
     public void dispose() {
         assetManager.dispose();
-        if (backgroundMusic != null) {
-            backgroundMusic.dispose();
-        }
     }
 
+    public boolean shouldKeepSettingsMusic() {
+        return keepSettingsMusic;
+    }
 }
