@@ -1,17 +1,17 @@
 package com.example.golfgame;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.BallState;
 
 import java.awt.Robot;
 import java.awt.AWTException;
 import java.awt.event.KeyEvent;
 
-import javax.security.auth.kerberos.KeyTab;
 
 public class WallE {
 
-    private GolfGame game;
+    private volatile                                       GolfGame game;
     private Robot robot;
     private boolean hitAllowed = true;
 
@@ -76,7 +76,7 @@ public class WallE {
                     for (int t = 0; t<1000; t++){
                         robot.keyPress(KeyEvent.VK_SPACE);
                     }
-                    while (game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f) {
+                    while (game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f&&game.getScreen() instanceof GolfGameScreen) {
                         robot.keyPress(KeyEvent.VK_SPACE);
                         Thread.sleep(10); // Adding sleep to prevent excessive CPU usage
                     }

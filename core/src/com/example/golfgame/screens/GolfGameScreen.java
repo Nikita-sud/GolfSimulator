@@ -488,12 +488,12 @@ public class GolfGameScreen implements Screen, Disposable {
         for (WaterAnimation waterAnimation : waterAnimations) {
             waterAnimation.update(deltaTime);
         }
-        if (botActive){
+        if (mainGame.getScreen() instanceof GolfGameScreen){
             if(!cameraCorrectlyPut()){
                 wallE.setDirection();                                                                                                                                                  
             }
             if(wallE.hitAllowed()){
-                wallE.hit();
+                wallE.hit();                                                                                     
             }
         }
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
