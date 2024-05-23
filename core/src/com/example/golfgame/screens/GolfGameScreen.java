@@ -118,7 +118,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private float sunlight;
 
     // Weather
-    private Weather weather;
+    private Weather weather = new Weather(0);
 
     // Music
     private Music music;
@@ -170,8 +170,8 @@ public class GolfGameScreen implements Screen, Disposable {
         // Initialize Physics Engine and Game State
         initializePhysicsAndGameState();
 
-        // Initialize Terrain and Weather
-        initializeTerrainAndWeather();
+        // Initialize Terrain
+        initializeTerrain();
 
         // Initialize Camera and Light
         initializeCameraAndLight();
@@ -226,8 +226,7 @@ private void initializePhysicsAndGameState() {
     sandFrictionStatic = 1;
 }
 
-private void initializeTerrainAndWeather() {
-    weather = new Weather(0);
+private void initializeTerrain() {
     terrainManager = new TerrainManager(terrainHeightFunction,
         assetManager.get("textures/grassTexture.jpeg", Texture.class),
         assetManager.get("textures/sandTexture.jpeg", Texture.class),
