@@ -185,13 +185,13 @@ public class GolfGameScreen implements Screen, Disposable {
 
 private void initializeSkinAndDialog() {
     skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
-
     pauseDialog = new Dialog("", skin, "dialog") {
         public void result(Object obj) {
             if ((Boolean) obj) {
                 pauseGame();
             } else {
-                mainGame.setScreen(mainGame.getMenuScreen());
+                isBallAllowedToMove = false;
+                mainGame.switchToMenu();
             }
         }
     };
@@ -373,7 +373,7 @@ private TextButton createSettingsButton() {
                 pauseGame();
             }
             isBallAllowedToMove = false;
-            mainGame.setScreen(mainGame.getSettingsScreen());
+            mainGame.switchToSettings();
         }
     });
     return settingsButton;
