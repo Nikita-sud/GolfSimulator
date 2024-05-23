@@ -699,6 +699,9 @@ public class GolfGameScreen implements Screen, Disposable {
         return currentSpeed;
     }
     
+    public WallE wallE(){
+        return wallE;
+    }
     public float getCurrentSpeedAdjustmentRate(){
         return speedAdjustmentRate;
     }

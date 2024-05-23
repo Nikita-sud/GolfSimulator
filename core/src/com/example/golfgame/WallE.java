@@ -11,9 +11,10 @@ import java.awt.event.KeyEvent;
 
 public class WallE {
 
-    private volatile                                       GolfGame game;
+    private volatile GolfGame game;
     private Robot robot;
     private boolean hitAllowed = true;
+    private volatile boolean gameOver = false;
 
     public WallE(GolfGame game){
         this.game = game;
@@ -66,17 +67,20 @@ public class WallE {
         return currentAngle + smoothingFactor * deltaAngle;
     }
     
-    public void hit(){
+    public synchronized void hit(){
         hitAllowed = false;
         Thread keyPressThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                if(gameOver){
+                    return;
+                }
                 try {
                     Thread.sleep(1000);
                     for (int t = 0; t<1000; t++){
                         robot.keyPress(KeyEvent.VK_SPACE);
                     }
-                    while (game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f&&game.getScreen() instanceof GolfGameScreen) {
+                    while (!gameOver&&game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f&&game.getScreen() instanceof GolfGameScreen) {
                         robot.keyPress(KeyEvent.VK_SPACE);
                         Thread.sleep(10); // Adding sleep to prevent excessive CPU usage
                     }
@@ -94,5 +98,8 @@ public class WallE {
     public boolean hitAllowed(){
         return hitAllowed;
     }
-    
+
+    public void gameOver(){
+        gameOver = true;
+    }
 }

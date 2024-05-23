@@ -141,6 +141,6 @@ public class GolfGame extends Game {
         if (backgroundMusic != null) {
             backgroundMusic.dispose();
         }
+        getGolfGameScreen().wallE().gameOver();
     }
-    
 }
