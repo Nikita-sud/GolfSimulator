@@ -1,4 +1,4 @@
-package com.example.golfgame.neuralnetwork;
+package com.example.golfgame.bot.neuralnetwork;
 
 import java.io.*;
 import java.util.ArrayList;

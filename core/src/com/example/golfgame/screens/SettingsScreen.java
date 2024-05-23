@@ -143,7 +143,43 @@ public class SettingsScreen implements Screen {
                 game.switchToSandBoxSettings();  // Switch to SandboxSettingsScreen
             }
         });
-    
+
+        //Add bots labes
+        Label ruleBasedBotStatus = new Label("Rule-Based Bot: Off", skin);
+        Label hillClimbingBotStatus = new Label("Hill-Climbing Bot: Off", skin);
+
+        // Add the rule-based bot UI
+        TextButton toggleRuleBasedBot = new TextButton("Toggle Rule-Based Bot", skin);
+        toggleRuleBasedBot.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getGolfGameScreen().toggleRuleBasedBotActiveness();
+                if (ruleBasedBotStatus.getText().toString().equals("Rule-Based Bot: Off")) {
+                    ruleBasedBotStatus.setText("Rule-Based Bot: On");
+                    hillClimbingBotStatus.setText("Hill-Climbing Bot: Off");
+                    game.getGolfGameScreen().setHillClimbingBotActive(false);
+                } else {
+                    ruleBasedBotStatus.setText("Rule-Based Bot: Off");
+                }
+            }
+        });
+
+        // Add the hill-climbing bot UI
+        TextButton toggleHillClimbingBot = new TextButton("Toggle Hill-Climbing Bot", skin);
+        toggleHillClimbingBot.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getGolfGameScreen().toggleHillClimbingBotActiveness();
+                if (hillClimbingBotStatus.getText().toString().equals("Hill-Climbing Bot: Off")) {
+                    hillClimbingBotStatus.setText("Hill-Climbing Bot: On");
+                    ruleBasedBotStatus.setText("Rule-Based Bot: Off");
+                    game.getGolfGameScreen().setRuleBasedBotActive(false);
+                } else {
+                    hillClimbingBotStatus.setText("Hill-Climbing Bot: Off");
+                }
+            }
+        });
+
         // Create root table
         Table rootTable = new Table();
         rootTable.setFillParent(true);
@@ -166,6 +202,14 @@ public class SettingsScreen implements Screen {
     
         // Add sandbox settings button to middle table
         middleTable.add(sandboxSettingsButton).pad(20).row();
+
+        // Add bot toggle buttons and labels to middle table
+        Table botTable = new Table();
+        botTable.add(ruleBasedBotStatus).pad(10);
+        botTable.add(toggleRuleBasedBot).pad(10).row();
+        botTable.add(hillClimbingBotStatus).pad(10);
+        botTable.add(toggleHillClimbingBot).pad(10).row();
+        middleTable.add(botTable).pad(10).row();
     
         // Add components to root table
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);

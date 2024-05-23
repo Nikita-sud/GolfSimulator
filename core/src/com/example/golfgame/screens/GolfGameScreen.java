@@ -113,6 +113,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private float cameraDistance = DEFAULT_CAMERA_DISTANCE;
     private float cameraViewAngle = 0;
     private float terrainCenterX = 0, terrainCenterZ = 0;
+    private boolean ruleBasedBotActive = false;
+    private boolean hillClimbingBotActive = false;
 
     // Light settings
     private float sunlight;
@@ -183,124 +185,124 @@ public class GolfGameScreen implements Screen, Disposable {
         setInputProcessor();
     }
 
-private void initializeSkinAndDialog() {
-    skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
-    pauseDialog = new Dialog("", skin, "dialog") {
-        public void result(Object obj) {
-            if ((Boolean) obj) {
-                pauseGame();
-            } else {
-                isBallAllowedToMove = false;
-                mainGame.switchToMenu();
+    private void initializeSkinAndDialog() {
+        skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
+        pauseDialog = new Dialog("", skin, "dialog") {
+            public void result(Object obj) {
+                if ((Boolean) obj) {
+                    pauseGame();
+                } else {
+                    isBallAllowedToMove = false;
+                    mainGame.switchToMenu();
+                }
             }
+        };
+        pauseDialog.text("Game Paused");
+        pauseDialog.button("Resume", true);
+        pauseDialog.button("Back to Main Menu", false);
+        pauseDialog.hide();
+    }
+
+    private void initializeModelsAndAssets() {
+        mainModelBatch = new ModelBatch();
+        golfBallModel = assetManager.get("models/sphere.obj", Model.class);
+        flagModel = assetManager.get("models/flag.obj", Model.class);
+        flagStemModel = assetManager.get("models/flagStem.obj", Model.class);
+        music = assetManager.get("assets/music/game-screen.mp3");
+    }
+
+    private void initializePhysicsAndGameState() {
+        terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
+        ODE solver = new RungeKutta();
+        currentBallState = new BallState(0, 0, 0.001, 0.001);
+        gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
+        goalState = new BallState(-20, 20, 0, 0);
+        score = 0;
+        lastScore = -1;
+        ballPositionsWhenSlow = new ArrayList<>();
+        ballPositionsWhenSlow.clear();
+        lastValidState = currentBallState.copy();
+        grassFrictionKinetic = 0.1;
+        grassFrictionStatic = 0.2;
+        sandFrictionKinetic = 0.7;
+        sandFrictionStatic = 1;
+    }
+
+    private void initializeTerrain() {
+        terrainManager = new TerrainManager(terrainHeightFunction,
+            assetManager.get("textures/grassTexture.jpeg", Texture.class),
+            assetManager.get("textures/sandTexture.jpeg", Texture.class),
+            assetManager.get("textures/holeTexture.png", Texture.class),
+            200, 200, 1.0f, 4);
+        waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50);
+    }
+
+    private void initializeCameraAndLight() {
+        mainCamera = new PerspectiveCamera(CAMERA_FOV, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        mainCamera.position.set(1f, 1f, 1f);
+        mainCamera.lookAt(0f, 0f, 0f);
+        mainCamera.near = 0.1f;
+        mainCamera.far = 300.0f;
+        mainCamera.update();
+
+        mainShadowLight = new DirectionalShadowLight(2048 * 2, 2048 * 2, 500f, 500f, 0.01f, 1000f);
+        sunlight = (float) mainGame.getGolfGameScreen().getWeather().getSun();
+        mainShadowLight.set(0.8f * sunlight, 0.8f * sunlight, 0.8f * sunlight, -1f, -0.8f, -0.2f);
+    }
+
+    private void initializeGameEnvironment() {
+        for (Sandbox box : mainGame.getSandboxes()) {
+            terrainManager.addSandArea(new float[]{box.getXLowBound(), box.getXLowBound(), box.getXHighBound(), box.getYHighBound()});
         }
-    };
-    pauseDialog.text("Game Paused");
-    pauseDialog.button("Resume", true);
-    pauseDialog.button("Back to Main Menu", false);
-    pauseDialog.hide();
-}
+        terrainManager.setHoleArea(new float[]{(float) goalState.getX(), (float) goalState.getY()});
 
-private void initializeModelsAndAssets() {
-    mainModelBatch = new ModelBatch();
-    golfBallModel = assetManager.get("models/sphere.obj", Model.class);
-    flagModel = assetManager.get("models/flag.obj", Model.class);
-    flagStemModel = assetManager.get("models/flagStem.obj", Model.class);
-    music = assetManager.get("assets/music/game-screen.mp3");
-}
+        gameEnvironment = new Environment();
+        gameEnvironment.add(mainShadowLight);
+        gameEnvironment.shadowMap = mainShadowLight;
 
-private void initializePhysicsAndGameState() {
-    terrainHeightFunction = mainGame.getSettingsScreen().getCurHeightFunction();
-    ODE solver = new RungeKutta();
-    currentBallState = new BallState(0, 0, 0.001, 0.001);
-    gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
-    goalState = new BallState(-20, 20, 0, 0);
-    score = 0;
-    lastScore = -1;
-    ballPositionsWhenSlow = new ArrayList<>();
-    ballPositionsWhenSlow.clear();
-    lastValidState = currentBallState.copy();
-    grassFrictionKinetic = 0.1;
-    grassFrictionStatic = 0.2;
-    sandFrictionKinetic = 0.7;
-    sandFrictionStatic = 1;
-}
+        shadowModelBatch = new ModelBatch(new DepthShaderProvider());
 
-private void initializeTerrain() {
-    terrainManager = new TerrainManager(terrainHeightFunction,
-        assetManager.get("textures/grassTexture.jpeg", Texture.class),
-        assetManager.get("textures/sandTexture.jpeg", Texture.class),
-        assetManager.get("textures/holeTexture.png", Texture.class),
-        200, 200, 1.0f, 4);
-    waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50);
-}
+        golfBallInstance = new ModelInstance(golfBallModel);
+        initializeModelInstance(golfBallInstance, Color.WHITE);
 
-private void initializeCameraAndLight() {
-    mainCamera = new PerspectiveCamera(CAMERA_FOV, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-    mainCamera.position.set(1f, 1f, 1f);
-    mainCamera.lookAt(0f, 0f, 0f);
-    mainCamera.near = 0.1f;
-    mainCamera.far = 300.0f;
-    mainCamera.update();
+        flagInstance = new ModelInstance(flagModel);
+        initializeModelInstance(flagInstance, Color.RED, true);
 
-    mainShadowLight = new DirectionalShadowLight(2048 * 2, 2048 * 2, 500f, 500f, 0.01f, 1000f);
-    sunlight = (float) mainGame.getGolfGameScreen().getWeather().getSun();
-    mainShadowLight.set(0.8f * sunlight, 0.8f * sunlight, 0.8f * sunlight, -1f, -0.8f, -0.2f);
-}
+        flagStemInstance = new ModelInstance(flagStemModel);
+        initializeModelInstance(flagStemInstance, Color.WHITE);
 
-private void initializeGameEnvironment() {
-    for (Sandbox box : mainGame.getSandboxes()) {
-        terrainManager.addSandArea(new float[]{box.getXLowBound(), box.getXLowBound(), box.getXHighBound(), box.getYHighBound()});
-    }
-    terrainManager.setHoleArea(new float[]{(float) goalState.getX(), (float) goalState.getY()});
+        setPositionForFlagAndStemInstances();
 
-    gameEnvironment = new Environment();
-    gameEnvironment.add(mainShadowLight);
-    gameEnvironment.shadowMap = mainShadowLight;
+        flagAnimation = new FlagAnimation(flagInstance);
+        golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
+        sandInstances = terrainManager.createSandTerrainModels(0, 0);
+        holeInstance = terrainManager.createHoleTerrainModel(0, 0);
 
-    shadowModelBatch = new ModelBatch(new DepthShaderProvider());
-
-    golfBallInstance = new ModelInstance(golfBallModel);
-    initializeModelInstance(golfBallInstance, Color.WHITE);
-
-    flagInstance = new ModelInstance(flagModel);
-    initializeModelInstance(flagInstance, Color.RED, true);
-
-    flagStemInstance = new ModelInstance(flagStemModel);
-    initializeModelInstance(flagStemInstance, Color.WHITE);
-
-    setPositionForFlagAndStemInstances();
-
-    flagAnimation = new FlagAnimation(flagInstance);
-    golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
-    sandInstances = terrainManager.createSandTerrainModels(0, 0);
-    holeInstance = terrainManager.createHoleTerrainModel(0, 0);
-
-    waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
-    waterAnimations = new ArrayList<>();
-    for (ModelInstance waterSurface : waterSurfaces) {
-        waterAnimations.add(new WaterAnimation(waterSurface));
-    }
-}
-
-private void setInputProcessor() {
-    cameraController = new CameraInputController(mainCamera);
-    Gdx.input.setInputProcessor(cameraController);
-}
-
-private void initializeModelInstance(ModelInstance instance, Color color) {
-    initializeModelInstance(instance, color, false);
-}
-
-private void initializeModelInstance(ModelInstance instance, Color color, boolean noCullFace) {
-    for (Material material : instance.materials) {
-        material.clear();
-        if (noCullFace) {
-            material.set(new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE));
+        waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
+        waterAnimations = new ArrayList<>();
+        for (ModelInstance waterSurface : waterSurfaces) {
+            waterAnimations.add(new WaterAnimation(waterSurface));
         }
-        material.set(ColorAttribute.createDiffuse(color));
     }
-}
+
+    private void setInputProcessor() {
+        cameraController = new CameraInputController(mainCamera);
+        Gdx.input.setInputProcessor(cameraController);
+    }
+
+    private void initializeModelInstance(ModelInstance instance, Color color) {
+        initializeModelInstance(instance, color, false);
+    }
+
+    private void initializeModelInstance(ModelInstance instance, Color color, boolean noCullFace) {
+        for (Material material : instance.materials) {
+            material.clear();
+            if (noCullFace) {
+                material.set(new IntAttribute(IntAttribute.CullFace, GL20.GL_NONE));
+            }
+            material.set(ColorAttribute.createDiffuse(color));
+        }
+    }
 
 private void setPositionForFlagAndStemInstances() {
     flagInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
@@ -315,131 +317,131 @@ private void setPositionForFlagAndStemInstances() {
 }
 
 
-@Override
-public void show() {
-    // Stop any previously playing music to prevent overlapping
-    if (music.isPlaying()) {
-        music.stop();
+    @Override
+    public void show() {
+        // Stop any previously playing music to prevent overlapping
+        if (music.isPlaying()) {
+            music.stop();
+        }
+
+        // Reset the stage to clear any previously added actors to avoid overlays
+        stage.clear();
+
+        // Initialize UI components
+        initializeUIComponents();
+
+        // Play background music
+        music.setLooping(true);
+        music.play();
+
+        // Initialize input processors
+        InputMultiplexer multiplexer = new InputMultiplexer();
+        multiplexer.addProcessor(stage);
+        multiplexer.addProcessor(cameraController);
+        Gdx.input.setInputProcessor(multiplexer);
+
+        // Reload terrain and reset game state if necessary
+        if (golfCourseInstances == null || golfCourseInstances.isEmpty()) {
+            reloadTerrainAndResetState();
+        }
     }
 
-    // Reset the stage to clear any previously added actors to avoid overlays
-    stage.clear();
-
-    // Initialize UI components
-    initializeUIComponents();
-
-    // Play background music
-    music.setLooping(true);
-    music.play();
-
-    // Initialize input processors
-    InputMultiplexer multiplexer = new InputMultiplexer();
-    multiplexer.addProcessor(stage);
-    multiplexer.addProcessor(cameraController);
-    Gdx.input.setInputProcessor(multiplexer);
-
-    // Reload terrain and reset game state if necessary
-    if (golfCourseInstances == null || golfCourseInstances.isEmpty()) {
-        reloadTerrainAndResetState();
+    private void initializeUIComponents() {
+        initializeButtons();
+        initializeLabels();
+        initializeProgressBar();
     }
-}
 
-private void initializeUIComponents() {
-    initializeButtons();
-    initializeLabels();
-    initializeProgressBar();
-}
+    private void initializeButtons() {
+        Table buttonTable = new Table();
+        buttonTable.setFillParent(true);
+        buttonTable.top().right();
 
-private void initializeButtons() {
-    Table buttonTable = new Table();
-    buttonTable.setFillParent(true);
-    buttonTable.top().right();
+        TextButton settingsButton = createSettingsButton();
+        TextButton pauseButton = createPauseButton();
 
-    TextButton settingsButton = createSettingsButton();
-    TextButton pauseButton = createPauseButton();
+        buttonTable.add(settingsButton).width(100).height(50).pad(10);
+        buttonTable.add(pauseButton).width(100).height(50).pad(10);
 
-    buttonTable.add(settingsButton).width(100).height(50).pad(10);
-    buttonTable.add(pauseButton).width(100).height(50).pad(10);
+        stage.addActor(buttonTable);
+    }
 
-    stage.addActor(buttonTable);
-}
+    private TextButton createSettingsButton() {
+        TextButton settingsButton = new TextButton("Settings", skin);
+        settingsButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (isPaused) {
+                    pauseGame();
+                }
+                isBallAllowedToMove = false;
+                mainGame.switchToSettings();
+            }
+        });
+        return settingsButton;
+    }
 
-private TextButton createSettingsButton() {
-    TextButton settingsButton = new TextButton("Settings", skin);
-    settingsButton.addListener(new ClickListener() {
-        @Override
-        public void clicked(InputEvent event, float x, float y) {
-            if (isPaused) {
+    private TextButton createPauseButton() {
+        TextButton pauseButton = new TextButton("Pause", skin);
+        pauseButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
                 pauseGame();
             }
-            isBallAllowedToMove = false;
-            mainGame.switchToSettings();
-        }
-    });
-    return settingsButton;
-}
+        });
+        return pauseButton;
+    }
 
-private TextButton createPauseButton() {
-    TextButton pauseButton = new TextButton("Pause", skin);
-    pauseButton.addListener(new ClickListener() {
-        @Override
-        public void clicked(InputEvent event, float x, float y) {
-            pauseGame();
-        }
-    });
-    return pauseButton;
-}
+    private void initializeLabels() {
+        Table labelTable = new Table();
+        labelTable.setFillParent(true);
+        labelTable.top().left();
 
-private void initializeLabels() {
-    Table labelTable = new Table();
-    labelTable.setFillParent(true);
-    labelTable.top().left();
+        Label windLabel = createWindLabel();
+        facingLabel = createFacingLabel();
+        scoreLabel = createScoreLabel();
+        lastScoreLabel = createLastScoreLabel();
 
-    Label windLabel = createWindLabel();
-    facingLabel = createFacingLabel();
-    scoreLabel = createScoreLabel();
-    lastScoreLabel = createLastScoreLabel();
+        labelTable.add(scoreLabel).pad(10);
+        labelTable.add(lastScoreLabel).pad(10);
+        labelTable.add(facingLabel).pad(10).top().left();
+        labelTable.row();
+        labelTable.add(windLabel).pad(10).bottom().left().expandY();
 
-    labelTable.add(scoreLabel).pad(10);
-    labelTable.add(lastScoreLabel).pad(10);
-    labelTable.add(facingLabel).pad(10).top().left();
-    labelTable.row();
-    labelTable.add(windLabel).pad(10).bottom().left().expandY();
+        stage.addActor(labelTable);
+    }
 
-    stage.addActor(labelTable);
-}
+    private Label createWindLabel() {
+        return new Label("Wind: vx=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0]) +
+                ", vy=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1]) +
+                ", vz=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
+    }
 
-private Label createWindLabel() {
-    return new Label("Wind: vx=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[0]) +
-            ", vy=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[1]) +
-            ", vz=" + String.format("%.4f", mainGame.getGolfGameScreen().getWeather().getWind()[2]), skin);
-}
+    private Label createFacingLabel() {
+        return new Label("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " +
+                String.format("%.2f", mainCamera.direction.y) + ", " + String.format("%.2f", mainCamera.direction.z), skin);
+    }
 
-private Label createFacingLabel() {
-    return new Label("Facing(x,y,z): " + String.format("%.2f", mainCamera.direction.x) + ", " +
-            String.format("%.2f", mainCamera.direction.y) + ", " + String.format("%.2f", mainCamera.direction.z), skin);
-}
+    private Label createScoreLabel() {
+        return new Label("Score: " + score, skin);
+    }
 
-private Label createScoreLabel() {
-    return new Label("Score: " + score, skin);
-}
+    private Label createLastScoreLabel() {
+        return new Label("Last Score: " + lastScore, skin);
+    }
 
-private Label createLastScoreLabel() {
-    return new Label("Last Score: " + lastScore, skin);
-}
+    private void initializeProgressBar() {
+        speedProgressBar = new ProgressBar(MIN_SPEED, MAX_SPEED, 0.1f, true, skin, "progress-bar");
+        speedProgressBar.setValue(currentSpeed);
+        speedProgressBar.setVisible(true);
 
-private void initializeProgressBar() {
-    speedProgressBar = new ProgressBar(MIN_SPEED, MAX_SPEED, 0.1f, true, skin, "progress-bar");
-    speedProgressBar.setValue(currentSpeed);
-    speedProgressBar.setVisible(true);
+        Table uiTable = new Table();
+        uiTable.setFillParent(true);
+        uiTable.right().padRight(20);
+        uiTable.add(speedProgressBar).width(40).height(600).pad(10);
 
-    Table uiTable = new Table();
-    uiTable.setFillParent(true);
-    uiTable.right().padRight(20);
-    uiTable.add(speedProgressBar).width(40).height(600).pad(10);
-
-    stage.addActor(uiTable);
-}
+        stage.addActor(uiTable);
+    }
     
     private void reloadTerrainAndResetState() {
         reloadTerrain();
@@ -837,6 +839,22 @@ private void initializeProgressBar() {
         } else {
             pauseDialog.hide();
         }
+    }
+
+    public void toggleRuleBasedBotActiveness(){
+        ruleBasedBotActive = !ruleBasedBotActive;
+    }
+
+    public void setRuleBasedBotActive(boolean activeness){
+        ruleBasedBotActive = activeness;
+    }
+    
+    public void toggleHillClimbingBotActiveness(){
+        hillClimbingBotActive= !hillClimbingBotActive;
+    }
+
+    public void setHillClimbingBotActive(boolean activeness){
+        hillClimbingBotActive = activeness;
     }
 
     @Override

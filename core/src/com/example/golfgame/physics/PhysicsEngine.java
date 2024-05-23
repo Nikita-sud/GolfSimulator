@@ -172,6 +172,20 @@ public class PhysicsEngine {
         }
     }
 
+    public BallState updateToCertaintTime(BallState ballState, double stepSize, double time) {
+        if (isAtRest(ballState)) {
+            // Check if the force exceeds static friction threshold to start moving
+            if (canOvercomeStaticFriction(ballState)) {
+                return updateWithKineticFriction(ballState, stepSize, time);
+            }
+            // No movement, return current state
+            return ballState;
+        } else {
+            return updateWithKineticFriction(ballState, stepSize, time);
+        }
+    }
+
+
     private boolean isAtRest(BallState ballState) {
         return Math.abs(ballState.getVx()) < 0.001 && Math.abs(ballState.getVy()) < 0.001;
     }
@@ -196,6 +210,30 @@ public class PhysicsEngine {
         initialState.put("t", 0.0);
     
         List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, stepSize,"t");
+    
+        if (results.isEmpty()) {
+            System.err.println("No states were returned by the ODE solver.");
+            return ballState;
+        }
+    
+        Map<String, Double> finalState = results.get(results.size() - 1);
+        ballState.setX(finalState.get("x"));
+        ballState.setY(finalState.get("y"));
+        ballState.setVx(finalState.get("vx"));
+        ballState.setVy(finalState.get("vy"));
+        return ballState;
+    }
+
+    private BallState updateWithKineticFriction(BallState ballState, double stepSize, double time) {
+        Map<String, Function> differentials = getDifferentialEquations(ballState);
+        Map<String, Double> initialState = new HashMap<>();
+        initialState.put("x", ballState.getX());
+        initialState.put("y", ballState.getY());
+        initialState.put("vx", ballState.getVx());
+        initialState.put("vy", ballState.getVy());
+        initialState.put("t", 0.0);
+    
+        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, time,"t");
     
         if (results.isEmpty()) {
             System.err.println("No states were returned by the ODE solver.");
