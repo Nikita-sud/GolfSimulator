@@ -11,7 +11,7 @@ public class DesktopLauncher {
         config.setWindowedMode(800, 480);
         config.setResizable(true);
         config.setWindowSizeLimits(800, 480, -1, -1);
-        config.setForegroundFPS(60);
+        config.setForegroundFPS(40);
         config.setTitle("Golf");
         new Lwjgl3Application(new GolfGame(), config);
     }

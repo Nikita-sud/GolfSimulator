@@ -488,9 +488,13 @@ public class GolfGameScreen implements Screen, Disposable {
         for (WaterAnimation waterAnimation : waterAnimations) {
             waterAnimation.update(deltaTime);
         }
-        if(botActive&&!cameraCorrectlyPut()){
-            wallE.setDirection();
-            wallE.hit();
+        if (botActive){
+            if(!cameraCorrectlyPut()){
+                wallE.setDirection();                                                                                                                                                  
+            }
+            if(wallE.hitAllowed()){
+                wallE.hit();
+            }
         }
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + 1f;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
@@ -695,6 +699,9 @@ public class GolfGameScreen implements Screen, Disposable {
         return currentSpeed;
     }
     
+    public float getCurrentSpeedAdjustmentRate(){
+        return speedAdjustmentRate;
+    }
     public boolean cameraCorrectlyPut(){
         // if the ball is rolling, camera position does not matter
         if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
@@ -702,7 +709,6 @@ public class GolfGameScreen implements Screen, Disposable {
         }
         Vector2 ballToGoal = new Vector2((float)(goalState.getX()-currentBallState.getX()), (float)(goalState.getY()-currentBallState.getY())).nor();
         Vector2 camVector2 = new Vector2(mainCamera.direction.x, mainCamera.direction.z).nor();
-        System.out.println(ballToGoal+" "+camVector2);
         return (Math.abs(ballToGoal.x-camVector2.x)<0.001)&&(Math.abs(ballToGoal.y-camVector2.y)<0.001);
     }
     

@@ -7,10 +7,13 @@ import java.awt.Robot;
 import java.awt.AWTException;
 import java.awt.event.KeyEvent;
 
+import javax.security.auth.kerberos.KeyTab;
+
 public class WallE {
 
     private GolfGame game;
     private Robot robot;
+    private boolean hitAllowed = true;
 
     public WallE(GolfGame game){
         this.game = game;
@@ -64,11 +67,15 @@ public class WallE {
     }
     
     public void hit(){
+        hitAllowed = false;
         Thread keyPressThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     Thread.sleep(1000);
+                    for (int t = 0; t<1000; t++){
+                        robot.keyPress(KeyEvent.VK_SPACE);
+                    }
                     while (game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f) {
                         robot.keyPress(KeyEvent.VK_SPACE);
                         Thread.sleep(10); // Adding sleep to prevent excessive CPU usage
@@ -77,10 +84,15 @@ public class WallE {
                     e.printStackTrace();
                 } finally {
                     robot.keyRelease(KeyEvent.VK_SPACE);
+                    hitAllowed = true;
                 }
             }
         });
         keyPressThread.start();
+    }
+
+    public boolean hitAllowed(){
+        return hitAllowed;
     }
     
 }
