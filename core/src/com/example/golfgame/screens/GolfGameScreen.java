@@ -488,7 +488,7 @@ public class GolfGameScreen implements Screen, Disposable {
         for (WaterAnimation waterAnimation : waterAnimations) {
             waterAnimation.update(deltaTime);
         }
-        if (mainGame.getScreen() instanceof GolfGameScreen){
+        if (botActive&&mainGame.getScreen() instanceof GolfGameScreen){
             if(!cameraCorrectlyPut()){
                 wallE.setDirection();                                                                                                                                                  
             }
