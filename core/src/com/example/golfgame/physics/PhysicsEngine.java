@@ -21,6 +21,7 @@ public class PhysicsEngine {
     private double mu_s = 0.2; // Coefficient of static friction
     private double deltaX = 0.01; // Increment for numerical derivative in x-direction
     private double deltaY = 0.01; // Increment for numerical derivative in y-direction
+    private double deltaDirection = 0.01; // Increment for numerical derivative in given direction
 
     /**
      * Constructs a PhysicsEngine with a specific ODE solver, a surface function, and a coefficient of friction.
@@ -122,6 +123,85 @@ public class PhysicsEngine {
                             / (12 * h);
     
         return derivative;
+    }
+
+    
+    /**
+     * Calulates the derivative of the surface function along the direction vector at a given point.
+     * 
+     * @param x the x-coordinate at which to calculate the derivative
+     * @param y the y-coordinate at which to calculate the derivative
+     * @param xDirection x-component of the direction
+     * @param yDirection y-component of the direction
+     * @return the derivative along the direction axis
+     */
+    public double derivative(double x, double y, double xDirection, double yDirection){
+        Map<String, Double> valuesOneStepAhead = new HashMap<>();
+        Map<String, Double> valuesOneStepBehind = new HashMap<>();
+        Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
+        Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
+        
+        double h = deltaDirection; // Assuming deltaDirection is your small step for the derivative
+        valuesOneStepAhead.put("x", x+ xDirection*h);
+        valuesOneStepAhead.put("y", y + yDirection*h);
+        valuesOneStepBehind.put("x", x- xDirection*h);
+        valuesOneStepBehind.put("y", y - yDirection*h);
+
+        valuesTwoStepsAhead.put("x", x+ xDirection*2*h);
+        valuesTwoStepsAhead.put("y", y + yDirection*2* h);
+        valuesTwoStepsBehind.put("x", x - xDirection*2*h);
+        valuesTwoStepsBehind.put("y", y - yDirection*2*h);
+
+        // Five point centered difference
+        double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
+        + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
+        - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
+        + surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+       / (12 * h);
+
+       return derivative;
+
+    }
+
+    /**
+     * Calculates the second derivative of the surface function along the direction vector at a given point.
+     * 
+     * @param x the x-coordinate at which to calculate the second derivative
+     * @param y the y-coordinate at which to calculate the second derivative
+     * @param xDirection
+     * @param yDirection
+     * @return
+     */
+    public double secondDerivative(double x, double y, double xDirection, double yDirection){
+        Map<String, Double> valuesOneStepAhead = new HashMap<>();
+        Map<String, Double> valuesOneStepBehind = new HashMap<>();
+        Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
+        Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
+        Map<String, Double> currentValues = new HashMap<>();
+        
+        double h = deltaDirection; // Assuming deltaDirection is your small step for the derivative
+        valuesOneStepAhead.put("x", x+ xDirection*h);
+        valuesOneStepAhead.put("y", y + yDirection*h);
+        valuesOneStepBehind.put("x", x- xDirection*h);
+        valuesOneStepBehind.put("y", y - yDirection*h);
+
+        valuesTwoStepsAhead.put("x", x+ xDirection*2*h);
+        valuesTwoStepsAhead.put("y", y + yDirection*2* h);
+        valuesTwoStepsBehind.put("x", x - xDirection*2*h);
+        valuesTwoStepsBehind.put("y", y - yDirection*2*h);
+
+        currentValues.put("x", x);
+        currentValues.put("y", y);
+
+        // Five point centered difference for second derivative
+        double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
+        + 16 * surfaceFunction.evaluate(valuesOneStepAhead)
+        - 30 * surfaceFunction.evaluate(currentValues)
+        + 16* surfaceFunction.evaluate(valuesOneStepBehind)
+        - surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+       / (12 * Math.pow(h, 2));
+
+       return derivative;
     }
     
 
