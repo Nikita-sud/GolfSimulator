@@ -79,9 +79,5 @@ project(":core") {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
         api 'net.objecthunter:exp4j:0.4.8'
-<<<<<<< HEAD
-=======
-
->>>>>>> 9acfe5a (Your commit message)
     }
 }

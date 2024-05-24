@@ -172,6 +172,8 @@ public class GolfGameScreen implements Screen, Disposable {
             pauseGame();
         }
 
+        initializeBot();
+
         // Initialize Skin and Dialog
         initializeSkinAndDialog();
 
@@ -192,6 +194,10 @@ public class GolfGameScreen implements Screen, Disposable {
 
         // Set Input Processor
         setInputProcessor();
+    }
+
+    private void initializeBot(){
+        this.wallE = new WallE(mainGame);
     }
 
     private void initializeSkinAndDialog() {
@@ -874,6 +880,10 @@ private void setPositionForFlagAndStemInstances() {
         }}), coords[1]);
     }
 
+    public void setBotHitTriggered(boolean botHitTriggered){
+        this.botHitTriggered = botHitTriggered;
+    }
+
     public void setCameraAngel(float newCameraAngel){
         cameraViewAngle = newCameraAngel;
     }
@@ -910,9 +920,6 @@ private void setPositionForFlagAndStemInstances() {
         return wallE;
     }
     
-    public float getCurrentSpeedAdjustmentRate(){
-        return speedAdjustmentRate;
-    }
     
     public boolean cameraCorrectlyPut(){
         // if the ball is rolling, camera position does not matter
@@ -932,7 +939,6 @@ private void setPositionForFlagAndStemInstances() {
             pauseDialog.hide();
         }
     }
-
     public void toggleRuleBasedBotActiveness(){
         ruleBasedBotActive = !ruleBasedBotActive;
     }

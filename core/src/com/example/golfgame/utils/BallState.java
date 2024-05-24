@@ -1,5 +1,7 @@
 package com.example.golfgame.utils;
 
+import com.badlogic.gdx.math.Vector2;
+
 /**
  * Represents the state of a golf ball, including its position and velocity components.
  * This class provides methods to set and retrieve the ball's position (x, y) and velocity (vx, vy)
@@ -134,6 +136,41 @@ public class BallState {
 
     public BallState copy(){
         return new BallState(x, y, vx, vy);
+    }
+
+    /**
+     * computes inner/dot product between BallState position vectors
+     * @return computed inner product
+     */
+    public float positionDot(BallState other){
+        float posX = (float)(x*other.getX());
+        float posY = (float)(y*other.getY());
+        return posX+posY;
+    }
+
+    /**
+     * computes (euclidean) magnitude of position vector of ball state object
+     * @return computed magnitude
+     */
+    public float positionMag(){
+        return (float)Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2));
+    }
+
+    /**
+     * computes (euclidean) magnitude of velocity vector of ball state object
+     * @return computed magnitude
+     */
+    public float velocityMag(){
+        return (float)Math.sqrt(Math.pow(vx, 2)+Math.pow(vy, 2));
+    }
+
+    /**
+     * normalizes the position vector of BallState object
+     */
+    public void positionNor(){
+        Vector2 pos = new Vector2((float)x, (float)y).nor();
+        x = pos.x;
+        y = pos.y;
     }
 
     @Override
