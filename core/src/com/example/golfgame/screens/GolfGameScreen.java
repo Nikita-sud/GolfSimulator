@@ -125,6 +125,12 @@ public class GolfGameScreen implements Screen, Disposable {
     // Music
     private Music music;
 
+    // Bots
+    private WallE wallE;
+
+    // Flag to trigger bot hit
+    private boolean botHitTriggered = false; 
+
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
      *
@@ -524,12 +530,18 @@ private void setPositionForFlagAndStemInstances() {
         } else if (isAdjustingSpeed) {
             isAdjustingSpeed = false;
             if (!isBallAllowedToMove) {
-                isBallAllowedToMove = true;
-                currentBallState.setVx(-currentSpeed * Math.cos(cameraViewAngle));
-                currentBallState.setVy(-currentSpeed * Math.sin(cameraViewAngle));
+                performHit(currentSpeed);
             }
         }
     }
+
+    private void performHit(float speed) {
+        // Logic to hit the ball
+        isBallAllowedToMove = true;
+        currentBallState.setVx(-speed * Math.cos(cameraViewAngle));
+        currentBallState.setVy(-speed * Math.sin(cameraViewAngle));
+    }
+
 
     @Override
     public void render(float delta) {
@@ -551,6 +563,17 @@ private void setPositionForFlagAndStemInstances() {
         // Adjust ball speed if necessary
         if (isAdjustingSpeed) {
             adjustBallSpeed(deltaTime);
+        }
+
+        if (hillClimbingBotActive) {
+            hillClimbingBotPlay();
+        } else if (ruleBasedBotActive) {
+            ruleBasedPlay();
+        }
+
+        if (botHitTriggered) {
+            performHit(MAX_SPEED);
+            botHitTriggered = false;
         }
     
         // Check if the ball has reached the goal
@@ -586,6 +609,7 @@ private void setPositionForFlagAndStemInstances() {
     
         // Set friction based on the terrain type
         setTerrainFriction();
+        // Reset the bot hit trigger flag after processing
     }
     
     private void handleGoalReached() {
@@ -674,7 +698,26 @@ private void setPositionForFlagAndStemInstances() {
         }
     }
     
+    private void ruleBasedPlay(){
+        if(!cameraCorrectlyPut()){
+            wallE.switchToRuleBased();
+            wallE.setDirection();
+        }
+        if(!isBallAllowedToMove){
+            wallE.hit();
+        }
+    }
 
+    private void hillClimbingBotPlay() {
+        if (!cameraCorrectlyPut()) {
+            wallE.switchToHillClimbing();
+            wallE.setDirection();
+        }
+        if (!isBallAllowedToMove()) {
+            wallE.hit();
+        }
+    }
+    
     private void scoreChange(){
         scoreLabel.setText("Score: " + score++);
     }
@@ -839,6 +882,14 @@ private void setPositionForFlagAndStemInstances() {
         } else {
             pauseDialog.hide();
         }
+    }
+
+    public boolean isBallAllowedToMove() {
+        return isBallAllowedToMove;
+    }
+
+    public void setBotHitTriggered(boolean triggered) {
+        this.botHitTriggered = triggered;
     }
 
     public void toggleRuleBasedBotActiveness(){
