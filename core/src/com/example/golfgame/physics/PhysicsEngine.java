@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.physics.ODE.*;
 import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.Function;

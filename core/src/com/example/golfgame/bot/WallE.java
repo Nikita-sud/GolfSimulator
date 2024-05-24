@@ -1,6 +1,5 @@
 package com.example.golfgame.bot;
 
-import com.badlogic.gdx.graphics.Camera;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.BallState;
@@ -42,10 +41,6 @@ public class WallE implements NativeKeyListener {
         goal.setX(goal.getX() - ball.getX()); // Adjust relative to ball's position
         goal.setY(goal.getY() - ball.getY()); 
         goal.positionNor();
-    
-        // Get camera 
-        Camera cam = game.getGolfGameScreen().getMainCamera();
-       
     
         // Calculate the straight target angle using atan2 for accurate angle direction
         float straightTargetAngle = (float)Math.PI+(float) Math.atan2(goal.getY(), goal.getX());
