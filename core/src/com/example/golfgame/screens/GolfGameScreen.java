@@ -16,9 +16,11 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
@@ -38,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.example.golfgame.GolfGame;
+import com.example.golfgame.bot.WallE;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -713,7 +716,7 @@ private void setPositionForFlagAndStemInstances() {
             wallE.switchToHillClimbing();
             wallE.setDirection();
         }
-        if (!isBallAllowedToMove()) {
+        if (!isBallAllowedToMove) {
             wallE.hit();
         }
     }
@@ -875,10 +878,52 @@ private void setPositionForFlagAndStemInstances() {
         cameraViewAngle = newCameraAngel;
     }
 
+    public float getCameraAngel(){
+        return cameraViewAngle;
+    }
+    
     public static float getGoalTolerance() {
         return GOAL_TOLERANCE;
     }
 
+    public BallState getBallState(){
+        return currentBallState;
+    }
+
+    public BallState getGoalState(){
+        return goalState;
+    }
+
+    public Camera getMainCamera(){
+        return mainCamera;
+    }
+    
+    public float getCurrentSpeedBar(){
+        return currentSpeed;
+    }
+    
+    public PhysicsEngine getPhysicsEngine(){
+        return gamePhysicsEngine;
+    }
+    
+    public WallE wallE(){
+        return wallE;
+    }
+    
+    public float getCurrentSpeedAdjustmentRate(){
+        return speedAdjustmentRate;
+    }
+    
+    public boolean cameraCorrectlyPut(){
+        // if the ball is rolling, camera position does not matter
+        if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){
+            return true;
+        }
+        Vector2 ballToGoal = new Vector2((float)(goalState.getX()-currentBallState.getX()), (float)(goalState.getY()-currentBallState.getY())).nor();
+        Vector2 camVector2 = new Vector2(mainCamera.direction.x, mainCamera.direction.z).nor();
+        return (Math.abs(ballToGoal.x-camVector2.x)<0.001)&&(Math.abs(ballToGoal.y-camVector2.y)<0.001);
+    }
+    
     private void pauseGame() {
         isPaused = !isPaused;
         if (isPaused) {
@@ -886,14 +931,6 @@ private void setPositionForFlagAndStemInstances() {
         } else {
             pauseDialog.hide();
         }
-    }
-
-    public boolean isBallAllowedToMove() {
-        return isBallAllowedToMove;
-    }
-
-    public void setBotHitTriggered(boolean triggered) {
-        this.botHitTriggered = triggered;
     }
 
     public void toggleRuleBasedBotActiveness(){
