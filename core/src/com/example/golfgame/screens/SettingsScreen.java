@@ -214,8 +214,6 @@ public class SettingsScreen implements Screen {
         // Add components to root table
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);
         rootTable.add(middleTable).expand().center();
-        rootTable.add(botStatus);
-        rootTable.add(toggleBot);
         rootTable.add(playButton).width(150).height(50).pad(20).bottom().right();
     
         // Add root table to stage
