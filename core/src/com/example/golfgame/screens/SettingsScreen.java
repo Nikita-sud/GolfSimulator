@@ -50,6 +50,7 @@ public class SettingsScreen implements Screen {
      * Sets up the user interface components including buttons, sliders, and input fields.
      */
     private void setupUI() {
+        // Create main menu button
         TextButton mainMenuButton = new TextButton("Back to Main Menu", skin);
         mainMenuButton.addListener(new ChangeListener() {
             @Override
@@ -58,6 +59,7 @@ public class SettingsScreen implements Screen {
             }
         });
     
+        // Create play button
         TextButton playButton = new TextButton("Play!", skin);
         playButton.addListener(new ChangeListener() {
             @Override
@@ -66,6 +68,7 @@ public class SettingsScreen implements Screen {
             }
         });
     
+        // Create height function text field
         TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)+0.8", skin);
         heightFunction.addListener(new ChangeListener() {
             @Override
@@ -78,9 +81,11 @@ public class SettingsScreen implements Screen {
             }
         });
     
+        // Create goal position input fields and label
         Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
         TextField goalXPosition = new TextField("-20", skin);
         TextField goalYPosition = new TextField("20", skin);
+    
         goalXPosition.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -92,6 +97,7 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
+    
         goalYPosition.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -104,6 +110,7 @@ public class SettingsScreen implements Screen {
             }
         });
     
+        // Create wind slider and label
         Slider windSlider = new Slider(0f, 0.001f, 0.0001f, false, skin);
         Label windLabel = new Label("Wind speed magnitude: " + String.format("%.4f", windSlider.getValue()), skin);
         windSlider.addListener(new ChangeListener() {
@@ -115,6 +122,7 @@ public class SettingsScreen implements Screen {
             }
         });
     
+        // Create sunlight slider and label
         Slider sunSlider = new Slider(0.2f, 1f, 0.001f, false, skin);
         sunSlider.setValue(1);
         Label sunLabel = new Label("Sunlight level: " + String.format("%.3f", sunSlider.getValue()), skin);
@@ -126,23 +134,8 @@ public class SettingsScreen implements Screen {
                 sunLabel.setText("Sunlight level: " + String.format("%.3f", value));
             }
         });
-
-        Label botStatus = new Label("Bot turned off", skin);
-        TextButton toggleBot = new TextButton("Toggle bot", skin);
-        toggleBot.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor){
-                game.getGolfGameScreen().toggleBotActiveness();
-                if (botStatus.getText().toString().equals("Bot turned off")){
-                    botStatus.setText("Bot turned on");
-                }
-                else{
-                    botStatus.setText("Bot turned off");
-                }
-            }
-        });
     
-        // Button to open the SandboxSettingsScreen
+        // Create sandbox settings button
         TextButton sandboxSettingsButton = new TextButton("Sandbox Settings", skin);
         sandboxSettingsButton.addListener(new ChangeListener() {
             @Override
@@ -150,11 +143,49 @@ public class SettingsScreen implements Screen {
                 game.switchToSandBoxSettings();  // Switch to SandboxSettingsScreen
             }
         });
-    
+
+        //Add bots labes
+        Label ruleBasedBotStatus = new Label("Rule-Based Bot: Off", skin);
+        Label hillClimbingBotStatus = new Label("Hill-Climbing Bot: Off", skin);
+
+        // Add the rule-based bot UI
+        TextButton toggleRuleBasedBot = new TextButton("Toggle Rule-Based Bot", skin);
+        toggleRuleBasedBot.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getGolfGameScreen().toggleRuleBasedBotActiveness();
+                if (ruleBasedBotStatus.getText().toString().equals("Rule-Based Bot: Off")) {
+                    ruleBasedBotStatus.setText("Rule-Based Bot: On");
+                    hillClimbingBotStatus.setText("Hill-Climbing Bot: Off");
+                    game.getGolfGameScreen().setHillClimbingBotActive(false);
+                } else {
+                    ruleBasedBotStatus.setText("Rule-Based Bot: Off");
+                }
+            }
+        });
+
+        // Add the hill-climbing bot UI
+        TextButton toggleHillClimbingBot = new TextButton("Toggle Hill-Climbing Bot", skin);
+        toggleHillClimbingBot.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getGolfGameScreen().toggleHillClimbingBotActiveness();
+                if (hillClimbingBotStatus.getText().toString().equals("Hill-Climbing Bot: Off")) {
+                    hillClimbingBotStatus.setText("Hill-Climbing Bot: On");
+                    ruleBasedBotStatus.setText("Rule-Based Bot: Off");
+                    game.getGolfGameScreen().setRuleBasedBotActive(false);
+                } else {
+                    hillClimbingBotStatus.setText("Hill-Climbing Bot: Off");
+                }
+            }
+        });
+
+        // Create root table
         Table rootTable = new Table();
         rootTable.setFillParent(true);
         rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("backgrounds/settingsBackground.jpeg"))));
     
+        // Create middle table
         Table middleTable = new Table();
         middleTable.add(heightFunction).width(200).height(50).pad(10).row();
         middleTable.add(windSlider).width(400).pad(10).row();
@@ -162,36 +193,44 @@ public class SettingsScreen implements Screen {
         middleTable.add(sunSlider).width(400).pad(10).row();
         middleTable.add(sunLabel).pad(10).row();
     
-        // Create a table for goal position settings
+        // Create goal position table
         Table goalPositionTable = new Table();
         goalPositionTable.add(goalPositionLabel).pad(10);
         goalPositionTable.add(goalXPosition).width(50).height(50).pad(10);
         goalPositionTable.add(goalYPosition).width(50).height(50).pad(10);
-        middleTable.add(goalPositionTable).pad(10).row(); // Add goal position table to middle table
-        
-        
-        middleTable.add(sandboxSettingsButton).pad(20).row();  // Add the sandbox settings button here
+        middleTable.add(goalPositionTable).pad(10).row();
     
+        // Add sandbox settings button to middle table
+        middleTable.add(sandboxSettingsButton).pad(20).row();
+
+        // Add bot toggle buttons and labels to middle table
+        Table botTable = new Table();
+        botTable.add(ruleBasedBotStatus).pad(10);
+        botTable.add(toggleRuleBasedBot).pad(10).row();
+        botTable.add(hillClimbingBotStatus).pad(10);
+        botTable.add(toggleHillClimbingBot).pad(10).row();
+        middleTable.add(botTable).pad(10).row();
+    
+        // Add components to root table
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);
         rootTable.add(middleTable).expand().center();
         rootTable.add(botStatus);
         rootTable.add(toggleBot);
         rootTable.add(playButton).width(150).height(50).pad(20).bottom().right();
     
+        // Add root table to stage
         stage.addActor(rootTable);
     }
     
-    
-    
-    
-
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST); // Disable depth testing for 2D rendering
         Gdx.gl.glClearColor(0, 0, 0, 1); // Ensure background is set to black
-        music.setLooping(true);
-        music.play();
+        if (!game.shouldKeepSettingsMusic() || !music.isPlaying()) {
+            music.setLooping(true);
+            music.play();
+        }
     }
 
     @Override
@@ -219,7 +258,9 @@ public class SettingsScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
-        music.stop();
+        if (!game.shouldKeepSettingsMusic()) {
+            music.stop();
+        }
     }
 
     @Override

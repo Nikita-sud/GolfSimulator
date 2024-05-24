@@ -25,7 +25,7 @@ public class SandboxSettingsScreen implements Screen {
     private Skin skin;
     private Music music;
 
-    public SandboxSettingsScreen(GolfGame game,AssetManager assetManager) {
+    public SandboxSettingsScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
         this.stage = new Stage(new ScreenViewport());
         this.skin = new Skin(Gdx.files.internal("uiskin.json"));  // Make sure you have a 'uiskin.json' in your assets
@@ -35,8 +35,10 @@ public class SandboxSettingsScreen implements Screen {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
-        music.setLooping(true);
-        music.play();
+        if (!game.shouldKeepSettingsMusic() || !music.isPlaying()) {
+            music.setLooping(true);
+            music.play();
+        }
         // Setup the UI for Sandbox settings
         setupUI();
     }
@@ -127,9 +129,6 @@ public class SandboxSettingsScreen implements Screen {
         // Place the sandboxInfoTable at the bottom right
         mainTable.add(sandboxInfoTable).expand().bottom().right().pad(10);
     }
-    
-    
-
 
     @Override
     public void render(float delta) {
@@ -156,7 +155,9 @@ public class SandboxSettingsScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
-        music.stop();
+        if (!game.shouldKeepSettingsMusic()) {
+            music.stop();
+        }
     }
 
     @Override
