@@ -16,7 +16,8 @@ public class WallE implements NativeKeyListener {
     private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
 
-    private static final float terrainAdjustmentConstant = 1.4f;
+    private static final float firstOrderTerrainConstant = 1.4f;
+    private static final float secondOrderTerrainConstant = firstOrderTerrainConstant/2;
 
     public WallE(GolfGame game){
         this.game = game;
@@ -55,8 +56,19 @@ public class WallE implements NativeKeyListener {
 
         double avgSlope = (orthoSlopeAtEnd+orthoSlopeAtStart)/2;
 
-        float targetAngle = straightTargetAngle+terrainAdjustmentConstant*(float)avgSlope;        
+        // Let's try also using information about the second derivative (Second slope means second derivative)
+        // Like in a taylor approximation, the derivatives on one line should encode a good amount of information about the terrain in general
 
+        double orthoSecondSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(ball.getX(), ball.getY(), -Math.cos(straightTargetAngle), Math.sin(straightTargetAngle));
+
+        double orthoSecondSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(goal.getX(), goal.getY(), -Math.cos(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant), Math.sin(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant));
+
+        double avgSecondSlope = (orthoSecondSlopeAtEnd+orthoSecondSlopeAtStart)/2;
+
+        float targetAngle = straightTargetAngle+firstOrderTerrainConstant*(float)avgSlope+secondOrderTerrainConstant*(float)avgSecondSlope;        
+
+
+        System.out.println(avgSlope+ " "+avgSecondSlope);
         
         // Get the current camera angle
         float currentAngle = game.getGolfGameScreen().getCameraAngel();
