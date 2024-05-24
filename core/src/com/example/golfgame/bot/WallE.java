@@ -1,6 +1,7 @@
 package com.example.golfgame.bot;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.BallState;
@@ -11,7 +12,7 @@ import java.awt.event.KeyEvent;
 
 public class WallE {
 
-    private volatile GolfGame game;
+    private GolfGame game;
     private Robot robot;
     private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
@@ -31,22 +32,32 @@ public class WallE {
         BallState goal = game.getGolfGameScreen().getGoalState().copy();
         BallState ball = game.getGolfGameScreen().getBallState().copy();
         goal.setX(goal.getX() - ball.getX()); // Adjust relative to ball's position
-        goal.setY(goal.getY() - ball.getY()); // Adjust relative to ball's position
+        goal.setY(goal.getY() - ball.getY()); 
         goal.positionNor();
     
-        // Get camera direction and normalize
+        // Get camera 
         Camera cam = game.getGolfGameScreen().getMainCamera();
-        BallState camState = new BallState(cam.direction.x, cam.direction.z, 0, 0);
-        camState.positionNor();
+       
     
-        // Calculate the target angle using atan2 for accurate angle direction
-        float targetAngle = (float)Math.PI+(float) Math.atan2(goal.getY(), goal.getX());
+        // Calculate the straight target angle using atan2 for accurate angle direction
+        float straightTargetAngle = (float)Math.PI+(float) Math.atan2(goal.getY(), goal.getX());
+
+        // As a heuristic on our knowledge of the terrain, let's use the average slope from ball to hole in orthogonal direction to the camera.
+        // (To calculate the average slope, we assume the height function is differentialble, so the slope in orthogonal direction would be continuous, 
+        // so the average slope in orthogonal direction is given by (orthogonalSlope(ballState)+orthgonalSlope(goalState))/2 ).
+        float xDir = cam.direction.x;
+        float yDir = cam.direction.z;
+
+        Vector2 orthoToCam = new Vector2(-yDir, xDir);
+        
+        
+
     
         // Get the current camera angle
         float currentAngle = game.getGolfGameScreen().getCameraAngel();
     
         // Smoothly adjust the camera angle
-        float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);
+        float adjustedAngle = smoothAngleTransition(currentAngle, straightTargetAngle);
     
         // Set the camera angle
         game.getGolfGameScreen().setCameraAngel(adjustedAngle);
@@ -83,7 +94,7 @@ public class WallE {
                     }
                     while (!gameOver&&game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f&&game.getScreen() instanceof GolfGameScreen) {
                         robot.keyPress(KeyEvent.VK_SPACE);
-                        Thread.sleep(10); // Adding sleep to prevent excessive CPU usage
+                        Thread.sleep(10);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

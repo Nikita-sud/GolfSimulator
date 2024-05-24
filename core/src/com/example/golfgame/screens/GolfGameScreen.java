@@ -24,7 +24,6 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
-import com.badlogic.gdx.maps.Map;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -39,7 +38,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
@@ -317,7 +315,7 @@ public class GolfGameScreen implements Screen, Disposable {
         }
     }
 
-private void setPositionForFlagAndStemInstances() {
+    private void setPositionForFlagAndStemInstances() {
     flagInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
         put("x", goalState.getX());
         put("y", goalState.getY());
@@ -328,7 +326,6 @@ private void setPositionForFlagAndStemInstances() {
         put("y", goalState.getY());
     }}), (float) goalState.getY());
 }
-
 
     @Override
     public void show() {
@@ -888,9 +885,11 @@ private void setPositionForFlagAndStemInstances() {
     public WallE wallE(){
         return wallE;
     }
+    
     public float getCurrentSpeedAdjustmentRate(){
         return speedAdjustmentRate;
     }
+    
     public boolean cameraCorrectlyPut(){
         // if the ball is rolling, camera position does not matter
         if (currentBallState.getVx()>0.01||currentBallState.getVy()>0.01){

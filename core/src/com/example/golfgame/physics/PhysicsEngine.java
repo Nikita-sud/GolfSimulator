@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.physics.ODE.*;
 import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.Function;
@@ -21,6 +22,7 @@ public class PhysicsEngine {
     private double mu_s = 0.2; // Coefficient of static friction
     private double deltaX = 0.01; // Increment for numerical derivative in x-direction
     private double deltaY = 0.01; // Increment for numerical derivative in y-direction
+    private double deltaDirection = 0.01; // Incremen for numerical derivative in given direction
 
     /**
      * Constructs a PhysicsEngine with a specific ODE solver, a surface function, and a coefficient of friction.
@@ -122,6 +124,26 @@ public class PhysicsEngine {
                             / (12 * h);
     
         return derivative;
+    }
+
+    /**
+     * Calulates the derivative of the surface function along the direction vector at a given point.
+     * 
+     * @param x the x-coordinate at which to calculate the derivative
+     * @param y the y-coordinate at which to calculate the derivative
+     * @param xDirection x-component of the direction
+     * @param yDirection y-component of the direction
+     * @return the derivative along the direction axis
+     */
+    public double derivative(float x, float y, float xDirection, float yDirection){
+        Map<String, Double> valuesOneStepAhead = new HashMap<>();
+        Map<String, Double> valuesOneStepBehind = new HashMap<>();
+        Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
+        Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
+        
+        double h = deltaDirection; // Assuming deltaDirection is your small step for the derivative
+
+
     }
     
 
