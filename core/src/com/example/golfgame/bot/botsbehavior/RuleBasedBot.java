@@ -42,7 +42,7 @@ public class RuleBasedBot implements BotBehavior {
          // Let's try also using information about the second derivative (Second slope means second derivative)
          // Like in a taylor approximation, the derivatives on one line should encode a good amount of information about the terrain in general
  
-         double orthoSecondSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(ball.getX(), ball.getY(), -Math.cos(straightTargetAngle), Math.sin(straightTargetAngle));
+         double orthoSecondSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(ball.getX(), ball.getY(), -Math.cos(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant), Math.sin(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant));
  
          double orthoSecondSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(goal.getX(), goal.getY(), -Math.cos(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant), Math.sin(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant));
  
