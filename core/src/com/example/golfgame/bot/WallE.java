@@ -4,24 +4,31 @@ import com.badlogic.gdx.graphics.Camera;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.BallState;
+import org.jnativehook.GlobalScreen;
+import org.jnativehook.keyboard.NativeKeyEvent;
+import org.jnativehook.keyboard.NativeKeyListener;
 
-import java.awt.Robot;
-import java.awt.AWTException;
-import java.awt.event.KeyEvent;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class WallE {
+public class WallE implements NativeKeyListener {
 
     private volatile GolfGame game;
-    private Robot robot;
     private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
 
     public WallE(GolfGame game){
         this.game = game;
         try {
-            robot = new Robot();
-        } catch (AWTException e) {
-            System.out.println("Issue in Robot creation.");
+            // Отключение логирования jnativehook
+            Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
+            logger.setLevel(Level.OFF);
+            logger.setUseParentHandlers(false);
+
+            GlobalScreen.registerNativeHook();
+            GlobalScreen.addNativeKeyListener(this);
+        } catch (Exception e) {
+            System.out.println("Issue in jnativehook initialization.");
             e.printStackTrace();
         }
     }
@@ -77,23 +84,45 @@ public class WallE {
                 }
                 try {
                     Thread.sleep(2000);
-                    for (int t = 0; t<100&&!gameOver&&game.getScreen() instanceof GolfGameScreen; t++){
-                        robot.keyPress(KeyEvent.VK_SPACE);
+                    for (int t = 0; t < 100 && !gameOver && game.getScreen() instanceof GolfGameScreen; t++) {
+                        pressSpaceKey();
                         Thread.sleep(10);
                     }
-                    while (!gameOver&&game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f&&game.getScreen() instanceof GolfGameScreen) {
-                        robot.keyPress(KeyEvent.VK_SPACE);
+                    while (!gameOver && game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f && game.getScreen() instanceof GolfGameScreen) {
+                        pressSpaceKey();
                         Thread.sleep(10); // Adding sleep to prevent excessive CPU usage
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } finally {
-                    robot.keyRelease(KeyEvent.VK_SPACE);
+                    releaseSpaceKey();
                     hitAllowed = true;
                 }
             }
         });
         keyPressThread.start();
+    }
+
+    private void pressSpaceKey() {
+        NativeKeyEvent keyPress = new NativeKeyEvent(
+            NativeKeyEvent.NATIVE_KEY_PRESSED, 
+            System.currentTimeMillis(), 
+            0, 
+            0,  // rawCode is not always necessary
+            NativeKeyEvent.VC_SPACE, 
+            NativeKeyEvent.CHAR_UNDEFINED);
+        GlobalScreen.postNativeEvent(keyPress);
+    }
+
+    private void releaseSpaceKey() {
+        NativeKeyEvent keyRelease = new NativeKeyEvent(
+            NativeKeyEvent.NATIVE_KEY_RELEASED, 
+            System.currentTimeMillis(), 
+            0, 
+            0,  // rawCode is not always necessary
+            NativeKeyEvent.VC_SPACE, 
+            NativeKeyEvent.CHAR_UNDEFINED);
+        GlobalScreen.postNativeEvent(keyRelease);
     }
 
     public boolean hitAllowed(){
@@ -102,5 +131,20 @@ public class WallE {
 
     public void gameOver(){
         gameOver = true;
+    }
+
+    @Override
+    public void nativeKeyPressed(NativeKeyEvent e) {
+        // Not used in this implementation
+    }
+
+    @Override
+    public void nativeKeyReleased(NativeKeyEvent e) {
+        // Not used in this implementation
+    }
+
+    @Override
+    public void nativeKeyTyped(NativeKeyEvent e) {
+        // Not used in this implementation
     }
 }

@@ -1,6 +1,4 @@
 buildscript {
-    
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -9,8 +7,7 @@ buildscript {
         google()
     }
     dependencies {
-        
-
+        // Ваши зависимости
     }
 }
 
@@ -50,7 +47,7 @@ project(":desktop") {
         duplicatesStrategy = 'exclude'
         
         from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-        from 'assets' 
+        from 'assets'
         
         with jar
     }
@@ -63,21 +60,20 @@ project(":desktop") {
     }
 }
 
-
-
-
-
 project(":core") {
     apply plugin: "java-library"
 
     jar {
         archiveBaseName = 'core'
-        archiveVersion = '1.0' 
+        archiveVersion = '1.0'
     }
 
     dependencies {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
         api 'net.objecthunter:exp4j:0.4.8'
+
+        implementation group: 'com.1stleg', name: 'jnativehook', version: '2.0.2'
     }
 }
+
