@@ -17,7 +17,7 @@ public class WallE implements NativeKeyListener {
     private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
 
-    private static final float terrainAdjustmentConstant = 1;
+    private static final float terrainAdjustmentConstant = 1.2f;
 
     public WallE(GolfGame game){
         this.game = game;
@@ -54,13 +54,11 @@ public class WallE implements NativeKeyListener {
         // (To calculate the average slope, we assume the height function is differentialble, so the slope in orthogonal direction would be continuous, 
         // so the average slope in orthogonal direction is given by (orthogonalSlope(ballState)+orthgonalSlope(goalState))/2 ).
         
-        double orthoSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().derivative(ball.getX(), ball.getY(), -cam.direction.z, cam.direction.x);
+        double orthoSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().derivative(ball.getX(), ball.getY(), -Math.cos(straightTargetAngle), Math.sin(straightTargetAngle));
 
-        double orthoSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().derivative(goal.getX(), goal.getY() , -cam.direction.z, cam.direction.x);
+        double orthoSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().derivative(goal.getX(), goal.getY() , -Math.cos(straightTargetAngle), Math.sin(straightTargetAngle));
 
         double avgSlope = (orthoSlopeAtEnd+orthoSlopeAtStart)/2;
-
-        System.out.println(avgSlope);
 
         float targetAngle = straightTargetAngle+terrainAdjustmentConstant*(float)avgSlope;        
 
