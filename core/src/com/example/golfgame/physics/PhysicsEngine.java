@@ -135,14 +135,31 @@ public class PhysicsEngine {
      * @param yDirection y-component of the direction
      * @return the derivative along the direction axis
      */
-    public double derivative(float x, float y, float xDirection, float yDirection){
+    public double derivative(double x, double y, double xDirection, double yDirection){
         Map<String, Double> valuesOneStepAhead = new HashMap<>();
         Map<String, Double> valuesOneStepBehind = new HashMap<>();
         Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
         Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         
         double h = deltaDirection; // Assuming deltaDirection is your small step for the derivative
+        valuesOneStepAhead.put("x", x+ xDirection*h);
+        valuesOneStepAhead.put("y", y + yDirection*h);
+        valuesOneStepBehind.put("x", x- xDirection*h);
+        valuesOneStepBehind.put("y", y - yDirection*h);
 
+        valuesTwoStepsAhead.put("x", x+ xDirection*2*h);
+        valuesTwoStepsAhead.put("y", y + yDirection*2* h);
+        valuesTwoStepsBehind.put("x", x - xDirection*2*h);
+        valuesTwoStepsBehind.put("y", y - yDirection*2*h);
+
+        // Five point centered difference
+        double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
+        + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
+        - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
+        + surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+       / (12 * h);
+
+       return derivative;
 
     }
     

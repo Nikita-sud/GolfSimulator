@@ -882,6 +882,10 @@ public class GolfGameScreen implements Screen, Disposable {
         return currentSpeed;
     }
     
+    public PhysicsEngine getPhysicsEngine(){
+        return gamePhysicsEngine;
+    }
+    
     public WallE wallE(){
         return wallE;
     }

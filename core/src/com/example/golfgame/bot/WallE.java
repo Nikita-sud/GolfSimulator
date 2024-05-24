@@ -1,7 +1,6 @@
 package com.example.golfgame.bot;
 
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.BallState;
@@ -16,6 +15,8 @@ public class WallE {
     private Robot robot;
     private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
+
+    private static final float terrainAdjustmentConstant = 1;
 
     public WallE(GolfGame game){
         this.game = game;
@@ -45,19 +46,23 @@ public class WallE {
         // As a heuristic on our knowledge of the terrain, let's use the average slope from ball to hole in orthogonal direction to the camera.
         // (To calculate the average slope, we assume the height function is differentialble, so the slope in orthogonal direction would be continuous, 
         // so the average slope in orthogonal direction is given by (orthogonalSlope(ballState)+orthgonalSlope(goalState))/2 ).
-        float xDir = cam.direction.x;
-        float yDir = cam.direction.z;
-
-        Vector2 orthoToCam = new Vector2(-yDir, xDir);
         
-        
+        double orthoSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().derivative(ball.getX(), ball.getY(), -cam.direction.z, cam.direction.x);
 
-    
+        double orthoSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().derivative(goal.getX(), goal.getY() , -cam.direction.z, cam.direction.x);
+
+        double avgSlope = (orthoSlopeAtEnd+orthoSlopeAtStart)/2;
+
+        System.out.println(avgSlope);
+
+        float targetAngle = straightTargetAngle+terrainAdjustmentConstant*(float)avgSlope;        
+
+        
         // Get the current camera angle
         float currentAngle = game.getGolfGameScreen().getCameraAngel();
     
         // Smoothly adjust the camera angle
-        float adjustedAngle = smoothAngleTransition(currentAngle, straightTargetAngle);
+        float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);
     
         // Set the camera angle
         game.getGolfGameScreen().setCameraAngel(adjustedAngle);
