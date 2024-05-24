@@ -1,6 +1,7 @@
-package com.example.golfgame;
+package com.example.golfgame.bot;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.example.golfgame.GolfGame;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.BallState;
 
@@ -8,12 +9,11 @@ import java.awt.Robot;
 import java.awt.AWTException;
 import java.awt.event.KeyEvent;
 
-
 public class WallE {
 
     private volatile GolfGame game;
     private Robot robot;
-    private boolean hitAllowed = true;
+    private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
 
     public WallE(GolfGame game){
@@ -76,9 +76,10 @@ public class WallE {
                     return;
                 }
                 try {
-                    Thread.sleep(1000);
-                    for (int t = 0; t<1000; t++){
+                    Thread.sleep(2000);
+                    for (int t = 0; t<100&&!gameOver&&game.getScreen() instanceof GolfGameScreen; t++){
                         robot.keyPress(KeyEvent.VK_SPACE);
+                        Thread.sleep(10);
                     }
                     while (!gameOver&&game.getGolfGameScreen().getCurrentSpeedBar() < 9.9f&&game.getScreen() instanceof GolfGameScreen) {
                         robot.keyPress(KeyEvent.VK_SPACE);

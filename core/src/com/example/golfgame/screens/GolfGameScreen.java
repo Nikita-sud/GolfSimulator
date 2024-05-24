@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.example.golfgame.GolfGame;
-import com.example.golfgame.WallE;
+import com.example.golfgame.bot.WallE;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -579,9 +579,8 @@ private void setPositionForFlagAndStemInstances() {
         }
 
         // Let rule-based bot play
-        if (ruleBasedBotActive){
-            wallE.setDirection();
-            wallE.hit();
+        if(ruleBasedBotActive){
+            ruleBasedPlay();
         }
     
         // Apply wind effects to the ball's velocity
@@ -695,7 +694,16 @@ private void setPositionForFlagAndStemInstances() {
         }
     }
     
-
+    private void ruleBasedPlay(){
+        // For each of the bots actions, only execute when allowed/necessary
+        if(!cameraCorrectlyPut()){
+            wallE.setDirection();
+        }
+        if(currentBallState.velocityMag()<0.01&&wallE.hitAllowed()){
+            wallE.hit();
+        }
+    }
+    
     private void scoreChange(){
         scoreLabel.setText("Score: " + score++);
     }
@@ -934,6 +942,7 @@ private void setPositionForFlagAndStemInstances() {
 
     @Override
     public void dispose() {
+        wallE.gameOver();
         Gdx.app.log("GolfGameScreen", "Disposing screen");
         mainModelBatch.dispose();
         mainShadowLight.dispose();

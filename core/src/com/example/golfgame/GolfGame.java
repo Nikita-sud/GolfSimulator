@@ -142,6 +142,7 @@ public class GolfGame extends Game {
     @Override
     public void dispose() {
         assetManager.dispose();
+        getGolfGameScreen().wallE().gameOver();
     }
 
     public boolean shouldKeepSettingsMusic() {

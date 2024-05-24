@@ -157,6 +157,14 @@ public class BallState {
     }
 
     /**
+     * computes (euclidean) magnitude of velocity vector of ball state object
+     * @return computed magnitude
+     */
+    public float velocityMag(){
+        return (float)Math.sqrt(Math.pow(vx, 2)+Math.pow(vy, 2));
+    }
+
+    /**
      * normalizes the position vector of BallState object
      */
     public void positionNor(){
