@@ -871,6 +871,10 @@ private void setPositionForFlagAndStemInstances() {
         }}), coords[1]);
     }
 
+    public void setCameraAngel(float newCameraAngel){
+        cameraViewAngle = newCameraAngel;
+    }
+
     public static float getGoalTolerance() {
         return GOAL_TOLERANCE;
     }
