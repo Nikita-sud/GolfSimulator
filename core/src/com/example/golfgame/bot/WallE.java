@@ -16,7 +16,7 @@ public class WallE implements NativeKeyListener {
     private volatile boolean hitAllowed = true;
     private volatile boolean gameOver = false;
 
-    private static final float terrainAdjustmentConstant = 1.2f;
+    private static final float terrainAdjustmentConstant = 1.4f;
 
     public WallE(GolfGame game){
         this.game = game;
