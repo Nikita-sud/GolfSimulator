@@ -716,7 +716,7 @@ public class GolfGameScreen implements Screen, Disposable {
 
     private void hillClimbingBotPlay() {
         if (!cameraCorrectlyPut()) {
-            wallE.switchToHillClimbing();
+            wallE.switchToAdvanced();
             wallE.setDirection();
         }
         if (!isBallAllowedToMove) {

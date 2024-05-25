@@ -146,7 +146,7 @@ public class SettingsScreen implements Screen {
 
         //Add bots labes
         Label ruleBasedBotStatus = new Label("Rule-Based Bot: Off", skin);
-        Label hillClimbingBotStatus = new Label("Hill-Climbing Bot: Off", skin);
+        Label hillClimbingBotStatus = new Label("Advanced Bot: Off", skin);
 
         // Add the rule-based bot UI
         TextButton toggleRuleBasedBot = new TextButton("Toggle Rule-Based Bot", skin);
@@ -156,7 +156,7 @@ public class SettingsScreen implements Screen {
                 game.getGolfGameScreen().toggleRuleBasedBotActiveness();
                 if (ruleBasedBotStatus.getText().toString().equals("Rule-Based Bot: Off")) {
                     ruleBasedBotStatus.setText("Rule-Based Bot: On");
-                    hillClimbingBotStatus.setText("Hill-Climbing Bot: Off");
+                    hillClimbingBotStatus.setText("Advanced Bot: Off");
                     game.getGolfGameScreen().setHillClimbingBotActive(false);
                 } else {
                     ruleBasedBotStatus.setText("Rule-Based Bot: Off");
@@ -164,18 +164,18 @@ public class SettingsScreen implements Screen {
             }
         });
 
-        // Add the hill-climbing bot UI
-        TextButton toggleHillClimbingBot = new TextButton("Toggle Hill-Climbing Bot", skin);
+        // Add the Advanced Bot bot UI
+        TextButton toggleHillClimbingBot = new TextButton("Toggle Advanced Bot", skin);
         toggleHillClimbingBot.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 game.getGolfGameScreen().toggleHillClimbingBotActiveness();
-                if (hillClimbingBotStatus.getText().toString().equals("Hill-Climbing Bot: Off")) {
-                    hillClimbingBotStatus.setText("Hill-Climbing Bot: On");
+                if (hillClimbingBotStatus.getText().toString().equals("Advanced Bot: Off")) {
+                    hillClimbingBotStatus.setText("Advanced Bot: On");
                     ruleBasedBotStatus.setText("Rule-Based Bot: Off");
                     game.getGolfGameScreen().setRuleBasedBotActive(false);
                 } else {
-                    hillClimbingBotStatus.setText("Hill-Climbing Bot: Off");
+                    hillClimbingBotStatus.setText("Advanced Bot: Off");
                 }
             }
         });
