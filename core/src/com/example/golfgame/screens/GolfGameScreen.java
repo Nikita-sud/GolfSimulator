@@ -55,7 +55,7 @@ import com.example.golfgame.physics.ODE.*;
 public class GolfGameScreen implements Screen, Disposable {
     @SuppressWarnings("unused")
     // Constants
-    private static final float GOAL_TOLERANCE = 1f;
+    private static final float GOAL_TOLERANCE = 1.5f;
     private static final float CAMERA_FOV = 100;
     private static final float MIN_CAMERA_DISTANCE = 5;
     private static final float MAX_CAMERA_DISTANCE = 15;
