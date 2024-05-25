@@ -230,6 +230,13 @@ public class TerrainManager {
         return onSand;
     }
     
+    public boolean isWater(float x, float y) {
+        // Logic to determine if the position (x, y) is water
+        // This is a placeholder. Replace with actual implementation.
+        // Example: check if the height at (x, y) is below water level.
+        float height = getTerrainHeight(x, y);
+        return height < 0; // Assuming waterLevel is defined
+    }
 
     public float getTerrainHeight(float x, float z) {
         Map<String, Double> args = new HashMap<>();

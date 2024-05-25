@@ -51,6 +51,5 @@ public class HillClimbingBot implements BotBehavior {
     public void hit(GolfGame game) {
         float currentAngle = game.getGolfGameScreen().getCameraAngel();
         game.getGolfGameScreen().setCameraAngel(currentAngle);
-        game.getGolfGameScreen().setBotHitTriggered(true);
     }
 }

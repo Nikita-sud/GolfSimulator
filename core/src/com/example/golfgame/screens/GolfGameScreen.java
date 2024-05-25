@@ -63,7 +63,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private static final float CAMERA_HEIGHT = 5f;
     private static final float BALL_HEIGHT_OFFSET = 1f;
     private static final float LOW_SPEED_THRESHOLD_GRASS = 0.005f;
-    private static final float LOW_SPEED_THRESHOLD_SAND = 0.05f;
+    private static final float LOW_SPEED_THRESHOLD_SAND = 1.0f;
     private static final float MIN_SPEED = 0.01f;
     private static final float MAX_SPEED = 10.0f;
 
@@ -91,7 +91,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private TerrainManager terrainManager;
     private WaterSurfaceManager waterSurfaceManager;
     private Function terrainHeightFunction;
-    private BallState currentBallState, lastValidState, goalState;
+    private BallState currentBallState, lastValidState, goalState = new BallState(-20, 20, 0, 0);;
     private double grassFrictionKinetic, grassFrictionStatic, sandFrictionKinetic, sandFrictionStatic;
     private float lowSpeedThreshold = LOW_SPEED_THRESHOLD_GRASS;
     private List<BallState> ballPositionsWhenSlow;
@@ -130,9 +130,6 @@ public class GolfGameScreen implements Screen, Disposable {
 
     // Bots
     private WallE wallE;
-
-    // Flag to trigger bot hit
-    private boolean botHitTriggered = false; 
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -231,7 +228,6 @@ public class GolfGameScreen implements Screen, Disposable {
         ODE solver = new RungeKutta();
         currentBallState = new BallState(0, 0, 0.001, 0.001);
         gamePhysicsEngine = new PhysicsEngine(solver, terrainHeightFunction);
-        goalState = new BallState(-20, 20, 0, 0);
         score = 0;
         lastScore = -1;
         ballPositionsWhenSlow = new ArrayList<>();
@@ -319,17 +315,17 @@ public class GolfGameScreen implements Screen, Disposable {
         }
     }
 
-private void setPositionForFlagAndStemInstances() {
-    flagInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
-        put("x", goalState.getX());
-        put("y", goalState.getY());
-    }}), (float) goalState.getY());
+    private void setPositionForFlagAndStemInstances() {
+        flagInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
+            put("x", goalState.getX());
+            put("y", goalState.getY());
+        }}), (float) goalState.getY());
 
-    flagStemInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
-        put("x", goalState.getX());
-        put("y", goalState.getY());
-    }}), (float) goalState.getY());
-}
+        flagStemInstance.transform.setToTranslation((float) goalState.getX(), (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
+            put("x", goalState.getX());
+            put("y", goalState.getY());
+        }}), (float) goalState.getY());
+    }
 
 
     @Override
@@ -544,12 +540,18 @@ private void setPositionForFlagAndStemInstances() {
         }
     }
 
-    private void performHit(float speed) {
+    public void performHit(float speed) {
         // Logic to hit the ball
         isBallAllowedToMove = true;
         currentBallState.setVx(-speed * Math.cos(cameraViewAngle));
         currentBallState.setVy(-speed * Math.sin(cameraViewAngle));
     }
+    public void performHitWithVelocity(double vx,double vy) {
+        isBallAllowedToMove = true;
+        currentBallState.setVx(-vx);
+        currentBallState.setVy(-vy);
+    }
+
 
 
     @Override
@@ -579,11 +581,6 @@ private void setPositionForFlagAndStemInstances() {
         } else if (ruleBasedBotActive) {
             ruleBasedPlay();
         }
-
-        if (botHitTriggered) {
-            performHit(MAX_SPEED);
-            botHitTriggered = false;
-        }
     
         // Check if the ball has reached the goal
         if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
@@ -594,7 +591,7 @@ private void setPositionForFlagAndStemInstances() {
         if (isBallAllowedToMove) {
             currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         }
-    
+        setPositionForFlagAndStemInstances();
         // Apply wind effects to the ball's velocity
         applyWindEffect();
     
@@ -870,18 +867,7 @@ private void setPositionForFlagAndStemInstances() {
     public void setGoalCoords(float[] coords) {
         goalState.setX(coords[0]);
         goalState.setY(coords[1]);
-        flagInstance.transform.setToTranslation(coords[0], (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
-            put("x", (double) coords[0]);
-            put("y", (double) coords[1]);
-        }}), coords[1]);
-        flagStemInstance.transform.setToTranslation(coords[0], (float) terrainHeightFunction.evaluate(new HashMap<String, Double>() {{
-            put("x", (double) coords[0]);
-            put("y", (double) coords[1]);
-        }}), coords[1]);
-    }
-
-    public void setBotHitTriggered(boolean botHitTriggered){
-        this.botHitTriggered = botHitTriggered;
+        setPositionForFlagAndStemInstances();
     }
 
     public void setCameraAngel(float newCameraAngel){
@@ -918,6 +904,15 @@ private void setPositionForFlagAndStemInstances() {
     
     public WallE wallE(){
         return wallE;
+    }
+
+    public TerrainManager getTerrainManager(){
+        return terrainManager;
+    }
+
+    public float getFriction(float x, float y) {
+        Vector3 position = new Vector3(x, y, terrainManager.getTerrainHeight(x, y));
+        return terrainManager.isBallOnSand(position) ? (float) sandFrictionKinetic : (float) grassFrictionKinetic;
     }
     
     

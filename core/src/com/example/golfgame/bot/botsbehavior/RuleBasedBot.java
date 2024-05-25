@@ -1,6 +1,5 @@
 package com.example.golfgame.bot.botsbehavior;
 
-
 import com.badlogic.gdx.graphics.Camera;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
@@ -29,13 +28,8 @@ public class RuleBasedBot implements BotBehavior {
 
         // Get the current camera angle
         float currentAngle = game.getGolfGameScreen().getCameraAngel();
-
-        System.out.println("Target Angle: " + targetAngle);
-        System.out.println("Current Angle: " + currentAngle);
-
         // Smoothly adjust the camera angle
-        float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);
-        System.out.println("Adjusted Angle: " + adjustedAngle);
+        float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);;
 
         return adjustedAngle;
     }
@@ -57,8 +51,8 @@ public class RuleBasedBot implements BotBehavior {
 
     @Override
     public void hit(GolfGame game) {
-        if(Math.abs(deltaAngle)<0.005){
-            game.getGolfGameScreen().setBotHitTriggered(true);
+        if (Math.abs(deltaAngle) < 0.005) {
+            game.getGolfGameScreen().performHit(7f);
         }
     }
 

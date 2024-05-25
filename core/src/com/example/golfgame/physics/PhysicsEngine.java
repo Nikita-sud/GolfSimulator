@@ -248,4 +248,13 @@ public class PhysicsEngine {
         return ballState;
     }
 
+    public float getSlopeX(float x, float y) {
+        return (float) derivativeX(x, y);
+    }
+    
+    public float getSlopeY(float x, float y) {
+        return (float) derivativeY(x, y);
+    }
+    
+
 }
