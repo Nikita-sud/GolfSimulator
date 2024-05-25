@@ -8,6 +8,8 @@ import com.example.golfgame.utils.BallState;
 public class RuleBasedBot implements BotBehavior {
     private float deltaAngle;
 
+    private static final float firstOrderTerrainConstant = 1.4f;
+    private static final float secondOrderTerrainConstant = firstOrderTerrainConstant/2;
 
     @Override
     public float setDirection(GolfGame game) {
@@ -23,10 +25,31 @@ public class RuleBasedBot implements BotBehavior {
         BallState camState = new BallState(cam.direction.x, cam.direction.z, 0, 0);
         camState.positionNor();
 
-        // Calculate the target angle using atan2 for accurate angle direction
-        float targetAngle = (float) Math.PI + (float) Math.atan2(goal.getY(), goal.getX());
+        // Calculate the straight target angle using atan2 for accurate angle direction
+        float straightTargetAngle = (float)Math.PI+(float) Math.atan2(goal.getY(), goal.getX());
 
-        // Get the current camera angle
+        // As a heuristic on our knowledge of the terrain, let's use the average slope from ball to hole in orthogonal direction to the camera.
+        // (To calculate the average slope, we assume the height function is differentialble, so the slope in orthogonal direction would be continuous, 
+        // so the average slope in orthogonal direction is given by (orthogonalSlope(ballState)+orthgonalSlope(goalState))/2 ).
+        
+        double orthoSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().derivative(ball.getX(), ball.getY(), -Math.cos(straightTargetAngle), Math.sin(straightTargetAngle));
+
+        double orthoSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().derivative(goal.getX(), goal.getY() , -Math.cos(straightTargetAngle), Math.sin(straightTargetAngle));
+
+        double avgSlope = (orthoSlopeAtEnd+orthoSlopeAtStart)/2;
+
+        // Let's try also using information about the second derivative (Second slope means second derivative)
+        // Like in a taylor approximation, the derivatives on one line should encode a good amount of information about the terrain in general
+
+        double orthoSecondSlopeAtStart = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(ball.getX(), ball.getY(), -Math.cos(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant), Math.sin(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant));
+
+        double orthoSecondSlopeAtEnd = game.getGolfGameScreen().getPhysicsEngine().secondDerivative(goal.getX(), goal.getY(), -Math.cos(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant), Math.sin(straightTargetAngle+(float)avgSlope*firstOrderTerrainConstant));
+
+        double avgSecondSlope = (orthoSecondSlopeAtEnd+orthoSecondSlopeAtStart)/2;
+
+        float targetAngle = straightTargetAngle+firstOrderTerrainConstant*(float)avgSlope+secondOrderTerrainConstant*(float)avgSecondSlope; 
+
+// Get the current camera angle
         float currentAngle = game.getGolfGameScreen().getCameraAngel();
         // Smoothly adjust the camera angle
         float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);;
