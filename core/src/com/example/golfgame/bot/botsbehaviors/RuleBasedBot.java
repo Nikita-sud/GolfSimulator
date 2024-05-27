@@ -75,7 +75,7 @@ public class RuleBasedBot implements BotBehavior {
     @Override
     public void hit(GolfGame game) {
         if (Math.abs(deltaAngle) < 0.005) {
-            game.getGolfGameScreen().performHit(7f);
+            game.getGolfGameScreen().performHit(9.9f);
         }
     }
 
