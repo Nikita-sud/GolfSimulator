@@ -47,4 +47,8 @@ public class WallE {
     public void switchToDQL() {
         setBotBehavior(dqlBot); 
     }
+
+    public BotBehavior getBotBehavior(){
+        return botBehavior;
+    }
 }

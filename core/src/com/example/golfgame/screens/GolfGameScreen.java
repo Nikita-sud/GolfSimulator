@@ -41,6 +41,7 @@ import java.util.List;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
+import com.example.golfgame.bot.botsbehaviors.DQLBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -563,6 +564,7 @@ public class GolfGameScreen implements Screen, Disposable {
         handleInput();
         if (!isPaused) {
             update(delta);
+            checkBallStopAndUpdateNextState();
         }
         draw();
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
@@ -726,7 +728,7 @@ public class GolfGameScreen implements Screen, Disposable {
         isBallAllowedToMove = false;
     }
 
-    private void updateCameraPosition(float delta) {
+    public void updateCameraPosition(float delta) {
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + BALL_HEIGHT_OFFSET;
         float cameraX = (float) (currentBallState.getX() + cameraDistance * Math.cos(cameraViewAngle));
         float cameraY = (float) (currentBallState.getY() + cameraDistance * Math.sin(cameraViewAngle));
@@ -922,6 +924,32 @@ public class GolfGameScreen implements Screen, Disposable {
         Vector2 ballToGoal = new Vector2((float)(goalState.getX()-currentBallState.getX()), (float)(goalState.getY()-currentBallState.getY())).nor();
         Vector2 camVector2 = new Vector2(mainCamera.direction.x, mainCamera.direction.z).nor();
         return (Math.abs(ballToGoal.x-camVector2.x)<0.001)&&(Math.abs(ballToGoal.y-camVector2.y)<0.001);
+    }
+
+    private void checkBallStopAndUpdateNextState() {
+        if (!isBallAllowedToMove) {
+
+            // Убедитесь, что бот в состоянии ожидания
+            if (wallE.getBotBehavior() instanceof DQLBot) {
+                DQLBot dqlBot = (DQLBot) wallE.getBotBehavior();
+                if (dqlBot.isWaitingForStop()) {
+                    BallState newBallState = getBallState();
+                    BallState goal = getGoalState();
+
+                    // Используем относительные координаты мяча и цели
+                    double newRelativeX = goal.getX() - newBallState.getX();
+                    double newRelativeY = goal.getY() - newBallState.getY();
+                    double[] nextState = { newBallState.getX(), newBallState.getY(), newRelativeX, newRelativeY };
+
+                    // Определение вознаграждения и завершения
+                    double reward = dqlBot.calculateReward(newBallState, goal);
+                    boolean done = dqlBot.checkIfDone(newBallState, goal);
+
+                    // Обновляем память и обучаем нейросеть
+                    dqlBot.updateMemoryAndTrain(nextState, reward, done);
+                }
+            }
+        }
     }
     
     private void pauseGame() {
