@@ -552,6 +552,10 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState.setVy(-vy);
     }
 
+    public boolean getIsBallAllowedToMove(){
+        return isBallAllowedToMove;
+    }
+
 
 
     @Override
@@ -624,7 +628,6 @@ public class GolfGameScreen implements Screen, Disposable {
         scoreLabel.clear();
         scoreChange();
         lastScoreLabel.setText("Last Score: " + lastScore);
-        isBallAllowedToMove = false;
         resetGameState();
     }
     
@@ -667,7 +670,6 @@ public class GolfGameScreen implements Screen, Disposable {
             if (shouldAdd) {
                 ballPositionsWhenSlow.add(new BallState(currentBallState.getX(), currentBallState.getY(), currentBallState.getVx(), currentBallState.getVy()));
                 scoreChange();
-                isBallAllowedToMove = false;
             }
         }
     }
@@ -676,7 +678,6 @@ public class GolfGameScreen implements Screen, Disposable {
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + BALL_HEIGHT_OFFSET;
         if (ballZ - BALL_HEIGHT_OFFSET < 0) {
             scoreChange();
-            isBallAllowedToMove = false;
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
             System.out.println("Ball has fallen below ground level. Resetting to last valid position.");
         } else {
@@ -705,27 +706,24 @@ public class GolfGameScreen implements Screen, Disposable {
     }
     
     private void ruleBasedPlay(){
-        if(!cameraCorrectlyPut()){
+        if(!isBallAllowedToMove){
             wallE.switchToRuleBased();
             wallE.setDirection();
-        }
-        if(!isBallAllowedToMove){
             wallE.hit();
         }
     }
 
     private void hillClimbingBotPlay() {
-        if (!cameraCorrectlyPut()) {
-            wallE.switchToAdvanced();
-            wallE.setDirection();
-        }
         if (!isBallAllowedToMove) {
+            wallE.switchToDQL();
+            wallE.setDirection();
             wallE.hit();
         }
     }
     
     private void scoreChange(){
         scoreLabel.setText("Score: " + score++);
+        isBallAllowedToMove = false;
     }
 
     private void updateCameraPosition(float delta) {

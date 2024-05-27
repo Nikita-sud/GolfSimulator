@@ -102,10 +102,19 @@ public class NeuralNetwork implements Serializable {
     }
 
     private double[][] multiplyMatrices(double[][] firstMatrix, double[][] secondMatrix) {
-        double[][] result = new double[firstMatrix.length][secondMatrix[0].length];
-        for (int i = 0; i < firstMatrix.length; i++) {
-            for (int j = 0; j < secondMatrix[0].length; j++) {
-                for (int k = 0; k < firstMatrix[0].length; k++) {
+        int firstMatrixRows = firstMatrix.length;
+        int firstMatrixCols = firstMatrix[0].length;
+        int secondMatrixRows = secondMatrix.length;
+        int secondMatrixCols = secondMatrix[0].length;
+
+        if (firstMatrixCols != secondMatrixRows) {
+            throw new IllegalArgumentException("Matrix multiplication dimensions do not match");
+        }
+
+        double[][] result = new double[firstMatrixRows][secondMatrixCols];
+        for (int i = 0; i < firstMatrixRows; i++) {
+            for (int j = 0; j < secondMatrixCols; j++) {
+                for (int k = 0; k < firstMatrixCols; k++) {
                     result[i][j] += firstMatrix[i][k] * secondMatrix[k][j];
                 }
             }

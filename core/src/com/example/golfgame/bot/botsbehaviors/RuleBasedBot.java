@@ -1,4 +1,4 @@
-package com.example.golfgame.bot.botsbehavior;
+package com.example.golfgame.bot.botsbehaviors;
 
 import com.badlogic.gdx.graphics.Camera;
 import com.example.golfgame.GolfGame;
