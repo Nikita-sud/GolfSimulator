@@ -1,7 +1,6 @@
 package com.example.golfgame.bot.neuralnetwork;
 
 import java.util.Arrays;
-
 import com.example.golfgame.utils.ReplayMemory;
 
 public class DQLNeuralNetwork extends NeuralNetwork {
@@ -29,5 +28,7 @@ public class DQLNeuralNetwork extends NeuralNetwork {
 
             trainSingle(experience.state, qValues);
         }
+        
+        System.out.println("Training completed with batch size: " + batchSize);
     }
 }

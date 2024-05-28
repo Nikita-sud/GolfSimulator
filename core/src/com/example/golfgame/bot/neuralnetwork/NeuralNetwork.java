@@ -1,6 +1,11 @@
 package com.example.golfgame.bot.neuralnetwork;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,15 +15,15 @@ import com.example.golfgame.utils.MatrixUtils;
 public class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private int numLayers;
-    @SuppressWarnings("unused")
-    private int[] sizes;
-    private double[][][] weights;
-    private double[][] biases;
+    protected int numLayers;
+    protected int[] sizes;
+    protected double[][][] weights;
+    protected double[][] biases;
 
     static class BackPropResult {
         double[][][] deltaNablaW;
         double[][] deltaNablaB;
+
         public BackPropResult(double[][][] deltaNablaW, double[][] deltaNablaB) {
             this.deltaNablaW = deltaNablaW;
             this.deltaNablaB = deltaNablaB;
@@ -63,7 +68,6 @@ public class NeuralNetwork implements Serializable {
         double[][] activation = MatrixUtils.getTwoDimensionalVector(input);
         activations.add(activation);
 
-        // Feedforward
         for (int i = 0; i < numLayers - 1; i++) {
             double[][] z = MatrixUtils.multiplyMatrices(weights[i], activation);
             z = MatrixUtils.addBias(z, biases[i]);
@@ -72,7 +76,6 @@ public class NeuralNetwork implements Serializable {
             activations.add(activation);
         }
 
-        // Backpropagation
         double[][] delta = MatrixUtils.matrixSubtraction(activations.get(activations.size() - 1), MatrixUtils.getTwoDimensionalVector(target));
         double[][][] nablaW = new double[weights.length][][];
         double[][] nablaB = new double[biases.length][];
@@ -85,11 +88,18 @@ public class NeuralNetwork implements Serializable {
             }
         }
 
-        // Update weights and biases
         for (int i = 0; i < weights.length; i++) {
             weights[i] = MatrixUtils.matrixSubtraction(weights[i], MatrixUtils.scalarMultiplyMatrix(nablaW[i], 0.01));
             biases[i] = MatrixUtils.vectorSubtraction(biases[i], MatrixUtils.scalarMultiplyVector(nablaB[i], 0.01));
         }
+    }
+
+    public double[][][] getWeights() {
+        return weights;
+    }
+
+    public double[][] getBiases() {
+        return biases;
     }
 
     public void saveNetwork(String filePath) throws IOException {

@@ -1,8 +1,10 @@
 package com.example.golfgame.utils;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
+import java.util.List;
 
 public class ReplayMemory {
     private Queue<Experience> memory;
@@ -33,19 +35,17 @@ public class ReplayMemory {
 
     public void add(Experience experience) {
         if (memory.size() >= capacity) {
-            memory.poll();
+            memory.poll(); // Remove the oldest experience if the capacity is exceeded
         }
         memory.add(experience);
     }
 
     public Experience[] sample(int batchSize) {
+        List<Experience> experiences = new ArrayList<>(memory);
         Experience[] batch = new Experience[batchSize];
-        int i = 0;
-        Object[] experiences = memory.toArray();
-        while (i < batchSize) {
-            int index = random.nextInt(experiences.length);
-            batch[i] = (Experience) experiences[index];
-            i++;
+        for (int i = 0; i < batchSize; i++) {
+            int index = random.nextInt(experiences.size());
+            batch[i] = experiences.remove(index);
         }
         return batch;
     }

@@ -129,4 +129,14 @@ public class MatrixUtils {
     public static double primeSigmoid(double x) {
         return sigmoid(x) * (1 - sigmoid(x));
     }
+
+    public static double[][] crossEntropyDelta(double[][] outputActivations, double[][] y) {
+        double[][] delta = new double[outputActivations.length][outputActivations[0].length];
+        for (int i = 0; i < outputActivations.length; i++) {
+            for (int j = 0; j < outputActivations[i].length; j++) {
+                delta[i][j] = outputActivations[i][j] - y[i][j];
+            }
+        }
+        return delta;
+    }
 }
