@@ -19,16 +19,27 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.utils.Sandbox;
 
+/**
+ * Represents the screen for configuring sandbox settings in the golf game.
+ * Allows the user to add and reset sandbox boundaries, providing a UI for
+ * interaction.
+ */
 public class SandboxSettingsScreen implements Screen {
     private GolfGame game;
     private Stage stage;
     private Skin skin;
     private Music music;
 
+    /**
+     * Constructs a new SandboxSettingsScreen with necessary dependencies.
+     *
+     * @param game the main game control object, handling overall game state and logic
+     * @param assetManager the asset manager to load and manage game assets
+     */
     public SandboxSettingsScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
         this.stage = new Stage(new ScreenViewport());
-        this.skin = new Skin(Gdx.files.internal("uiskin.json"));  // Make sure you have a 'uiskin.json' in your assets
+        this.skin = new Skin(Gdx.files.internal("uiskin.json"));  // Ensure 'uiskin.json' exists in assets
         music = assetManager.get("assets/music/settings.mp3", Music.class);
     }
 
@@ -43,6 +54,9 @@ public class SandboxSettingsScreen implements Screen {
         setupUI();
     }
 
+    /**
+     * Sets up the UI components for the sandbox settings screen.
+     */
     private void setupUI() {
         Table mainTable = new Table();
         Table sandboxInfoTable = new Table();
@@ -107,7 +121,6 @@ public class SandboxSettingsScreen implements Screen {
     
         // Adding a new button for resetting the sandbox list
         TextButton resetSandboxList = new TextButton("Reset Sandbox List", skin);
-        // Placeholder for listener to add functionality
         resetSandboxList.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {

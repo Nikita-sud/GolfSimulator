@@ -48,7 +48,7 @@ public class AdvancedBot implements BotBehavior {
         float targetAngle = straightTargetAngle + firstOrderTerrainConstant * (float) avgSlope + secondOrderTerrainConstant * (float) avgSecondSlope;
 
         // Get the current camera angle
-        float currentAngle = game.getGolfGameScreen().getCameraAngel();
+        float currentAngle = game.getGolfGameScreen().getCameraAngle();
         // Smoothly adjust the camera angle
         float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);
 

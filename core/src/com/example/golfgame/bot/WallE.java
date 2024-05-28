@@ -25,7 +25,7 @@ public class WallE {
 
     public void setDirection() {
         float adjustedAngle = botBehavior.setDirection(game);
-        game.getGolfGameScreen().setCameraAngel(adjustedAngle);
+        game.getGolfGameScreen().setCameraAngle(adjustedAngle);
     }
 
     public synchronized void hit() {

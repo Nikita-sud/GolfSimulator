@@ -1,46 +1,71 @@
 package com.example.golfgame.utils;
 
+/**
+ * Represents an abstract representation of a sandbox.
+ * The boundaries of the sandbox are read-only after initialization.
+ */
 public class Sandbox {
 
-    private float xLowBound;
-    private float xHighBound;
-    private float yLowBound;
-    private float yHighBound;
+    private final float xLowBound;
+    private final float xHighBound;
+    private final float yLowBound;
+    private final float yHighBound;
 
     /**
-     * Stores abstract representation of a sandbox. 
-     * Bounds are read-only.
-     * @param xLowBound start of Sandbox on spacial x axis
-     * @param xHighBound end of Sandbox in spacial x axis
-     * @param yLowBound start of Sandbox on spacial y axis
-     * @param yHighBound end of Sandbox on spacial y axis
+     * Constructs a Sandbox with specified boundaries.
+     *
+     * @param xLowBound  The starting position of the sandbox on the spatial x-axis.
+     * @param xHighBound The ending position of the sandbox on the spatial x-axis.
+     * @param yLowBound  The starting position of the sandbox on the spatial y-axis.
+     * @param yHighBound The ending position of the sandbox on the spatial y-axis.
      */
-    public Sandbox(float xLowBound, float xHighBound, float yLowBound, float yHighBound){
+    public Sandbox(float xLowBound, float xHighBound, float yLowBound, float yHighBound) {
         this.xLowBound = xLowBound;
         this.xHighBound = xHighBound;
         this.yLowBound = yLowBound;
         this.yHighBound = yHighBound;
     }
 
-    public float getXLowBound(){
+    /**
+     * Returns the lower boundary on the x-axis.
+     *
+     * @return The lower boundary on the x-axis.
+     */
+    public float getXLowBound() {
         return xLowBound;
     }
 
-    public float getXHighBound(){
+    /**
+     * Returns the upper boundary on the x-axis.
+     *
+     * @return The upper boundary on the x-axis.
+     */
+    public float getXHighBound() {
         return xHighBound;
     }
 
-    public float getYLowBound(){
+    /**
+     * Returns the lower boundary on the y-axis.
+     *
+     * @return The lower boundary on the y-axis.
+     */
+    public float getYLowBound() {
         return yLowBound;
     }
 
-    public float getYHighBound(){
+    /**
+     * Returns the upper boundary on the y-axis.
+     *
+     * @return The upper boundary on the y-axis.
+     */
+    public float getYHighBound() {
         return yHighBound;
     }
 
     /**
      * Returns a string representation of the sandbox boundaries.
-     * @return a string in the format "Sandbox from [xLow, yLow] to [xHigh, yHigh]"
+     *
+     * @return A string in the format "Sandbox from [xLow, yLow] to [xHigh, yHigh]".
      */
     @Override
     public String toString() {

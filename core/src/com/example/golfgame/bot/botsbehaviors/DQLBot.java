@@ -51,7 +51,7 @@ public class DQLBot implements BotBehavior {
         lastAction = action;
 
         float targetAngle = (float) action[0];
-        float currentAngle = game.getGolfGameScreen().getCameraAngel();
+        float currentAngle = game.getGolfGameScreen().getCameraAngle();
         float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);
         System.out.println("Set direction: currentAngle=" + currentAngle + ", targetAngle=" + targetAngle + ", adjustedAngle=" + adjustedAngle);
         return targetAngle ;

@@ -35,6 +35,7 @@ public class SettingsScreen implements Screen {
      * Initializes a new settings screen with default or specified parameters for terrain, wind, and sunlight.
      *
      * @param game The main game control to allow navigation between screens.
+     * @param assetManager The asset manager to load and manage game assets.
      */
     public SettingsScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
@@ -144,7 +145,7 @@ public class SettingsScreen implements Screen {
             }
         });
 
-        //Add bots labes
+        // Add bot labels
         Label ruleBasedBotStatus = new Label("Rule-Based Bot: Off", skin);
         Label hillClimbingBotStatus = new Label("Advanced Bot: Off", skin);
 

@@ -1,17 +1,16 @@
 package com.example.golfgame.bot.neuralnetwork;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import com.example.golfgame.utils.MatrixUtils;
 
+/**
+ * A class representing a simple feedforward neural network.
+ * This class provides methods for training the network and making predictions.
+ */
 public class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -20,16 +19,30 @@ public class NeuralNetwork implements Serializable {
     protected double[][][] weights;
     protected double[][] biases;
 
+    /**
+     * A static class to store the results of backpropagation.
+     */
     static class BackPropResult {
         double[][][] deltaNablaW;
         double[][] deltaNablaB;
 
+        /**
+         * Constructs a BackPropResult object with the specified weight and bias gradients.
+         *
+         * @param deltaNablaW The gradient of the weights.
+         * @param deltaNablaB The gradient of the biases.
+         */
         public BackPropResult(double[][][] deltaNablaW, double[][] deltaNablaB) {
             this.deltaNablaW = deltaNablaW;
             this.deltaNablaB = deltaNablaB;
         }
     }
 
+    /**
+     * Constructs a neural network with the specified layer sizes.
+     *
+     * @param sizes An array specifying the number of neurons in each layer of the neural network.
+     */
     public NeuralNetwork(int[] sizes) {
         this.numLayers = sizes.length;
         this.sizes = sizes;
@@ -50,6 +63,12 @@ public class NeuralNetwork implements Serializable {
         }
     }
 
+    /**
+     * Makes a prediction based on the input data.
+     *
+     * @param input The input data.
+     * @return The predicted output.
+     */
     public double[] predict(double[] input) {
         double[][] activation = MatrixUtils.getTwoDimensionalVector(input);
 
@@ -62,6 +81,12 @@ public class NeuralNetwork implements Serializable {
         return MatrixUtils.getOneDimensionalVector(activation);
     }
 
+    /**
+     * Trains the network with a single training example.
+     *
+     * @param input  The input data.
+     * @param target The target output.
+     */
     public void trainSingle(double[] input, double[] target) {
         List<double[][]> activations = new ArrayList<>();
         List<double[][]> zs = new ArrayList<>();
@@ -94,26 +119,55 @@ public class NeuralNetwork implements Serializable {
         }
     }
 
+    /**
+     * Returns the weights of the neural network.
+     *
+     * @return A three-dimensional array representing the weights.
+     */
     public double[][][] getWeights() {
         return weights;
     }
 
+    /**
+     * Returns the biases of the neural network.
+     *
+     * @return A two-dimensional array representing the biases.
+     */
     public double[][] getBiases() {
         return biases;
     }
 
+    /**
+     * Saves the neural network to a file.
+     *
+     * @param filePath The path of the file to save the network.
+     * @throws IOException If an I/O error occurs while saving the network.
+     */
     public void saveNetwork(String filePath) throws IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
             oos.writeObject(this);
         }
     }
 
+    /**
+     * Loads a neural network from a file.
+     *
+     * @param filePath The path of the file to load the network from.
+     * @return The loaded neural network.
+     * @throws IOException            If an I/O error occurs while loading the network.
+     * @throws ClassNotFoundException If the class of the serialized object cannot be found.
+     */
     public static NeuralNetwork loadNetwork(String filePath) throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
             return (NeuralNetwork) ois.readObject();
         }
     }
 
+    /**
+     * Main method for testing the neural network.
+     *
+     * @param args Command line arguments.
+     */
     public static void main(String[] args) {
         try {
             NeuralNetwork network = new NeuralNetwork(new int[]{4, 10, 2});

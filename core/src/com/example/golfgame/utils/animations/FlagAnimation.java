@@ -5,6 +5,10 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.utils.Array;
 
+/**
+ * A class to animate a flag in a 3D model instance.
+ * This class applies a waving effect to the flag by modifying its vertex positions.
+ */
 public class FlagAnimation {
     private ModelInstance flagInstance;
     private float elapsedTime = 0;
@@ -14,6 +18,11 @@ public class FlagAnimation {
     private float crossWaveAmplitude = 0.3f; // Amplitude for cross wave
     private Array<Vector3> originalVertices;
 
+    /**
+     * Constructs a FlagAnimation object with the specified flag model instance.
+     *
+     * @param flagInstance The ModelInstance representing the flag to be animated.
+     */
     public FlagAnimation(ModelInstance flagInstance) {
         this.flagInstance = flagInstance;
         this.originalVertices = new Array<>();
@@ -28,6 +37,11 @@ public class FlagAnimation {
         }
     }
 
+    /**
+     * Updates the flag animation by modifying the vertex positions to create a waving effect.
+     *
+     * @param deltaTime The time elapsed since the last frame, used to update the animation.
+     */
     public void update(float deltaTime) {
         elapsedTime += deltaTime;
         float[] vertices = new float[flagInstance.model.meshes.first().getNumVertices() * flagInstance.model.meshes.first().getVertexAttributes().vertexSize / 4];

@@ -5,6 +5,10 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.utils.Array;
 
+/**
+ * A class to animate water in a 3D model instance.
+ * This class applies a wave effect to the water by modifying its vertex positions.
+ */
 public class WaterAnimation {
     private ModelInstance waterInstance;
     private float elapsedTime = 0;
@@ -16,6 +20,11 @@ public class WaterAnimation {
     private float crossWaveSpatialFrequencyMultiplier = 5.0f; // Higher value means shorter wavelength for cross waves
     private Array<Vector3> originalVertices;
 
+    /**
+     * Constructs a WaterAnimation object with the specified water model instance.
+     *
+     * @param waterInstance The ModelInstance representing the water to be animated.
+     */
     public WaterAnimation(ModelInstance waterInstance) {
         this.waterInstance = waterInstance;
         this.originalVertices = new Array<>();
@@ -30,6 +39,11 @@ public class WaterAnimation {
         }
     }
 
+    /**
+     * Updates the water animation by modifying the vertex positions to create a wave effect.
+     *
+     * @param deltaTime The time elapsed since the last frame, used to update the animation.
+     */
     public void update(float deltaTime) {
         elapsedTime += deltaTime;
         float[] vertices = new float[waterInstance.model.meshes.first().getNumVertices() * waterInstance.model.meshes.first().getVertexAttributes().vertexSize / 4];

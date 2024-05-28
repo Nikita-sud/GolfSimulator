@@ -19,6 +19,11 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.example.golfgame.screens.GolfGameScreen;
 
+/**
+ * Manages the terrain generation and properties in the golf game.
+ * This includes creating grass, sand, and hole terrain models,
+ * as well as determining terrain heights and sand areas.
+ */
 public class TerrainManager {
     private Function heightFunction;
     private Texture grassTexture, sandTexture, holeTexture;
@@ -28,6 +33,18 @@ public class TerrainManager {
     private float scale;
     private int parts;
 
+    /**
+     * Constructs a TerrainManager with specified parameters.
+     *
+     * @param heightFunction The function defining the terrain height.
+     * @param grassTexture   The texture for grass areas.
+     * @param sandTexture    The texture for sand areas.
+     * @param holeTexture    The texture for the hole area.
+     * @param gridWidth      The width of the terrain grid.
+     * @param gridHeight     The height of the terrain grid.
+     * @param scale          The scale factor for the terrain.
+     * @param parts          The number of parts the terrain is divided into.
+     */
     public TerrainManager(Function heightFunction, Texture grassTexture, Texture sandTexture, Texture holeTexture, int gridWidth, int gridHeight, float scale, int parts) {
         this.heightFunction = heightFunction;
         this.grassTexture = grassTexture;
@@ -40,6 +57,13 @@ public class TerrainManager {
         sandAreas = new ArrayList<>();
     }
 
+    /**
+     * Creates grass terrain models around a specified center position.
+     *
+     * @param centerX The x-coordinate of the terrain center.
+     * @param centerZ The z-coordinate of the terrain center.
+     * @return A list of ModelInstance objects representing the grass terrain.
+     */
     public List<ModelInstance> createGrassTerrainModels(float centerX, float centerZ) {
         ModelBuilder modelBuilder = new ModelBuilder();
         List<ModelInstance> golfCourseInstances = new ArrayList<>();
@@ -96,6 +120,13 @@ public class TerrainManager {
         return golfCourseInstances;
     }
 
+    /**
+     * Creates a model instance for the hole area.
+     *
+     * @param centerX The x-coordinate of the hole center.
+     * @param centerZ The z-coordinate of the hole center.
+     * @return A ModelInstance representing the hole terrain.
+     */
     public ModelInstance createHoleTerrainModel(float centerX, float centerZ){
         ModelBuilder modelBuilder = new ModelBuilder();
 
@@ -106,10 +137,10 @@ public class TerrainManager {
         float maxZ = centerZ + gridHeight * scale * 0.5f;
 
         // Clipping the hole area to terrain boundaries (drawing it bigger than 1, to rescale for a small picture)
-        float x1 = Math.max(minX, (float)(holeArea[0]-GolfGameScreen.getGoalTolerance()));
-        float z1 = Math.max(minZ, (float)(holeArea[1]-GolfGameScreen.getGoalTolerance()));
-        float x2 = Math.min(maxX, (float)(holeArea[0]+GolfGameScreen.getGoalTolerance()));
-        float z2 = Math.min(maxZ, (float)(holeArea[1]+GolfGameScreen.getGoalTolerance()));
+        float x1 = Math.max(minX, (float)(holeArea[0] - GolfGameScreen.getGoalTolerance()));
+        float z1 = Math.max(minZ, (float)(holeArea[1] - GolfGameScreen.getGoalTolerance()));
+        float x2 = Math.min(maxX, (float)(holeArea[0] + GolfGameScreen.getGoalTolerance()));
+        float z2 = Math.min(maxZ, (float)(holeArea[1] + GolfGameScreen.getGoalTolerance()));
         
         modelBuilder.begin();
         holeTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
@@ -148,6 +179,13 @@ public class TerrainManager {
         return new ModelInstance(holeModel);
     }
 
+    /**
+     * Creates sand terrain models around a specified center position.
+     *
+     * @param centerX The x-coordinate of the terrain center.
+     * @param centerZ The z-coordinate of the terrain center.
+     * @return A list of ModelInstance objects representing the sand terrain.
+     */
     public List<ModelInstance> createSandTerrainModels(float centerX, float centerZ) {
         ModelBuilder modelBuilder = new ModelBuilder();
         List<ModelInstance> sandInstances = new ArrayList<>();
@@ -212,7 +250,13 @@ public class TerrainManager {
     
         return sandInstances;
     }
-    
+
+    /**
+     * Checks if a given position is on a sand area.
+     *
+     * @param ballPosition The position of the ball.
+     * @return True if the position is on sand, false otherwise.
+     */
     public boolean isBallOnSand(Vector3 ballPosition) {
         boolean onSand = false;
         for (float[] area : sandAreas) {
@@ -229,7 +273,14 @@ public class TerrainManager {
         }
         return onSand;
     }
-    
+
+    /**
+     * Determines if the given position is water.
+     *
+     * @param x The x-coordinate of the position.
+     * @param y The y-coordinate of the position.
+     * @return True if the position is water, false otherwise.
+     */
     public boolean isWater(float x, float y) {
         // Logic to determine if the position (x, y) is water
         // This is a placeholder. Replace with actual implementation.
@@ -238,6 +289,13 @@ public class TerrainManager {
         return height < 0; // Assuming waterLevel is defined
     }
 
+    /**
+     * Calculates the height of the terrain at the specified coordinates.
+     *
+     * @param x The x-coordinate.
+     * @param z The z-coordinate.
+     * @return The height of the terrain at the specified coordinates.
+     */
     public float getTerrainHeight(float x, float z) {
         Map<String, Double> args = new HashMap<>();
         args.put("x", (double) x);
@@ -245,17 +303,30 @@ public class TerrainManager {
         return (float) heightFunction.evaluate(args);
     }
 
-    public void addSandArea(float[] sandArea){
+    /**
+     * Adds a sand area to the terrain.
+     *
+     * @param sandArea An array representing the boundaries of the sand area (minX, minY, maxX, maxY).
+     */
+    public void addSandArea(float[] sandArea) {
         sandAreas.add(sandArea);
     }
 
-    public List<float[]> getSandAreasList(){
+    /**
+     * Returns the list of sand areas.
+     *
+     * @return The list of sand areas.
+     */
+    public List<float[]> getSandAreasList() {
         return sandAreas;
-    } 
-
-    public void setHoleArea(float[] newHoleArea){
-        holeArea = newHoleArea;
     }
 
+    /**
+     * Sets the hole area on the terrain.
+     *
+     * @param newHoleArea An array representing the boundaries of the hole area.
+     */
+    public void setHoleArea(float[] newHoleArea) {
+        holeArea = newHoleArea;
+    }
 }
-
