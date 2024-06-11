@@ -242,4 +242,8 @@ public class MatrixUtils {
         }
         return delta;
     }
+
+    public static double scaleToRange(double value, double min, double max) {
+        return min + (max - min) * sigmoid(value);
+    }
 }

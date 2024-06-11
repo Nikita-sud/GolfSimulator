@@ -71,14 +71,23 @@ public class NeuralNetwork implements Serializable {
      */
     public double[] predict(double[] input) {
         double[][] activation = MatrixUtils.getTwoDimensionalVector(input);
-
+    
         for (int i = 0; i < numLayers - 1; i++) {
             activation = MatrixUtils.multiplyMatrices(weights[i], activation);
             activation = MatrixUtils.addBias(activation, biases[i]);
-            activation = MatrixUtils.sigmoidVector(activation);
+            if (i < numLayers - 2) {
+                activation = MatrixUtils.sigmoidVector(activation);
+            }
         }
-
-        return MatrixUtils.getOneDimensionalVector(activation);
+    
+        double[] output = MatrixUtils.getOneDimensionalVector(activation);
+        double angle = output[0];
+        double rawSpeed = output[1];
+        double minSpeed = 1;
+        double maxSpeed = 5;
+        double speed = MatrixUtils.scaleToRange(rawSpeed, minSpeed, maxSpeed);
+    
+        return new double[]{angle, speed};
     }
 
     /**
@@ -88,11 +97,14 @@ public class NeuralNetwork implements Serializable {
      * @param target The target output.
      */
     public void trainSingle(double[] input, double[] target) {
+        double learningRate = 0.01;
+        double lambda = 0.01;  // Regularization parameter
+    
         List<double[][]> activations = new ArrayList<>();
         List<double[][]> zs = new ArrayList<>();
         double[][] activation = MatrixUtils.getTwoDimensionalVector(input);
         activations.add(activation);
-
+    
         for (int i = 0; i < numLayers - 1; i++) {
             double[][] z = MatrixUtils.multiplyMatrices(weights[i], activation);
             z = MatrixUtils.addBias(z, biases[i]);
@@ -100,11 +112,11 @@ public class NeuralNetwork implements Serializable {
             activation = MatrixUtils.sigmoidVector(z);
             activations.add(activation);
         }
-
+    
         double[][] delta = MatrixUtils.matrixSubtraction(activations.get(activations.size() - 1), MatrixUtils.getTwoDimensionalVector(target));
         double[][][] nablaW = new double[weights.length][][];
         double[][] nablaB = new double[biases.length][];
-
+    
         for (int i = weights.length - 1; i >= 0; i--) {
             nablaW[i] = MatrixUtils.multiplyMatrices(delta, MatrixUtils.transpose(activations.get(i)));
             nablaB[i] = MatrixUtils.getOneDimensionalVector(delta);
@@ -112,10 +124,17 @@ public class NeuralNetwork implements Serializable {
                 delta = MatrixUtils.hadamardProduct(MatrixUtils.multiplyMatrices(MatrixUtils.transpose(weights[i]), delta), MatrixUtils.primeSigmoidVector(zs.get(i - 1)));
             }
         }
-
+    
         for (int i = 0; i < weights.length; i++) {
-            weights[i] = MatrixUtils.matrixSubtraction(weights[i], MatrixUtils.scalarMultiplyMatrix(nablaW[i], 0.01));
-            biases[i] = MatrixUtils.vectorSubtraction(biases[i], MatrixUtils.scalarMultiplyVector(nablaB[i], 0.01));
+            weights[i] = MatrixUtils.matrixSubtraction(weights[i], MatrixUtils.scalarMultiplyMatrix(nablaW[i], learningRate));
+            biases[i] = MatrixUtils.vectorSubtraction(biases[i], MatrixUtils.scalarMultiplyVector(nablaB[i], learningRate));
+    
+            // Apply L2 regularization
+            for (int j = 0; j < weights[i].length; j++) {
+                for (int k = 0; k < weights[i][j].length; k++) {
+                    weights[i][j][k] -= lambda * weights[i][j][k];
+                }
+            }
         }
     }
 

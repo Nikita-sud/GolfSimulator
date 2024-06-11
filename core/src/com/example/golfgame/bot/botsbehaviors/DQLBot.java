@@ -44,9 +44,12 @@ public class DQLBot implements BotBehavior {
         double[] action;
 
         if (Math.random() < epsilon) {
-            action = new double[]{ Math.random() * 2 * Math.PI, Math.random() * 10 }; // Случайный угол и сила
+            double angleToGoal = Math.atan2(relativeY, relativeX);
+            action = new double[]{-(angleToGoal + (Math.random() - 0.5) * Math.PI / 4), Math.random() * 5};
+            System.out.println("Random action");
         } else {
             action = neuralNetwork.predict(state);
+            System.out.println("NN action");
         }
         lastAction = action;
 
@@ -101,33 +104,45 @@ public class DQLBot implements BotBehavior {
         return Math.sqrt(Math.pow(relativeX, 2) + Math.pow(relativeY, 2));
     }
 
-    public double calculateReward(BallState ball, BallState goal) {
-        double distanceToGoal = Math.sqrt(Math.pow(goal.getX() - ball.getX(), 2) + Math.pow(goal.getY() - ball.getY(), 2));
-        if (distanceToGoal < 1.0) {
-            return 100.0;  // Большое положительное вознаграждение за достижение цели
-        } else {
-            return -distanceToGoal;  // Отрицательное вознаграждение пропорционально расстоянию до цели
+    public double calculateReward(BallState currentBallState, BallState goal, boolean win, boolean isBallInWater, BallState lastBallState) {
+        double previousDistanceToGoal = Math.sqrt(Math.pow(goal.getX() - lastBallState.getX(), 2) + Math.pow(goal.getY() - lastBallState.getY(), 2));
+        double currentDistanceToGoal = Math.sqrt(Math.pow(goal.getX() - currentBallState.getX(), 2) + Math.pow(goal.getY() - currentBallState.getY(), 2));
+        
+        double distanceDifference = previousDistanceToGoal - currentDistanceToGoal;
+        double reward = distanceDifference*10;
+    
+        // Наказание за нулевое расстояние (бездействие)
+        if (distanceDifference == 0) {
+            reward -= 100.0;
         }
+    
+        if (win) {
+            reward += 200.0; 
+        }
+    
+        if (isBallInWater) {
+            reward -= 100.0;
+        }
+    
+        return reward;
     }
 
     public boolean checkIfDone(BallState ball, BallState goal) {
-        // Условие завершения эпизода
-        double distanceToGoal = Math.sqrt(Math.pow(goal.getX() - ball.getX(), 2) + Math.pow(goal.getY() - ball.getY(), 2));
-        return distanceToGoal < 1.0;
+        double distanceToGoal = calculateDistanceToGoal(new double[]{ball.getX(), ball.getY(), goal.getX() - ball.getX(), goal.getY() - ball.getY()});
+        return distanceToGoal < 1.0 || ball.getX() < 0 || ball.getY() < 0; // Добавить другие условия при необходимости
     }
 
     private float smoothAngleTransition(float currentAngle, float targetAngle) {
         deltaAngle = targetAngle - currentAngle;
-
-        // Ensure the transition is within -PI to PI for shortest rotation direction
         if (deltaAngle > Math.PI) {
             deltaAngle -= 2 * Math.PI;
         } else if (deltaAngle < -Math.PI) {
             deltaAngle += 2 * Math.PI;
         }
-
-        // Apply a smoothing factor (adjust as necessary for smooth transition)
         float smoothingFactor = 0.1f;
+        if (Math.abs(deltaAngle) > Math.PI / 2) {
+            smoothingFactor = 0.5f;
+        }
         return currentAngle + smoothingFactor * deltaAngle;
     }
 

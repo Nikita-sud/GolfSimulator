@@ -63,7 +63,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private static final float DEFAULT_CAMERA_DISTANCE = 10;
     private static final float CAMERA_HEIGHT = 5f;
     private static final float BALL_HEIGHT_OFFSET = 1f;
-    private static final float LOW_SPEED_THRESHOLD_GRASS = 0.005f;
+    private static final float LOW_SPEED_THRESHOLD_GRASS = 0.008f;
     private static final float LOW_SPEED_THRESHOLD_SAND = 1.0f;
     private static final float MIN_SPEED = 0.01f;
     private static final float MAX_SPEED = 10.0f;
@@ -111,6 +111,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private boolean isPaused = false;
     private boolean isAdjustingSpeed = false;
     private boolean isBallAllowedToMove = false;
+    private boolean isBallInWater = false;
+    private boolean win = false;
     private float currentSpeed = MIN_SPEED;
     private float speedAdjustmentRate = 10.0f;
     private int score = 0, lastScore = -1;
@@ -648,6 +650,8 @@ public class GolfGameScreen implements Screen, Disposable {
         isBallAllowedToMove = true;
         currentBallState.setVx(-speed * Math.cos(cameraViewAngle));
         currentBallState.setVy(-speed * Math.sin(cameraViewAngle));
+        isBallInWater = false;
+        win = false;
     }
 
     /**
@@ -660,6 +664,8 @@ public class GolfGameScreen implements Screen, Disposable {
         isBallAllowedToMove = true;
         currentBallState.setVx(-vx);
         currentBallState.setVy(-vy);
+        isBallInWater = false;
+        win = false;
     }
 
     /**
@@ -744,6 +750,7 @@ public class GolfGameScreen implements Screen, Disposable {
         scoreLabel.clear();
         scoreChange();
         lastScoreLabel.setText("Last Score: " + lastScore);
+        win = true;
         resetGameState();
     }
 
@@ -811,6 +818,7 @@ public class GolfGameScreen implements Screen, Disposable {
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + BALL_HEIGHT_OFFSET;
         if (ballZ - BALL_HEIGHT_OFFSET < 0) {
             scoreChange();
+            isBallInWater = true;
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
             System.out.println("Ball has fallen below ground level. Resetting to last valid position.");
         } else {
@@ -860,7 +868,7 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void advancedBotPlay() {
         if (!isBallAllowedToMove) {
-            wallE.switchToAdvanced();
+            wallE.switchToDQL();
             wallE.setDirection();
             wallE.hit();
         }
@@ -1175,8 +1183,13 @@ public class GolfGameScreen implements Screen, Disposable {
                     double newRelativeX = goal.getX() - newBallState.getX();
                     double newRelativeY = goal.getY() - newBallState.getY();
                     double[] nextState = { newBallState.getX(), newBallState.getY(), newRelativeX, newRelativeY };
-
-                    double reward = dqlBot.calculateReward(newBallState, goal);
+                    BallState lastPosition;
+                    if(ballPositionsWhenSlow.size()<2){
+                        lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
+                    }else{
+                        lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 2);
+                    }
+                    double reward = dqlBot.calculateReward(newBallState, goal, win, isBallInWater, lastPosition);
                     boolean done = dqlBot.checkIfDone(newBallState, goal);
 
                     dqlBot.updateMemoryAndTrain(nextState, reward, done);
