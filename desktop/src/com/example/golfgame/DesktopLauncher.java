@@ -2,7 +2,6 @@ package com.example.golfgame;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-
 /**
  * Launches the desktop application for the Golf game.
  * Configures and starts a new instance of the game using LWJGL3.
