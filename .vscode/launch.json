@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Simulator",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.simulator.Simulator",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "SaveInitialNetworks",
             "request": "launch",
             "mainClass": "com.example.golfgame.bot.neuralnetwork.SaveInitialNetworks",
@@ -37,7 +44,6 @@
             "request": "launch",
             "mainClass": "com.example.golfgame.DesktopLauncher",
             "projectName": "Golf-desktop",
-            "vmArgs": "-XstartOnFirstThread",
             "args": ""
         }
     ]

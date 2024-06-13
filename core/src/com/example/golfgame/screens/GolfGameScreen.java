@@ -47,6 +47,7 @@ import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
 import com.example.golfgame.physics.*;
 import com.example.golfgame.physics.ODE.*;
+import com.example.golfgame.simulator.Simulator;
 
 /**
  * Represents the main game screen where the golf game takes place.
@@ -121,6 +122,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private float terrainCenterX = 0, terrainCenterZ = 0;
     private boolean ruleBasedBotActive = false;
     private boolean hillClimbingBotActive = false;
+    private Simulator simulator = null;
 
     // Light settings
     private float sunlight;
@@ -1159,6 +1161,9 @@ public class GolfGameScreen implements Screen, Disposable {
         return terrainManager.isBallOnSand(position) ? (float) sandFrictionKinetic : (float) grassFrictionKinetic;
     }
 
+    public int getScore(){
+        return score;
+    }
     /**
      * Checks if the camera is correctly positioned.
      *
@@ -1246,6 +1251,28 @@ public class GolfGameScreen implements Screen, Disposable {
         hillClimbingBotActive = activeness;
     }
 
+    public float getLowSpeedThreshold(){
+        return lowSpeedThreshold;
+    }
+    /**
+     * Sets simulator
+     * 
+     * @param simulator
+     */
+    public void setSimulator(Simulator simulator){
+        this.simulator = simulator;
+    }
+    
+    /**
+     * sets current ball state to desired state
+     */
+    public void setBallState(BallState newBallState) throws IllegalAccessException{
+        if (simulator==null){
+            throw new IllegalAccessException("This method should only be called for simulation purposes!");
+        }
+        this.currentBallState = newBallState;
+    }
+    
     @Override
     public void pause() {
     }

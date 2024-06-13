@@ -11,6 +11,7 @@ import com.example.golfgame.screens.MainMenuScreen;
 import com.example.golfgame.screens.SandboxSettingsScreen;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.screens.SettingsScreen;
+import com.example.golfgame.simulator.Simulator;
 
 /**
  * The main class for the golf game application. It manages the different screens of the game
@@ -18,13 +19,13 @@ import com.example.golfgame.screens.SettingsScreen;
  * these screens and the assets used throughout the game.
  */
 public class GolfGame extends Game {
-    private Screen mainScreen;
-    private Screen gameScreen;
-    private Screen settingsScreen;
-    private Screen sandboxSettingScreen;
-    private AssetManager assetManager;
-    private List<Sandbox> sandboxes = new ArrayList<>();
-    private boolean keepSettingsMusic = false;
+    protected Screen mainScreen;
+    protected Screen gameScreen;
+    protected Screen settingsScreen;
+    protected Screen sandboxSettingScreen;
+    protected AssetManager assetManager;
+    protected List<Sandbox> sandboxes = new ArrayList<>();
+    protected boolean keepSettingsMusic = false;
 
     /**
      * Initializes the game, creating and setting up the main menu, game, and settings screens.
@@ -38,7 +39,7 @@ public class GolfGame extends Game {
         assetManager.load("assets/music/main-menu.mp3", Music.class);
         assetManager.load("assets/music/game-screen.mp3", Music.class);
         assetManager.load("assets/music/settings.mp3", Music.class);
-
+   
         assetManager.finishLoading(); // Ensure all assets are loaded before using them
 
         // Create screens after loading assets
@@ -91,6 +92,10 @@ public class GolfGame extends Game {
      */
     public GolfGameScreen getGolfGameScreen() {
         return (GolfGameScreen) gameScreen;
+    }
+
+    public void setGolfGameScreen(GolfGameScreen screen){
+        this.gameScreen = screen;
     }
 
     /**
