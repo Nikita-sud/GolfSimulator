@@ -99,7 +99,7 @@ public class GolfGameScreen implements Screen, Disposable {
 
     // UI components
     private Skin skin;
-    private Label facingLabel, scoreLabel, lastScoreLabel;
+    private Label facingLabel, scoreLabel, lastScoreLabel, ballMovementLabel;
     private ProgressBar speedProgressBar;
     private Dialog pauseDialog;
 
@@ -474,11 +474,14 @@ public class GolfGameScreen implements Screen, Disposable {
         scoreLabel = createScoreLabel();
         lastScoreLabel = createLastScoreLabel();
 
+        ballMovementLabel = new Label("Ball can move: " + isBallAllowedToMove, skin);
+
         labelTable.add(scoreLabel).pad(10);
         labelTable.add(lastScoreLabel).pad(10);
         labelTable.add(facingLabel).pad(10).top().left();
         labelTable.row();
         labelTable.add(windLabel).pad(10).bottom().left().expandY();
+        labelTable.add(ballMovementLabel).pad(10).bottom().left().expandY();
 
         stage.addActor(labelTable);
     }
@@ -715,6 +718,7 @@ public class GolfGameScreen implements Screen, Disposable {
         if (isBallAllowedToMove) {
             currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
         }
+        ballMovementLabel.setText("Ball can move: " + isBallAllowedToMove);
         setPositionForFlagAndStemInstances();
         // Apply wind effects to the ball's velocity
         applyWindEffect();

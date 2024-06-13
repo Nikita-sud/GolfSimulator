@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "SaveInitialNetworks",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.bot.neuralnetwork.SaveInitialNetworks",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "NeuralNetwork",
             "request": "launch",
             "mainClass": "com.example.golfgame.bot.neuralnetwork.NeuralNetwork",

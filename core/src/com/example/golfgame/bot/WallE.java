@@ -12,14 +12,15 @@ public class WallE {
     private BotBehavior botBehavior;
     private RuleBasedBot ruleBasedBot;
     private AdvancedBot advancedBot;
-    private DQLBot dqlBot; // Исправлено: объявление переменной dqlBot
+    private DQLBot dqlBot;
 
     public WallE(GolfGame game) {
         this.game = game;
         this.ruleBasedBot = new RuleBasedBot();
         this.advancedBot = new AdvancedBot();
-        DQLNeuralNetwork dqlNetwork = new DQLNeuralNetwork(new int[]{4, 10, 2}); // Input: 4, Output: 2 (angle and strength)
-        this.dqlBot = new DQLBot(dqlNetwork, 1000, 1.0, 0.90, 0.1, 0.99, 32); // Исправлено: инициализация dqlBot
+        DQLNeuralNetwork mainNetwork = new DQLNeuralNetwork(new int[]{4, 20,20, 2});
+        DQLNeuralNetwork targetNetwork = new DQLNeuralNetwork(new int[]{4, 20,20, 2});
+        this.dqlBot = new DQLBot(mainNetwork, targetNetwork, 1000, 1.0, 0.995, 0.1, 0.99, 32,"neuralnetworkinformation/mainNetwork.ser","neuralnetworkinformation/targetNetwork.ser");
         this.botBehavior = ruleBasedBot; // Default behavior
     }
 

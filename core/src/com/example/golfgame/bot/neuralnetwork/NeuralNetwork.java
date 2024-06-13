@@ -97,8 +97,8 @@ public class NeuralNetwork implements Serializable {
      * @param target The target output.
      */
     public void trainSingle(double[] input, double[] target) {
-        double learningRate = 0.01;
-        double lambda = 0.01;  // Regularization parameter
+        double learningRate = 0.1;
+        double lambda = 0.1;  // Regularization parameter
     
         List<double[][]> activations = new ArrayList<>();
         List<double[][]> zs = new ArrayList<>();
@@ -148,12 +148,30 @@ public class NeuralNetwork implements Serializable {
     }
 
     /**
+     * Sets the weights of the neural network.
+     *
+     * @param weights A three-dimensional array representing the weights.
+     */
+    public void setWeights(double[][][] weights) {
+        this.weights = weights;
+    }
+
+    /**
      * Returns the biases of the neural network.
      *
      * @return A two-dimensional array representing the biases.
      */
     public double[][] getBiases() {
         return biases;
+    }
+
+    /**
+     * Sets the biases of the neural network.
+     *
+     * @param biases A two-dimensional array representing the biases.
+     */
+    public void setBiases(double[][] biases) {
+        this.biases = biases;
     }
 
     /**

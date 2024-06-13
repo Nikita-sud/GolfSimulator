@@ -1,5 +1,6 @@
 package com.example.golfgame.bot.botsbehaviors;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import com.example.golfgame.GolfGame;
@@ -9,7 +10,8 @@ import com.example.golfgame.utils.ReplayMemory;
 import com.example.golfgame.utils.BallState;
 
 public class DQLBot implements BotBehavior {
-    private DQLNeuralNetwork neuralNetwork;
+    private DQLNeuralNetwork mainNetwork;
+    private DQLNeuralNetwork targetNetwork;
     private ReplayMemory memory;
     private double epsilon;
     private double epsilonDecay;
@@ -21,15 +23,23 @@ public class DQLBot implements BotBehavior {
     private boolean waitingForStop = false;
     private double[] currentState;
     private double[] currentAction;
+    private int steps;
+    private final int targetUpdateFrequency = 50;
+    private final int saveNetworkFrequency = 100;
 
-    public DQLBot(DQLNeuralNetwork neuralNetwork, int memoryCapacity, double epsilon, double epsilonDecay, double epsilonMin, double gamma, int batchSize) {
-        this.neuralNetwork = neuralNetwork;
+    public DQLBot(DQLNeuralNetwork mainNetwork, DQLNeuralNetwork targetNetwork, int memoryCapacity, double epsilon, double epsilonDecay, double epsilonMin, double gamma, int batchSize, String mainNetworkFilePath, String targetNetworkFilePath) {
+        this.mainNetwork = mainNetwork;
+        this.targetNetwork = targetNetwork;
         this.memory = new ReplayMemory(memoryCapacity);
         this.epsilon = epsilon;
         this.epsilonDecay = epsilonDecay;
         this.epsilonMin = epsilonMin;
         this.gamma = gamma;
         this.batchSize = batchSize;
+        this.steps = 0;
+
+        // Загружаем сети из файлов, если они существуют
+        loadNetworks(mainNetworkFilePath, targetNetworkFilePath);
     }
 
     @Override
@@ -44,11 +54,11 @@ public class DQLBot implements BotBehavior {
         double[] action;
 
         if (Math.random() < epsilon) {
-            double angleToGoal = Math.atan2(relativeY, relativeX);
-            action = new double[]{-(angleToGoal + (Math.random() - 0.5) * Math.PI / 4), Math.random() * 5};
+            
+            action = new double[]{(Math.random() * Math.PI*2), Math.max(Math.random() * 5,1)};
             System.out.println("Random action");
         } else {
-            action = neuralNetwork.predict(state);
+            action = mainNetwork.predict(state);
             System.out.println("NN action");
         }
         lastAction = action;
@@ -57,7 +67,7 @@ public class DQLBot implements BotBehavior {
         float currentAngle = game.getGolfGameScreen().getCameraAngle();
         float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);
         System.out.println("Set direction: currentAngle=" + currentAngle + ", targetAngle=" + targetAngle + ", adjustedAngle=" + adjustedAngle);
-        return targetAngle ;
+        return targetAngle;
     }
 
     @Override
@@ -65,37 +75,18 @@ public class DQLBot implements BotBehavior {
         BallState ball = game.getGolfGameScreen().getBallState();
         BallState goal = game.getGolfGameScreen().getGoalState();
 
-        // Используем относительные координаты мяча и цели
         double relativeX = goal.getX() - ball.getX();
         double relativeY = goal.getY() - ball.getY();
 
-        // Текущее состояние
         double[] state = { ball.getX(), ball.getY(), relativeX, relativeY };
 
-        // Выполнение удара
-        game.getGolfGameScreen().performHit((float) lastAction[1]);  // Используем силу удара из action[1]
+        game.getGolfGameScreen().performHit((float) lastAction[1]);
 
-        // Устанавливаем флаг ожидания и сохраняем текущее состояние и действие
         waitingForStop = true;
         currentState = state;
         currentAction = lastAction;
 
         System.out.println("Hit: ball=" + ball + ", goal=" + goal + ", action=" + lastAction[1]);
-        System.out.println("Current State: " + Arrays.toString(state) + ", Action: " + Arrays.toString(lastAction));
-    }
-
-    public void updateMemoryAndTrain(double[] nextState, double reward, boolean done) {
-        memory.add(new ReplayMemory.Experience(currentState, currentAction, reward, nextState, done));
-        neuralNetwork.train(memory, batchSize, gamma);
-        waitingForStop = false;
-
-        if (epsilon > epsilonMin) {
-            epsilon *= epsilonDecay;
-        }
-
-        System.out.println("Memory updated and trained. Epsilon: " + epsilon);
-        System.out.println("Reward: " + reward + ", Current State: " + Arrays.toString(currentState) + ", Next State: " + Arrays.toString(nextState));
-        System.out.println("Distance to Goal: " + calculateDistanceToGoal(nextState));
     }
 
     private double calculateDistanceToGoal(double[] state) {
@@ -109,21 +100,26 @@ public class DQLBot implements BotBehavior {
         double currentDistanceToGoal = Math.sqrt(Math.pow(goal.getX() - currentBallState.getX(), 2) + Math.pow(goal.getY() - currentBallState.getY(), 2));
         
         double distanceDifference = previousDistanceToGoal - currentDistanceToGoal;
-        double reward = distanceDifference*10;
-    
-        // Наказание за нулевое расстояние (бездействие)
+        double reward = distanceDifference * 10;
+        
         if (distanceDifference == 0) {
-            reward -= 100.0;
+            reward += 100.0;
         }
-    
+        
         if (win) {
-            reward += 200.0; 
+            reward += 500.0;
         }
-    
+        
         if (isBallInWater) {
             reward -= 100.0;
         }
-    
+        
+        // Нелинейное наказание за отдаление от цели
+        if (distanceDifference < 0) {
+            double penaltyFactor = Math.exp(Math.abs(distanceDifference) / 10.0); // Экспоненциальная функция
+            reward -= penaltyFactor * 10; // Увеличиваем наказание
+        }
+        
         return reward;
     }
 
@@ -148,5 +144,56 @@ public class DQLBot implements BotBehavior {
 
     public boolean isWaitingForStop() {
         return waitingForStop;
+    }
+
+    public void updateMemoryAndTrain(double[] nextState, double reward, boolean done) {
+        memory.add(new ReplayMemory.Experience(currentState, currentAction, reward, nextState, done));
+        mainNetwork.train(memory, batchSize, gamma, targetNetwork);
+        waitingForStop = false;
+
+        if (epsilon > epsilonMin) {
+            epsilon *= epsilonDecay;
+        }
+
+        steps++;
+        if (steps % targetUpdateFrequency == 0) {
+            targetNetwork.setWeights(mainNetwork.getWeights()); // Копирование весов из основной сети в целевую
+        }
+
+        // Сохраняем сети в файлы после определенного количества шагов
+        if (steps % saveNetworkFrequency == 0) {
+            saveNetworks("neuralnetworkinformation/mainNetwork.ser", "neuralnetworkinformation/targetNetwork.ser");
+        }
+
+        System.out.println("Memory updated and trained. Epsilon: " + epsilon);
+        System.out.println("Reward: " + reward + ", Current State: " + Arrays.toString(currentState) + ", Next State: " + Arrays.toString(nextState));
+        System.out.println("Distance to Goal: " + calculateDistanceToGoal(nextState));
+    }
+
+    public void saveNetworks(String mainNetworkFilePath, String targetNetworkFilePath) {
+        try {
+            mainNetwork.saveNetwork(mainNetworkFilePath);
+            targetNetwork.saveNetwork(targetNetworkFilePath);
+            System.out.println("Networks saved successfully.");
+        } catch (IOException e) {
+            System.err.println("Failed to save networks: " + e.getMessage());
+        }
+    }
+
+    public void loadNetworks(String mainNetworkFilePath, String targetNetworkFilePath) {
+        try {
+            DQLNeuralNetwork mainNetworkLoaded = DQLNeuralNetwork.loadNetwork(mainNetworkFilePath);
+            DQLNeuralNetwork targetNetworkLoaded = DQLNeuralNetwork.loadNetwork(targetNetworkFilePath);
+            
+            this.mainNetwork.setWeights(mainNetworkLoaded.getWeights());
+            this.mainNetwork.setBiases(mainNetworkLoaded.getBiases());
+    
+            this.targetNetwork.setWeights(targetNetworkLoaded.getWeights());
+            this.targetNetwork.setBiases(targetNetworkLoaded.getBiases());
+    
+            System.out.println("Networks loaded successfully.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Failed to load networks: " + e.getMessage());
+        }
     }
 }
