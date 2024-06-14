@@ -109,7 +109,6 @@ public class PhysicsSimulator {
 
         for (int i = 0; i < n; i++) {
             res[i] = futures.get(i).get();
-            System.out.println(res[i]);
         }
 
         executor.shutdown();
