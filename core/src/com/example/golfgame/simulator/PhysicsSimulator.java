@@ -15,6 +15,7 @@ import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.RungeKutta;
 import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.Function;
+import com.example.golfgame.utils.Transition;
 
 public class PhysicsSimulator {
 
@@ -46,6 +47,10 @@ public class PhysicsSimulator {
             engine.update(ball, 0.01);
         }
         return ball;
+    }
+
+    public List<Transition> play(){
+        
     }
 
     /**
