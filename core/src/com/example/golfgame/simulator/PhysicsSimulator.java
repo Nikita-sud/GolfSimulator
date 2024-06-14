@@ -15,7 +15,7 @@ public class PhysicsSimulator {
     private static Random random = new Random(2024);
 
     public PhysicsSimulator(Function heightFunction){
-        engine = new PhysicsEngine(new RungeKutta(), heightFunction );
+        engine = new PhysicsEngine(new RungeKutta(), heightFunction);
         ball = new BallState(0, 0, 0, 0);
     }
 
@@ -59,7 +59,6 @@ public class PhysicsSimulator {
      * @return
      */
     public BallState[] randomHits(int n, BallState goal, float radius){
-        //TODO: implement method
         BallState[] res = new BallState[n];
         for (int i = 0; i<n; i++){
             float ballX = random.nextFloat(-radius, radius);
@@ -88,11 +87,11 @@ public class PhysicsSimulator {
 
     
     public static void main(String[] args){
-        Function h = new Function("10", "x", "y");
+        Function h = new Function("0.1x^2+0.1y^2+10", "x", "y");
         PhysicsSimulator sim = new PhysicsSimulator(h);
-        System.out.println(sim.hit(4f, (float)Math.PI));
+       
         
-        System.out.println(Arrays.toString(sim.hit(null, null)));
+        System.out.println(Arrays.toString(sim.randomHits(10, new BallState(0, 0, 0, 0), 10)));
     }
 
     
