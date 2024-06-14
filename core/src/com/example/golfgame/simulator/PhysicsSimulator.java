@@ -76,7 +76,6 @@ public class PhysicsSimulator {
             float velocityMagnitude = random.nextFloat(1, 5);
             float angle = random.nextFloat(0f, (float)(2*Math.PI));
             res[i] = hit(velocityMagnitude, angle);
-            System.out.println(res[i]);
         }
         return res;
     }
@@ -133,7 +132,7 @@ public class PhysicsSimulator {
         PhysicsSimulator sim = new PhysicsSimulator(h);
        
         
-        System.out.println(Arrays.toString(sim.parallelRandomHits(100, new BallState(0, 0, 0, 0), 10)));
+        System.out.println(Arrays.toString(sim.randomHits(100, new BallState(0, 0, 0, 0), 10)));
     }
 
     
