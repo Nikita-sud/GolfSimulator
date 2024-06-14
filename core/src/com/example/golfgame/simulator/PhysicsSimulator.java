@@ -3,11 +3,13 @@ package com.example.golfgame.simulator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.Map;
 
 import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.RungeKutta;
@@ -35,7 +37,12 @@ public class PhysicsSimulator {
         // I will set the velocities properly later
         ball.setVx(velocityMagnitude);
         ball.setVy(velocityMagnitude);
+        Map<String, Double> functionVals = new HashMap<String, Double>();
         while (!engine.isAtRest(ball)){
+            functionVals.put("x", ball.getX()); functionVals.put("y", ball.getY());
+            if(engine.getSurfaceFunction().evaluate(functionVals)<0){ // Water
+                return ball;
+            }
             engine.update(ball, 0.01);
         }
         return ball;
@@ -48,7 +55,6 @@ public class PhysicsSimulator {
      * @return
      */
     public BallState[] hit(float[] velocityMagnitudes, float[] angles){
-        // TODO: Multithreading
         BallState[] res = new BallState[velocityMagnitudes.length]; 
         for (int i = 0; i<velocityMagnitudes.length; i++){
             res[i] = hit(velocityMagnitudes[i], angles[i]);

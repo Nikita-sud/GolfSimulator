@@ -336,5 +336,7 @@ public class PhysicsEngine {
         return (float) derivativeY(x, y);
     }
     
-
+    public Function getSurfaceFunction(){
+        return surfaceFunction;
+    }
 }
