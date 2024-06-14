@@ -31,9 +31,8 @@ public class PPOAgent {
 
     public void train() {
         // Compute returns and advantages
-        List<Double> returns = computeReturns();
-        List<Double> advantages = computeAdvantages(returns);
-
+        List<Double> advantages = computeAdvantages();
+        
         // Compute old probabilities
         double[] oldProbabilities = computeOldProbabilities();
 
@@ -46,7 +45,7 @@ public class PPOAgent {
             states[i] = memory.get(i).getState1().getState();
             actions[i] = new double[]{memory.get(i).getAction().getAngle(), memory.get(i).getAction().getForce()};
             advantagesArray[i] = advantages.get(i);
-            targets[i] = returns.get(i);
+            targets[i] = memory.get(i).getReward() + gamma * valueNetwork.forward(memory.get(i).getState2().getState())[0][0];
         }
 
         // Train networks
@@ -72,24 +71,22 @@ public class PPOAgent {
         memory.clear();
     }
 
-    private List<Double> computeReturns() {
-        List<Double> returns = new ArrayList<>();
-        double G = 0.0;
-        for (int i = memory.size() - 1; i >= 0; i--) {
-            G = memory.get(i).getReward() + gamma * G;
-            returns.add(0, G);
-        }
-        return returns;
-    }
-
-    private List<Double> computeAdvantages(List<Double> returns) {
+    private List<Double> computeAdvantages() {
         List<Double> advantages = new ArrayList<>();
+        double[] deltas = new double[memory.size()];
         double[] values = new double[memory.size()];
+        double[] nextValues = new double[memory.size()];
+
         for (int i = 0; i < memory.size(); i++) {
             values[i] = valueNetwork.forward(memory.get(i).getState1().getState())[0][0];
+            nextValues[i] = valueNetwork.forward(memory.get(i).getState2().getState())[0][0];
+            deltas[i] = memory.get(i).getReward() + gamma * nextValues[i] - values[i];
         }
-        for (int i = 0; i < memory.size(); i++) {
-            advantages.add(returns.get(i) - values[i]);
+
+        double advantage = 0.0;
+        for (int i = memory.size() - 1; i >= 0; i--) {
+            advantage = deltas[i] + gamma * lambda * advantage;
+            advantages.add(0, advantage);
         }
         return advantages;
     }
