@@ -2,11 +2,14 @@ package com.example.golfgame.bot.neuralnetwork;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
+import com.example.golfgame.utils.BackPropResult;
 import com.example.golfgame.utils.MatrixUtils;
 
-public class NeuralNetwork implements Serializable {
+public abstract class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = 1L;
     protected int numLayers;
     protected int[] sizes;
@@ -33,25 +36,45 @@ public class NeuralNetwork implements Serializable {
         }
     }
 
-    public double[] predict(double[] input) {
-        double[][] activation = MatrixUtils.getTwoDimensionalVector(input);
-
-        for (int i = 0; i < numLayers - 1; i++) {
-            activation = MatrixUtils.multiplyMatrices(weights[i], activation);
-            activation = MatrixUtils.addBias(activation, biases[i]);
-            if (i < numLayers - 2) {
-                activation = MatrixUtils.sigmoidVector(activation);
+    public void updateParameters(double[][][] nabla_w, double[][] nabla_b, double eta, int miniBatchSize) {
+        for (int j = 0; j < weights.length; j++) {
+            for (int m = 0; m < weights[j].length; m++) {
+                for (int n = 0; n < weights[j][m].length; n++) {
+                    this.weights[j][m][n] -= (eta / miniBatchSize) * nabla_w[j][m][n];
+                }
             }
         }
 
-        return MatrixUtils.getOneDimensionalVector(activation);
+        for (int j = 0; j < biases.length; j++) {
+            for (int m = 0; m < biases[j].length; m++) {
+                this.biases[j][m] -= (eta / miniBatchSize) * nabla_b[j][m];
+            }
+        }
     }
 
-    public void update(double[] input, double[] target, double learningRate, double lambda) {
+    public BackPropResult backprop(double[] input, double loss) {
+        double[][] nabla_b = new double[this.biases.length][];
+        for (int i = 0; i < this.biases.length; i++) {
+            nabla_b[i] = new double[this.biases[i].length];
+            Arrays.fill(nabla_b[i], 0.0); // Fill with zeros
+        }
+        double[][][] nabla_w = new double[this.weights.length][][];
+        for (int i = 0; i < this.weights.length; i++) {
+            nabla_w[i] = new double[this.weights[i].length][];
+            for (int j = 0; j < this.weights[i].length; j++) {
+                nabla_w[i][j] = new double[this.weights[i][j].length];
+                Arrays.fill(nabla_w[i][j], 0.0); // Fill with zeros
+            }
+        }
+
+        // feedforward
+        double[][] activation = new double[input.length][1];
+        for (int i = 0; i < input.length; i++) {
+            activation[i][0] = input[i];
+        }
         List<double[][]> activations = new ArrayList<>();
-        List<double[][]> zs = new ArrayList<>();
-        double[][] activation = MatrixUtils.getTwoDimensionalVector(input);
         activations.add(activation);
+        List<double[][]> zs = new ArrayList<>();
 
         for (int i = 0; i < numLayers - 1; i++) {
             double[][] z = MatrixUtils.multiplyMatrices(weights[i], activation);
@@ -61,28 +84,36 @@ public class NeuralNetwork implements Serializable {
             activations.add(activation);
         }
 
-        double[][] delta = MatrixUtils.matrixSubtraction(activations.get(activations.size() - 1), MatrixUtils.getTwoDimensionalVector(target));
-        double[][][] nablaW = new double[weights.length][][];
-        double[][] nablaB = new double[biases.length][];
+        // Backward pass
+        double[][] delta = MatrixUtils.scalarMultiply(MatrixUtils.sigmoidPrimeVector(zs.get(zs.size() - 1)), loss);
+        nabla_b[nabla_b.length - 1] = MatrixUtils.getOneDimensionalVector(delta);
+        nabla_w[nabla_w.length - 1] = MatrixUtils.multiplyMatrices(delta, MatrixUtils.transpose(activations.get(activations.size() - 2)));
 
-        for (int i = weights.length - 1; i >= 0; i--) {
-            nablaW[i] = MatrixUtils.multiplyMatrices(delta, MatrixUtils.transpose(activations.get(i)));
-            nablaB[i] = MatrixUtils.getOneDimensionalVector(delta);
-            if (i > 0) {
-                delta = MatrixUtils.hadamardProduct(MatrixUtils.multiplyMatrices(MatrixUtils.transpose(weights[i]), delta), MatrixUtils.primeSigmoidVector(zs.get(i - 1)));
-            }
+        for (int i = 2; i < numLayers; i++) {
+            double[][] z = zs.get(zs.size() - i);
+            double[][] sp = MatrixUtils.sigmoidPrimeVector(z);
+            delta = MatrixUtils.multiplyMatrices(MatrixUtils.transpose(weights[weights.length - i + 1]), delta);
+            delta = MatrixUtils.hadamardProduct(delta, sp);
+            nabla_b[nabla_b.length - i] = MatrixUtils.getOneDimensionalVector(delta);
+            nabla_w[nabla_w.length - i] = MatrixUtils.multiplyMatrices(delta, MatrixUtils.transpose(activations.get(activations.size() - i - 1)));
         }
 
-        for (int i = 0; i < weights.length; i++) {
-            weights[i] = MatrixUtils.matrixSubtraction(weights[i], MatrixUtils.scalarMultiplyMatrix(nablaW[i], learningRate));
-            biases[i] = MatrixUtils.vectorSubtraction(biases[i], MatrixUtils.scalarMultiplyVector(nablaB[i], learningRate));
+        return new BackPropResult(nabla_w, nabla_b);
+    }
 
-            for (int j = 0; j < weights[i].length; j++) {
-                for (int k = 0; k < weights[i][j].length; k++) {
-                    weights[i][j][k] -= lambda * weights[i][j][k];
-                }
-            }
+    public double[][] forward(double[] input) {
+        double[][] activation = new double[input.length][1];
+        for (int i = 0; i < input.length; i++) {
+            activation[i][0] = input[i];
         }
+
+        for (int i = 0; i < numLayers - 1; i++) {
+            double[][] z = MatrixUtils.multiplyMatrices(weights[i], activation);
+            z = MatrixUtils.addBias(z, biases[i]);
+            activation = MatrixUtils.sigmoidVector(z);
+        }
+
+        return activation;
     }
 
     public void saveNetwork(String filePath) throws IOException {

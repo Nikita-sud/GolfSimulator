@@ -2,97 +2,121 @@ package com.example.golfgame.bot.agents;
 
 import com.example.golfgame.bot.neuralnetwork.PolicyNetwork;
 import com.example.golfgame.bot.neuralnetwork.ValueNetwork;
-import com.example.golfgame.utils.ReplayMemory;
+import com.example.golfgame.utils.BackPropResult;
+import com.example.golfgame.utils.Transition;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class PPOAgent {
     private PolicyNetwork policyNetwork;
     private ValueNetwork valueNetwork;
-    private ReplayMemory memory;
-    private double gamma;
-    private double epsilon;
-    private int batchSize;
-    private double clipParam;
-    private double learningRate;
-    private double lambda;
+    private List<Transition> memory;
+    private double gamma; // Discount factor
+    private double lambda; // GAE parameter
+    private double epsilon; // Clipping parameter for PPO
 
-    public PPOAgent(int[] policyNetworkSizes, int[] valueNetworkSizes, int memoryCapacity, double gamma, double epsilon, int batchSize, double clipParam, double learningRate, double lambda) {
+    public PPOAgent(int[] policyNetworkSizes, int[] valueNetworkSizes, double gamma, double lambda, double epsilon) {
         this.policyNetwork = new PolicyNetwork(policyNetworkSizes);
         this.valueNetwork = new ValueNetwork(valueNetworkSizes);
-        this.memory = new ReplayMemory(memoryCapacity);
+        this.memory = new ArrayList<>();
         this.gamma = gamma;
-        this.epsilon = epsilon;
-        this.batchSize = batchSize;
-        this.clipParam = clipParam;
-        this.learningRate = learningRate;
         this.lambda = lambda;
+        this.epsilon = epsilon;
     }
 
-    public double[] selectAction(double[] state) {
-        if (Math.random() < epsilon) {
-            return new double[]{Math.random() * 2 * Math.PI, Math.random() * 10}; // random action
-        }
-        return policyNetwork.getActionProbabilities(state); // policy network action
-    }
-
-    public void addExperience(double[] state, double[] action, double reward, double[] nextState, boolean done) {
-        memory.add(new ReplayMemory.Experience(state, action, reward, nextState, done));
+    public void storeTransition(Transition transition) {
+        memory.add(transition);
     }
 
     public void train() {
-        List<ReplayMemory.Experience> batch = memory.sample(batchSize);
-        update(batch);
+        // Compute returns and advantages
+        List<Double> returns = computeReturns();
+        List<Double> advantages = computeAdvantages(returns);
+
+        // Compute old probabilities
+        double[] oldProbabilities = computeOldProbabilities();
+
+        // Extract necessary data
+        double[][] states = new double[memory.size()][];
+        double[][] actions = new double[memory.size()][];
+        double[] advantagesArray = new double[memory.size()];
+        double[] targets = new double[memory.size()];
+        for (int i = 0; i < memory.size(); i++) {
+            states[i] = memory.get(i).getState1().getState();
+            actions[i] = new double[]{memory.get(i).getAction().getAngle(), memory.get(i).getAction().getForce()};
+            advantagesArray[i] = advantages.get(i);
+            targets[i] = returns.get(i);
+        }
+
+        // Train networks
+        for (int i = 0; i < memory.size(); i++) {
+            double[] state = states[i];
+            double[] action = actions[i];
+            double target = targets[i];
+
+            // Policy network update
+            double[][] policyOutput = policyNetwork.forward(state);
+            double policyLoss = policyNetwork.computeLoss(policyOutput, action, advantagesArray, oldProbabilities, epsilon);
+            BackPropResult policyBackpropResult = policyNetwork.backprop(state, policyLoss);
+            policyNetwork.updateParameters(policyBackpropResult.getNablaW(), policyBackpropResult.getNablaB(), 0.001, memory.size());
+
+            // Value network update
+            double[][] valueOutput = valueNetwork.forward(state);
+            double valueLoss = valueNetwork.computeLoss(valueOutput, new double[]{target});
+            BackPropResult valueBackpropResult = valueNetwork.backprop(state, valueLoss);
+            valueNetwork.updateParameters(valueBackpropResult.getNablaW(), valueBackpropResult.getNablaB(), 0.001, memory.size());
+        }
+
+        // Clear memory after training
+        memory.clear();
     }
 
-    private void update(List<ReplayMemory.Experience> batch) {
-        List<double[]> states = new ArrayList<>();
-        List<double[]> actions = new ArrayList<>();
-        List<Double> rewards = new ArrayList<>();
-        List<double[]> nextStates = new ArrayList<>();
-        List<Boolean> dones = new ArrayList<>();
-
-        for (ReplayMemory.Experience exp : batch) {
-            states.add(exp.state);
-            actions.add(exp.action);
-            rewards.add(exp.reward);
-            nextStates.add(exp.nextState);
-            dones.add(exp.done);
+    private List<Double> computeReturns() {
+        List<Double> returns = new ArrayList<>();
+        double G = 0.0;
+        for (int i = memory.size() - 1; i >= 0; i--) {
+            G = memory.get(i).getReward() + gamma * G;
+            returns.add(0, G);
         }
+        return returns;
+    }
 
-        double[][] stateArray = states.toArray(new double[0][0]);
-        double[][] actionArray = actions.toArray(new double[0][0]);
-        double[] rewardArray = rewards.stream().mapToDouble(d -> d).toArray();
-        double[][] nextStateArray = nextStates.toArray(new double[0][0]);
-        boolean[] doneArray = new boolean[dones.size()];
-        for (int i = 0; i < dones.size(); i++) {
-            doneArray[i] = dones.get(i);
+    private List<Double> computeAdvantages(List<Double> returns) {
+        List<Double> advantages = new ArrayList<>();
+        double[] values = new double[memory.size()];
+        for (int i = 0; i < memory.size(); i++) {
+            values[i] = valueNetwork.forward(memory.get(i).getState1().getState())[0][0];
         }
+        for (int i = 0; i < memory.size(); i++) {
+            advantages.add(returns.get(i) - values[i]);
+        }
+        return advantages;
+    }
 
-        double[] values = new double[stateArray.length];
-        for (int i = 0; i < stateArray.length; i++) {
-            values[i] = valueNetwork.getValue(stateArray[i]);
+    private double[] computeOldProbabilities() {
+        double[] oldProbabilities = new double[memory.size()];
+        for (int i = 0; i < memory.size(); i++) {
+            double[] state = memory.get(i).getState1().getState();
+            double[] action = {memory.get(i).getAction().getAngle(), memory.get(i).getAction().getForce()};
+            double[][] policyOutput = policyNetwork.forward(state);
+            oldProbabilities[i] = computeProbability(policyOutput, action);
         }
+        return oldProbabilities;
+    }
 
-        double[] nextValues = new double[nextStateArray.length];
-        for (int i = 0; i < nextStateArray.length; i++) {
-            nextValues[i] = valueNetwork.getValue(nextStateArray[i]);
-        }
+    private double computeProbability(double[][] policyOutput, double[] action) {
+        double mu_theta = policyOutput[0][0];
+        double sigma_theta = policyOutput[1][0];
+        double mu_force = policyOutput[2][0];
+        double sigma_force = policyOutput[3][0];
 
-        double[] advantages = new double[rewardArray.length];
-        double[] targets = new double[rewardArray.length];
-        for (int i = 0; i < rewardArray.length; i++) {
-            double tdError = rewardArray[i] + (doneArray[i] ? 0 : gamma * nextValues[i]) - values[i];
-            advantages[i] = tdError;
-            targets[i] = rewardArray[i] + (doneArray[i] ? 0 : gamma * nextValues[i]);
-        }
+        double theta = action[0];
+        double force = action[1];
 
-        for (int i = 0; i < stateArray.length; i++) {
-            policyNetwork.update(stateArray[i], actionArray[i], advantages[i], clipParam, learningRate, lambda);
-        }
+        double prob_theta = (1 / (Math.sqrt(2 * Math.PI) * sigma_theta)) * Math.exp(-Math.pow(theta - mu_theta, 2) / (2 * Math.pow(sigma_theta, 2)));
+        double prob_force = (1 / (Math.sqrt(2 * Math.PI) * sigma_force)) * Math.exp(-Math.pow(force - mu_force, 2) / (2 * Math.pow(sigma_force, 2)));
 
-        for (int i = 0; i < stateArray.length; i++) {
-            valueNetwork.update(stateArray[i], new double[]{targets[i]}, learningRate, lambda);
-        }
+        return prob_theta * prob_force;
     }
 }

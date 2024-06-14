@@ -5,7 +5,11 @@ public class ValueNetwork extends NeuralNetwork {
         super(sizes);
     }
 
-    public double getValue(double[] state) {
-        return predict(state)[0];
+    public double computeLoss(double[][] output, double[] target) {
+        double loss = 0.0;
+        for (int i = 0; i < output.length; i++) {
+            loss += Math.pow(output[i][0] - target[i], 2);
+        }
+        return loss / output.length;
     }
 }

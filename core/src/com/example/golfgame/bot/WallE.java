@@ -23,8 +23,6 @@ public class WallE {
         TerrainManager terrainManager = game.getGolfGameScreen().getTerrainManager();
         int height = terrainManager.getTerrainHeight();
         int width = terrainManager.getTerrainWidth();
-
-        int channels = 1; // Replace with actual width
         int numNumericFeatures = 4;
         int outputSize = 2;
         int memoryCapacity = 1000;
@@ -34,7 +32,7 @@ public class WallE {
         int updateSteps = 10;
         double clipValue = 0.2;
 
-        this.ppoBot = new PPOBot(height, width, channels, numNumericFeatures, outputSize, memoryCapacity, epsilon, gamma, batchSize, updateSteps, clipValue);
+        this.ppoBot = new PPOBot(height, width,numNumericFeatures, outputSize, memoryCapacity, epsilon, gamma, batchSize, updateSteps, clipValue);
     }
 
     public void setDirection() {
