@@ -6,6 +6,24 @@ package com.example.golfgame.utils;
 public class MatrixUtils {
 
     /**
+     * Adds a bias vector to each element of a vector.
+     *
+     * @param vector The input vector.
+     * @param bias   The bias vector.
+     * @return A new vector with the bias added to each element.
+     */
+    public static double[] addBias(double[] vector, double[] bias) {
+        if (vector.length != bias.length) {
+            throw new IllegalArgumentException("Vector and bias dimensions do not match");
+        }
+        double[] result = new double[vector.length];
+        for (int i = 0; i < vector.length; i++) {
+            result[i] = vector[i] + bias[i];
+        }
+        return result;
+    }
+
+    /**
      * Adds a bias vector to each column of a matrix.
      *
      * @param matrix The input matrix.
@@ -16,7 +34,7 @@ public class MatrixUtils {
         double[][] result = new double[matrix.length][matrix[0].length];
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[0].length; j++) {
-                result[i][j] = matrix[i][j] + bias[j];
+                result[i][j] = matrix[i][j] + bias[i];
             }
         }
         return result;
@@ -226,6 +244,19 @@ public class MatrixUtils {
         return sigmoid(x) * (1 - sigmoid(x));
     }
 
+    public static double[] flattenArray(double[][] array) {
+        int rows = array.length;
+        int cols = array[0].length;
+        double[] flatArray = new double[rows * cols];
+        int index = 0;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                flatArray[index++] = array[i][j];
+            }
+        }
+        return flatArray;
+    }
+
     /**
      * Computes the delta for cross-entropy loss.
      *
@@ -245,5 +276,61 @@ public class MatrixUtils {
 
     public static double scaleToRange(double value, double min, double max) {
         return min + (max - min) * sigmoid(value);
+    }
+
+    /**
+     * Sums the columns of a matrix.
+     *
+     * @param matrix The input matrix.
+     * @return A vector containing the sum of each column.
+     */
+    public static double[] sumColumns(double[][] matrix) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        double[] columnSums = new double[cols];
+
+        for (int j = 0; j < cols; j++) {
+            for (int i = 0; i < rows; i++) {
+                columnSums[j] += matrix[i][j];
+            }
+        }
+
+        return columnSums;
+    }
+
+    /**
+     * Multiplies a matrix by a vector.
+     *
+     * @param matrix The input matrix.
+     * @param vector The input vector.
+     * @return The resulting vector.
+     */
+    public static double[] multiplyMatrixAndVector(double[][] matrix, double[] vector) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        if (vector.length != cols) {
+            throw new IllegalArgumentException("Matrix and vector dimensions do not match");
+        }
+        double[] result = new double[rows];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                result[i] += matrix[i][j] * vector[j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Applies the sigmoid function to each element of a vector.
+     *
+     * @param vector The input vector.
+     * @return A new vector with the sigmoid function applied to each element.
+     */
+    public static double[] sigmoidVector(double[] vector) {
+        double[] result = new double[vector.length];
+        for (int i = 0; i < vector.length; i++) {
+            result[i] = sigmoid(vector[i]);
+        }
+        return result;
     }
 }

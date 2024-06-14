@@ -1,6 +1,4 @@
 buildscript {
-    
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -9,8 +7,6 @@ buildscript {
         google()
     }
     dependencies {
-        
-
     }
 }
 
@@ -63,10 +59,6 @@ project(":desktop") {
     }
 }
 
-
-
-
-
 project(":core") {
     apply plugin: "java-library"
 
@@ -79,5 +71,9 @@ project(":core") {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
         api 'net.objecthunter:exp4j:0.4.8'
+        
+        // Добавьте зависимости Deeplearning4j и Nd4j
+        implementation "org.deeplearning4j:deeplearning4j-core:1.0.0-beta6"
+        implementation "org.nd4j:nd4j-native-platform:1.0.0-beta6"
     }
 }

@@ -1,6 +1,7 @@
 package com.example.golfgame.utils;
 
 import com.badlogic.gdx.math.Vector2;
+import com.example.golfgame.screens.GolfGameScreen;
 
 /**
  * Represents the state of a golf ball, including its position and velocity components.
@@ -171,6 +172,27 @@ public class BallState {
         Vector2 pos = new Vector2((float)x, (float)y).nor();
         x = pos.x;
         y = pos.y;
+    }
+
+    /**
+     * Calculates the Euclidean distance to another BallState position.
+     * @param other The other BallState to calculate the distance to.
+     * @return The distance to the other BallState.
+     */
+    public double distanceTo(BallState other) {
+        return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
+    }
+
+    public boolean isInWater(GolfGameScreen gameScreen) {
+        return gameScreen.isBallInWater(this);
+    }
+
+    public boolean isOutOfBounds(GolfGameScreen gameScreen) {
+        return gameScreen.isBallOutOfBounds(this);
+    }
+
+    public boolean isInGoal(BallState goalState) {
+        return epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance());
     }
 
     @Override
