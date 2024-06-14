@@ -1,8 +1,8 @@
 package com.example.golfgame.simulator;
 
 import java.util.Arrays;
+import java.util.Random;
 
-import com.badlogic.gdx.physics.bullet.dynamics.btMultibodyLink.eFeatherstoneJointType;
 import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.RungeKutta;
 import com.example.golfgame.utils.BallState;
@@ -12,6 +12,7 @@ public class PhysicsSimulator {
 
     private PhysicsEngine engine;
     private BallState ball;
+    private static Random random = new Random(2024);
 
     public PhysicsSimulator(Function heightFunction){
         engine = new PhysicsEngine(new RungeKutta(), heightFunction );
@@ -57,8 +58,21 @@ public class PhysicsSimulator {
      * @param angles
      * @return
      */
-    public BallState[] randomHits(float velocityMagnitudes, float[] angles, BallState goal, float radius){
+    public BallState[] randomHits(int n, BallState goal, float radius){
         //TODO: implement method
+        BallState[] res = new BallState[n];
+        for (int i = 0; i<n; i++){
+            float ballX = random.nextFloat(-radius, radius);
+            float ballY = random.nextBoolean()? (float)Math.sqrt(radius*radius-ballX*ballX): -(float)Math.sqrt(radius*radius-ballX*ballX);
+            ballX += goal.getX();
+            ballY += goal.getY();
+            ball.setX(ballX);
+            ball.setY(ballY);
+            float velocityMagnitude = random.nextFloat(1, 5);
+            float angle = random.nextFloat(0f, (float)(2*Math.PI));
+            res[i] = hit(velocityMagnitude, angle);
+        }
+        return res;
     }
 
 
