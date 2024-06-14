@@ -329,4 +329,66 @@ public class TerrainManager {
     public void setHoleArea(float[] newHoleArea) {
         holeArea = newHoleArea;
     }
+
+    /**
+     * Generates a normalized heightmap of the terrain and marks the positions of the ball and the goal.
+     *
+     * @param ballX The x-coordinate of the ball.
+     * @param ballY The y-coordinate of the ball.
+     * @param goalX The x-coordinate of the goal.
+     * @param goalY The y-coordinate of the goal.
+     * @return A 2D array representing the normalized heightmap with marked ball and goal positions.
+     */
+    public double[][] getNormalizedMarkedHeightMap(float ballX, float ballY, float goalX, float goalY) {
+        double[][] heightMap = new double[gridWidth][gridHeight];
+    
+        // Step 1: Calculate the height map and find min and max heights
+        float minHeight = Float.MAX_VALUE;
+        float maxHeight = Float.MIN_VALUE;
+    
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                float height = getTerrainHeight(x * scale, y * scale);
+                heightMap[x][y] = height;
+                if (height < minHeight) {
+                    minHeight = height;
+                }
+                if (height > maxHeight) {
+                    maxHeight = height;
+                }
+            }
+        }
+    
+        // Step 2: Normalize the height map to the range [-1, 1]
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                heightMap[x][y] = 2 * ((heightMap[x][y] - minHeight) / (maxHeight - minHeight)) - 1;
+            }
+        }
+    
+        // Step 3: Mark the ball and goal positions
+        int ballPosX = (int) (ballX / scale);
+        int ballPosY = (int) (ballY / scale);
+        int goalPosX = (int) (goalX / scale);
+        int goalPosY = (int) (goalY / scale);
+    
+        // Assuming 2 for ball and 3 for goal to mark on the map
+        if (ballPosX >= 0 && ballPosX < gridWidth && ballPosY >= 0 && ballPosY < gridHeight) {
+            heightMap[ballPosX][ballPosY] = 2;
+        }
+    
+        if (goalPosX >= 0 && goalPosX < gridWidth && goalPosY >= 0 && goalPosY < gridHeight) {
+            heightMap[goalPosX][goalPosY] = 3;
+        }
+    
+        return heightMap;
+    }
+
+    public int getTerrainWidth(){
+        return gridWidth;
+    }
+
+    public int getTerrainHeight(){
+        return gridHeight;
+    }
 }
