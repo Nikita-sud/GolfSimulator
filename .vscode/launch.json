@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "PhysicsSimulator",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.simulator.PhysicsSimulator",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "SaveInitialNetworks",
             "request": "launch",
             "mainClass": "com.example.golfgame.bot.neuralnetwork.SaveInitialNetworks",

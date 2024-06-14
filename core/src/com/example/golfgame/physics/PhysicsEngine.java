@@ -266,7 +266,7 @@ public class PhysicsEngine {
     }
 
 
-    private boolean isAtRest(BallState ballState) {
+    public boolean isAtRest(BallState ballState) {
         return Math.abs(ballState.getVx()) < 0.001 && Math.abs(ballState.getVy()) < 0.001;
     }
     
