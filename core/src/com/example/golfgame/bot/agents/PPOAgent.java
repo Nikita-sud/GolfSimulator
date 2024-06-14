@@ -30,9 +30,9 @@ public class PPOAgent {
     }
 
     public void train() {
-        // Compute returns and advantages
+        // Compute advantages using GAE
         List<Double> advantages = computeAdvantages();
-        
+
         // Compute old probabilities
         double[] oldProbabilities = computeOldProbabilities();
 

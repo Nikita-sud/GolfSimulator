@@ -1189,60 +1189,12 @@ public class GolfGameScreen implements Screen, Disposable {
             if (wallE.getBotBehavior() instanceof PPOBot) {
                 PPOBot ppoBot = (PPOBot) wallE.getBotBehavior();
                 if (ppoBot.isWaitingForStop()) {
-                    BallState newBallState = getBallState();
-                    BallState goal = getGoalState();
-    
-                    double newRelativeX = goal.getX() - newBallState.getX();
-                    double newRelativeY = goal.getY() - newBallState.getY();
-    
-                    // Use the updated method that returns double[][]
-                    double[][] nextImageState = terrainManager.getNormalizedMarkedHeightMap(
-                        (float) newBallState.getX(), (float) newBallState.getY(),
-                        (float) goal.getX(), (float) goal.getY()
-                    );
-    
-                    double[] nextNumericState = { newBallState.getX(), newBallState.getY(), newRelativeX, newRelativeY };
-    
-                    BallState lastPosition;
-                    if (ballPositionsWhenSlow.size() < 2) {
-                        lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
-                    } else {
-                        lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 2);
-                    }
-    
-                    double reward = calculateReward(newBallState, goal, win, isBallInWater, lastPosition);
-                    boolean done = checkIfDone(newBallState, goal);
-    
-                    // Assuming nextImageState is a single array of doubles
-                    double[] nextImageStateFlattened = MatrixUtils.flattenArray(nextImageState);
-    
-                    ppoBot.updateMemoryAndTrain(nextImageStateFlattened, nextNumericState, reward, done);
                 }
             }
         }
     }
 
 
-    private double calculateReward(BallState current, BallState goal, boolean win, boolean isBallInWater, BallState lastPosition) {
-        double distanceToGoal = current.distanceTo(goal);
-        double lastDistanceToGoal = lastPosition.distanceTo(goal);
-        
-        // Example reward calculation
-        double reward = lastDistanceToGoal - distanceToGoal;
-        
-        if (win) {
-            reward += 100;
-        }
-        if (isBallInWater) {
-            reward -= 50;
-        }
-
-        return reward;
-    }
-
-    private boolean checkIfDone(BallState current, BallState goal) {
-        return current.epsilonPositionEquals(goal, GOAL_TOLERANCE);
-    }
     public boolean isBallInWater(BallState ballState) {
         return isBallInWater;
     }

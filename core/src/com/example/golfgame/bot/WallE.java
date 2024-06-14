@@ -19,20 +19,6 @@ public class WallE {
         this.ruleBasedBot = new RuleBasedBot();
         this.advancedBot = new AdvancedBot();
         this.botBehavior = ruleBasedBot; // Default behavior
-
-        TerrainManager terrainManager = game.getGolfGameScreen().getTerrainManager();
-        int height = terrainManager.getTerrainHeight();
-        int width = terrainManager.getTerrainWidth();
-        int numNumericFeatures = 4;
-        int outputSize = 2;
-        int memoryCapacity = 1000;
-        double epsilon = 1.0;
-        double gamma = 0.99;
-        int batchSize = 32;
-        int updateSteps = 10;
-        double clipValue = 0.2;
-
-        this.ppoBot = new PPOBot(height, width,numNumericFeatures, outputSize, memoryCapacity, epsilon, gamma, batchSize, updateSteps, clipValue);
     }
 
     public void setDirection() {
