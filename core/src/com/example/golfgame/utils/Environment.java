@@ -27,4 +27,28 @@ public class Environment {
     public Environment(){
         //TODO: Implement Method
     }
+
+    public Function getHeightFunction(){
+        return heightFunction;
+    }
+
+    public BallState getGoal(){
+        return goal;
+    }
+
+    public List<Sandbox> getSandboxes(){
+        return sandboxes;
+    }
+
+    public void setHeightFunction(Function newHeightFunction){
+        heightFunction = newHeightFunction;
+    }
+
+    public void setGoal(BallState newGoal){
+        goal = newGoal;
+    }
+
+    public void addSandbox(Sandbox newSandbox){
+        sandboxes.add(newSandbox);
+    }
 }

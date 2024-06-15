@@ -62,6 +62,10 @@ public class Sandbox {
         return yHighBound;
     }
 
+    public boolean inSandbox(BallState ball){
+        return ball.getX()<=xHighBound&&ball.getX()>=xLowBound&&ball.getY()>=yLowBound&&ball.getY()<=yHighBound;
+    }
+
     /**
      * Returns a string representation of the sandbox boundaries.
      *

@@ -91,7 +91,7 @@ public class PhysicsSimulator {
             State nextState = new State(MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) nextBallState.getX(), (float) nextBallState.getY(), 10, 10)));
             double reward = getReward(nextBallState);
             Transition transition = new Transition(initialState, action, reward, nextState);
-            System.out.println(transition);
+            //System.out.println(transition);
             transitions.add(transition);
             initialState = nextState;
             if (reward == REWARD_GOAL) {
@@ -109,6 +109,31 @@ public class PhysicsSimulator {
                 agent.storeTransition(transition);
             }
             agent.train();
+        }
+    }
+
+    public void runParallelSimulation(int episodes) {
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        
+        try {
+            List<Future<List<Transition>>> futures = new ArrayList<>();
+            
+            for (int episode = 0; episode < episodes; episode++) {
+                futures.add(executorService.submit(this::play));
+            }
+            
+            for (Future<List<Transition>> future : futures) {
+                List<Transition> transitions = future.get(); // This will block until the result is available
+                for (Transition transition : transitions) {
+                    agent.storeTransition(transition);
+                }
+                agent.train();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            executorService.shutdown();
         }
     }
 
