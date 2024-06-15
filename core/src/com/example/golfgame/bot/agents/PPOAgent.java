@@ -62,17 +62,21 @@ public class PPOAgent {
             double[][] policyOutput = policyNetwork.forward(state);
             double policyLoss = policyNetwork.computeLoss(policyOutput, action, advantagesArray, oldProbabilities, epsilon);
             BackPropResult policyBackpropResult = policyNetwork.backprop(state, policyLoss);
-            policyNetwork.updateParameters(policyBackpropResult.getNablaW(), policyBackpropResult.getNablaB(), 0.001, memory.size());
+            policyNetwork.updateParameters(policyBackpropResult.getNablaW(), policyBackpropResult.getNablaB(), 0.1, memory.size());
 
             // Value network update
             double[][] valueOutput = valueNetwork.forward(state);
             double valueLoss = valueNetwork.computeLoss(valueOutput, new double[]{target});
             BackPropResult valueBackpropResult = valueNetwork.backprop(state, valueLoss);
-            valueNetwork.updateParameters(valueBackpropResult.getNablaW(), valueBackpropResult.getNablaB(), 0.001, memory.size());
+            valueNetwork.updateParameters(valueBackpropResult.getNablaW(), valueBackpropResult.getNablaB(), 0.1, memory.size());
         }
 
         // Clear memory after training
         memory.clear();
+    }
+
+    public List<Transition> getMemory(){
+        return memory;
     }
 
     private List<Double> computeAdvantages() {
@@ -130,7 +134,7 @@ public class PPOAgent {
 
         double theta = mu_theta + sigma_theta * random.nextGaussian();
         double force = mu_force + sigma_force * random.nextGaussian();
-        
+
         return new Action(theta, force);
     }
 

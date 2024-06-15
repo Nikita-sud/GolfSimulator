@@ -355,7 +355,9 @@ public class TerrainManager {
     
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                float height = getTerrainHeight(x * scale, y * scale);
+                float worldX = (x - gridWidth / 2) * scale; // Центрирование X
+                float worldZ = (y - gridHeight / 2) * scale; // Центрирование Y
+                float height = getTerrainHeight(worldX, worldZ);
                 heightMap[x][y] = height;
                 if (height < minHeight) {
                     minHeight = height;
@@ -367,17 +369,25 @@ public class TerrainManager {
         }
     
         // Step 2: Normalize the height map to the range [-1, 1]
-        for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y < gridHeight; y++) {
-                heightMap[x][y] = 2 * ((heightMap[x][y] - minHeight) / (maxHeight - minHeight)) - 1;
+        if (minHeight == maxHeight) {
+            for (int x = 0; x < gridWidth; x++) {
+                for (int y = 0; y < gridHeight; y++) {
+                    heightMap[x][y] = 0; // Все точки будут на одной высоте, нормализованное значение 0
+                }
+            }
+        } else {
+            for (int x = 0; x < gridWidth; x++) {
+                for (int y = 0; y < gridHeight; y++) {
+                    heightMap[x][y] = 2 * ((heightMap[x][y] - minHeight) / (maxHeight - minHeight)) - 1;
+                }
             }
         }
     
         // Step 3: Mark the ball and goal positions
-        int ballPosX = (int) (ballX / scale);
-        int ballPosY = (int) (ballY / scale);
-        int goalPosX = (int) (goalX / scale);
-        int goalPosY = (int) (goalY / scale);
+        int ballPosX = (int) ((ballX / scale) + gridWidth / 2);
+        int ballPosY = (int) ((ballY / scale) + gridHeight / 2);
+        int goalPosX = (int) ((goalX / scale) + gridWidth / 2);
+        int goalPosY = (int) ((goalY / scale) + gridHeight / 2);
     
         // Assuming 2 for ball and 3 for goal to mark on the map
         if (ballPosX >= 0 && ballPosX < gridWidth && ballPosY >= 0 && ballPosY < gridHeight) {
