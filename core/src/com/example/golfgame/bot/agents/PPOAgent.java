@@ -2,11 +2,14 @@ package com.example.golfgame.bot.agents;
 
 import com.example.golfgame.bot.neuralnetwork.PolicyNetwork;
 import com.example.golfgame.bot.neuralnetwork.ValueNetwork;
+import com.example.golfgame.utils.Action;
 import com.example.golfgame.utils.BackPropResult;
+import com.example.golfgame.utils.State;
 import com.example.golfgame.utils.Transition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class PPOAgent {
     private PolicyNetwork policyNetwork;
@@ -15,6 +18,7 @@ public class PPOAgent {
     private double gamma; // Discount factor
     private double lambda; // GAE parameter
     private double epsilon; // Clipping parameter for PPO
+    private Random random;
 
     public PPOAgent(int[] policyNetworkSizes, int[] valueNetworkSizes, double gamma, double lambda, double epsilon) {
         this.policyNetwork = new PolicyNetwork(policyNetworkSizes);
@@ -115,5 +119,24 @@ public class PPOAgent {
         double prob_force = (1 / (Math.sqrt(2 * Math.PI) * sigma_force)) * Math.exp(-Math.pow(force - mu_force, 2) / (2 * Math.pow(sigma_force, 2)));
 
         return prob_theta * prob_force;
+    }
+
+    public Action selectAction(State state) {
+        double[][] policyOutput = policyNetwork.forward(state.getState());
+        double mu_theta = policyOutput[0][0];
+        double sigma_theta = policyOutput[1][0];
+        double mu_force = policyOutput[2][0];
+        double sigma_force = policyOutput[3][0];
+
+        double theta = mu_theta + sigma_theta * random.nextGaussian();
+        double force = mu_force + sigma_force * random.nextGaussian();
+
+        return new Action(theta, force);
+    }
+
+    public Action selectRandomAction() {
+        double theta = random.nextDouble() * 2 * Math.PI; 
+        double force = random.nextDouble() * (5 - 1) + 1;
+        return new Action(theta, force);
     }
 }
