@@ -18,7 +18,7 @@ public class PPOAgent {
     private double gamma; // Discount factor
     private double lambda; // GAE parameter
     private double epsilon; // Clipping parameter for PPO
-    private Random random;
+    private Random random = new Random(1);
 
     public PPOAgent(int[] policyNetworkSizes, int[] valueNetworkSizes, double gamma, double lambda, double epsilon) {
         this.policyNetwork = new PolicyNetwork(policyNetworkSizes);
@@ -130,7 +130,7 @@ public class PPOAgent {
 
         double theta = mu_theta + sigma_theta * random.nextGaussian();
         double force = mu_force + sigma_force * random.nextGaussian();
-
+        
         return new Action(theta, force);
     }
 

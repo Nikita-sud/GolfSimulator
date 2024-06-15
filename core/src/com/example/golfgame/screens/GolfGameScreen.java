@@ -41,7 +41,7 @@ import java.util.List;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
-import com.example.golfgame.bot.botsbehaviors.DQLBot;
+import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -108,6 +108,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private List<WaterAnimation> waterAnimations;
 
     // Game state
+    // private GolfEnvironment environment;
     private boolean isPaused = false;
     private boolean isAdjustingSpeed = false;
     private boolean isBallAllowedToMove = false;
@@ -148,6 +149,7 @@ public class GolfGameScreen implements Screen, Disposable {
         this.mainGame = game;
         this.assetManager = assetManager;
         this.stage = new Stage(new ScreenViewport()); 
+        // this.environment = new GolfEnvironment(terrainManager, currentBallState, goalState);
         loadAssets();
     }
 
@@ -172,8 +174,6 @@ public class GolfGameScreen implements Screen, Disposable {
             pauseGame();
         }
 
-        initializeBot();
-
         // Initialize Skin and Dialog
         initializeSkinAndDialog();
 
@@ -185,6 +185,8 @@ public class GolfGameScreen implements Screen, Disposable {
 
         // Initialize Terrain
         initializeTerrain();
+
+        initializeBot();
 
         // Initialize Camera and Light
         initializeCameraAndLight();
@@ -685,7 +687,6 @@ public class GolfGameScreen implements Screen, Disposable {
         handleInput();
         if (!isPaused) {
             update(delta);
-            checkBallStopAndUpdateNextState();
         }
         draw();
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
@@ -703,11 +704,7 @@ public class GolfGameScreen implements Screen, Disposable {
             adjustBallSpeed(deltaTime);
         }
 
-        if (hillClimbingBotActive) {
-            advancedBotPlay();
-        } else if (ruleBasedBotActive) {
-            ruleBasedbotPlay();
-        }
+        // updateBotBehavior();
 
         // Check if the ball has reached the goal
         if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
@@ -744,6 +741,17 @@ public class GolfGameScreen implements Screen, Disposable {
         // Set friction based on the terrain type
         setTerrainFriction();
     }
+
+    // private void updateBotBehavior() {
+    //     environment.updateBallState(currentBallState);
+    //     if (hillClimbingBotActive) {
+    //         advancedBotPlay();
+    //     } else if (ruleBasedBotActive) {
+    //         ruleBasedbotPlay();
+    //     }
+    
+    //     checkBallStopAndUpdateNextState();
+    // }
 
     /**
      * Handles the event when the goal is reached.
@@ -872,7 +880,7 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void advancedBotPlay() {
         if (!isBallAllowedToMove) {
-            wallE.switchToDQL();
+            wallE.switchToPPO();    
             wallE.setDirection();
             wallE.hit();
         }
@@ -1178,28 +1186,24 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void checkBallStopAndUpdateNextState() {
         if (!isBallAllowedToMove) {
-            if (wallE.getBotBehavior() instanceof DQLBot) {
-                DQLBot dqlBot = (DQLBot) wallE.getBotBehavior();
-                if (dqlBot.isWaitingForStop()) {
-                    BallState newBallState = getBallState();
-                    BallState goal = getGoalState();
-
-                    double newRelativeX = goal.getX() - newBallState.getX();
-                    double newRelativeY = goal.getY() - newBallState.getY();
-                    double[] nextState = { newBallState.getX(), newBallState.getY(), newRelativeX, newRelativeY };
-                    BallState lastPosition;
-                    if(ballPositionsWhenSlow.size()<2){
-                        lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
-                    }else{
-                        lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 2);
-                    }
-                    double reward = dqlBot.calculateReward(newBallState, goal, win, isBallInWater, lastPosition);
-                    boolean done = dqlBot.checkIfDone(newBallState, goal);
-
-                    dqlBot.updateMemoryAndTrain(nextState, reward, done);
+            if (wallE.getBotBehavior() instanceof PPOBot) {
+                PPOBot ppoBot = (PPOBot) wallE.getBotBehavior();
+                if (ppoBot.isWaitingForStop()) {
                 }
             }
         }
+    }
+
+
+    public boolean isBallInWater(BallState ballState) {
+        return isBallInWater;
+    }
+
+    public boolean isBallOutOfBounds(BallState ballState) {
+        // Определите логику, когда мяч считается вне границ
+        float x = (float) ballState.getX();
+        float y = (float) ballState.getY();
+        return x < 0 || x > terrainManager.getTerrainWidth() || y < 0 || y > terrainManager.getTerrainHeight();
     }
 
     /**

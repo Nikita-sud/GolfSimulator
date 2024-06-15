@@ -44,4 +44,14 @@ public class Transition {
     public State getState2(){
         return state2;
     }
+
+    @Override
+    public String toString() {
+        return "Transition{" +
+                "state1=" + state1 +
+                ", action=" + action +
+                ", reward=" + reward +
+                ", state2=" + state2 +
+                '}';
+    }
 }

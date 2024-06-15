@@ -23,4 +23,12 @@ public class Action {
     public double getForce(){
         return force;
     }
+
+    @Override
+    public String toString() {
+        return "Action{" +
+                "angle=" + angle +
+                ", force=" + force +
+                '}';
+    }
 }

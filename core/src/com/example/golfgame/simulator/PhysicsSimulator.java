@@ -25,8 +25,9 @@ public class PhysicsSimulator {
     private BallState goal;
     private static Random random = new Random(2024);
     private PPOAgent agent;
+    private boolean inWater = false;
 
-    private static final double GOAL_RADIUS = 0.5; // Радиус цели для вознаграждения
+    private static final double GOAL_RADIUS = 1; // Радиус цели для вознаграждения
     private static final double PENALTY_HIT = -1; // Наказание за каждый удар
     private static final double PENALTY_WATER = -3; // Наказание за попадание в воду
     private static final double REWARD_GOAL = 5; // Вознаграждение за попадание в цель
@@ -45,25 +46,32 @@ public class PhysicsSimulator {
      * @return
      */
     public BallState hit(float velocityMagnitude, float angle) {
-        ball.setVx(velocityMagnitude);
-        ball.setVy(velocityMagnitude);
+        System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
+        ball.setVx(velocityMagnitude * Math.cos(angle));
+        ball.setVy(velocityMagnitude * Math.sin(angle));
         Map<String, Double> functionVals = new HashMap<>();
         while (!engine.isAtRest(ball)) {
             functionVals.put("x", ball.getX());
             functionVals.put("y", ball.getY());
             if (engine.getSurfaceFunction().evaluate(functionVals) < 0) { // Water
+                System.out.println("Ball in water!");
                 return ball;
             }
             engine.update(ball, 0.01);
         }
+        System.out.printf("New ball position: (%.2f, %.2f)\n", ball.getX(), ball.getY());
         return ball;
     }
 
     public double getReward(BallState ball) {
-        double distanceToGoal = Math.sqrt(Math.pow(ball.getX() - goal.getX(), 2) + Math.pow(ball.getY() - goal.getY(), 2));
+        double distanceToGoal = ball.distanceTo(goal);
+        System.out.println(distanceToGoal);
         if (distanceToGoal < GOAL_RADIUS) {
+            System.out.println("");
+            System.out.println("Goal Reached");
+            System.out.println("");
             return REWARD_GOAL;
-        } else if (ball.getY() < 0) { // Ball is in water
+        } else if (inWater) { // Ball is in water
             return PENALTY_WATER;
         } else {
             return PENALTY_HIT;
@@ -73,17 +81,20 @@ public class PhysicsSimulator {
     public List<Transition> play() {
         List<Transition> transitions = new ArrayList<>();
         State initialState = new State(new double[]{ball.getX(), ball.getY(), ball.getVx(), ball.getVy()});
-        for (int step = 0; step < 200; step++) {
-            Action action = agent.selectAction(initialState);
+        for (int step = 0; step < 10; step++) {
+            Action action = agent.selectRandomAction();
             BallState nextBallState = hit((float) action.getForce(), (float) action.getAngle());
             State nextState = new State(new double[]{nextBallState.getX(), nextBallState.getY(), nextBallState.getVx(), nextBallState.getVy()});
             double reward = getReward(nextBallState);
-            transitions.add(new Transition(initialState, action, reward, nextState));
+            Transition transition = new Transition(initialState, action, reward, nextState);
+            System.out.println(transition);
+            transitions.add(transition);
             initialState = nextState;
             if (reward == REWARD_GOAL) {
                 break;
             }
         }
+        System.out.println("Done");
         return transitions;
     }
 
@@ -179,6 +190,10 @@ public class PhysicsSimulator {
         ball.setY(y);
     }
 
+    public void checkIfInWater(BallState ball){
+        this.inWater = false;
+    }
+
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         Function h = new Function("cos(0.3x)*sin(0.5y)+10", "x", "y");
         int[] policyNetworkSizes = {4, 64, 64, 4}; // Input size, hidden layers, and output size
@@ -186,14 +201,36 @@ public class PhysicsSimulator {
         double gamma = 0.99;
         double lambda = 0.95;
         double epsilon = 0.2;
-
+    
         PPOAgent agent = new PPOAgent(policyNetworkSizes, valueNetworkSizes, gamma, lambda, epsilon);
-        BallState goal = new BallState(10, 10, 0, 0);
-
+        BallState goal = new BallState(1, 1, 0, 0);
+    
         PhysicsSimulator sim = new PhysicsSimulator(h, agent, goal);
-
+    
+        // Run simulation for training the agent
         sim.runSimulation(1000);
-
+    
         System.out.println("Simulation complete");
+    
+        // Test the agent with one game
+        BallState initialBallState = new BallState(0, 0, 0, 0);
+        State initialState = new State(new double[]{initialBallState.getX(), initialBallState.getY(), initialBallState.getVx(), initialBallState.getVy()});
+        BallState ball = initialBallState;
+    
+        for (int step = 0; step < 200; step++) {
+            Action action = agent.selectAction(initialState);
+            ball = sim.hit((float) action.getForce(), (float) action.getAngle());
+            State nextState = new State(new double[]{ball.getX(), ball.getY(), ball.getVx(), ball.getVy()});
+    
+            double distanceToGoal = Math.sqrt(Math.pow(ball.getX() - goal.getX(), 2) + Math.pow(ball.getY() - goal.getY(), 2));
+            System.out.printf("Step %d: Ball at (%.2f, %.2f), Distance to goal: %.2f\n", step, ball.getX(), ball.getY(), distanceToGoal);
+    
+            if (distanceToGoal < 0.5) {
+                System.out.println("Goal reached!");
+                break;
+            }
+    
+            initialState = nextState;
+        }
     }
 }
