@@ -55,7 +55,7 @@ public class MatrixUtils {
         int secondMatrixCols = secondMatrix[0].length;
 
         if (firstMatrixCols != secondMatrixRows) {
-            throw new IllegalArgumentException("Matrix multiplication dimensions do not match");
+            throw new IllegalArgumentException("Matrix multiplication dimensions do not match: " + firstMatrixRows+","+firstMatrixCols+" and "+secondMatrixRows+","+secondMatrixCols+" not compatible");
         }
 
         double[][] result = new double[firstMatrixRows][secondMatrixCols];
