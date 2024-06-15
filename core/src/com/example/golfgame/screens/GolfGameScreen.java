@@ -1250,6 +1250,9 @@ public class GolfGameScreen implements Screen, Disposable {
         hillClimbingBotActive = activeness;
     }
 
+    public Function getHeightFunction(){
+        return terrainHeightFunction;
+    }
     @Override
     public void pause() {
     }
