@@ -43,6 +43,13 @@ public class PhysicsSimulator {
         this.goal = goal;
     }
 
+    public PhysicsSimulator(Function heightFunction, BallState goal){
+        engine = new PhysicsEngine(new RungeKutta(), heightFunction);
+        ball = new BallState(0, 0, 0, 0);
+        terrainManager =  new TerrainManager(heightFunction, 200, 200, 1, 4);
+        this.goal = goal;
+    }
+
     /**
      * performs hit simulation
      * @param velocityMagnitude
