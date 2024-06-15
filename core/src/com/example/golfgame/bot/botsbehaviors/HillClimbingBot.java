@@ -40,9 +40,9 @@ public class HillClimbingBot implements BotBehavior{
             // Increasing angle && Increasing hitPower
             BallState doubleIncreaseResult = simulator.hit(hitPower+DELTAHITPOWER, angle+DELTAANGLE);
             // Increasing angle && Decreasing hit Power
-            BallState angleIncreaseResult = simulator.hit(hitPower+DELTAHITPOWER, angle-DELTAANGLE);
+            BallState angleIncreaseResult = simulator.hit(hitPower-DELTAHITPOWER, angle+DELTAANGLE);
             // Increasing hitPower && Decreasing Anglae
-            BallState hitPowerIncreaseResult = simulator.hit(hitPower-DELTAHITPOWER, angle+DELTAANGLE);
+            BallState hitPowerIncreaseResult = simulator.hit(hitPower+DELTAHITPOWER, angle-DELTAANGLE);
             // Decreasing hitPower && decreasing angle
             BallState doubleDecreaseResult = simulator.hit(hitPower-DELTAHITPOWER, angle-DELTAANGLE);
             
