@@ -59,7 +59,7 @@ public class HillClimbingBot implements BotBehavior{
                 angle+=DELTAANGLE;
                 hitPower-=DELTAHITPOWER;
             }
-            else if(bestState.epsilonEquals(angleIncreaseResult, 0.00000001)){
+            else if(bestState.epsilonEquals(hitPowerIncreaseResult, 0.00000001)){
                 angle-=DELTAANGLE;
                 hitPower+=DELTAHITPOWER;
             }
