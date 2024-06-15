@@ -56,6 +56,13 @@ public class TerrainManager {
         this.parts = parts;
         sandAreas = new ArrayList<>();
     }
+    public TerrainManager(Function heightFunction, int gridWidth, int gridHeight, float scale, int parts) {
+        this.heightFunction = heightFunction;
+        this.gridWidth = gridWidth;
+        this.gridHeight = gridHeight;
+        this.scale = scale;
+        this.parts = parts;
+    }
 
     /**
      * Creates grass terrain models around a specified center position.

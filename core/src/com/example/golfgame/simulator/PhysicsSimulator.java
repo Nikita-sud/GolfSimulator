@@ -3,9 +3,11 @@ package com.example.golfgame.simulator;
 import com.example.golfgame.bot.agents.PPOAgent;
 import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.Function;
+import com.example.golfgame.utils.MatrixUtils;
 import com.example.golfgame.utils.Transition;
 import com.example.golfgame.utils.Action;
 import com.example.golfgame.utils.State;
+import com.example.golfgame.utils.TerrainManager;
 import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.RungeKutta;
 
@@ -26,6 +28,7 @@ public class PhysicsSimulator {
     private static Random random = new Random(2024);
     private PPOAgent agent;
     private boolean inWater = false;
+    TerrainManager terrainManager;
 
     private static final double GOAL_RADIUS = 1; // Радиус цели для вознаграждения
     private static final double PENALTY_HIT = -1; // Наказание за каждый удар
@@ -35,6 +38,7 @@ public class PhysicsSimulator {
     public PhysicsSimulator(Function heightFunction, PPOAgent agent, BallState goal) {
         engine = new PhysicsEngine(new RungeKutta(), heightFunction);
         ball = new BallState(0, 0, 0, 0);
+        terrainManager =  new TerrainManager(heightFunction, 200, 200, 1, 4);
         this.agent = agent;
         this.goal = goal;
     }
@@ -84,7 +88,7 @@ public class PhysicsSimulator {
         for (int step = 0; step < 10; step++) {
             Action action = agent.selectRandomAction();
             BallState nextBallState = hit((float) action.getForce(), (float) action.getAngle());
-            State nextState = new State(new double[]{nextBallState.getX(), nextBallState.getY(), nextBallState.getVx(), nextBallState.getVy()});
+            State nextState = new State(MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) nextBallState.getX(), (float) nextBallState.getY(), 10, 10)));
             double reward = getReward(nextBallState);
             Transition transition = new Transition(initialState, action, reward, nextState);
             System.out.println(transition);
@@ -196,14 +200,16 @@ public class PhysicsSimulator {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         Function h = new Function("cos(0.3x)*sin(0.5y)+10", "x", "y");
-        int[] policyNetworkSizes = {4, 64, 64, 4}; // Input size, hidden layers, and output size
-        int[] valueNetworkSizes = {4, 64, 64, 1};  // Input size, hidden layers, and output size
+        int[] policyNetworkSizes = {40000, 64, 64, 4}; // Input size, hidden layers, and output size
+        int[] valueNetworkSizes = {40000, 64, 64, 1};  // Input size, hidden layers, and output size
         double gamma = 0.99;
         double lambda = 0.95;
         double epsilon = 0.2;
+
+        TerrainManager terrainManager =  new TerrainManager(h, 200, 200, 1, 4);
     
         PPOAgent agent = new PPOAgent(policyNetworkSizes, valueNetworkSizes, gamma, lambda, epsilon);
-        BallState goal = new BallState(1, 1, 0, 0);
+        BallState goal = new BallState(10, 10, 0, 0);
     
         PhysicsSimulator sim = new PhysicsSimulator(h, agent, goal);
     
@@ -214,7 +220,7 @@ public class PhysicsSimulator {
     
         // Test the agent with one game
         BallState initialBallState = new BallState(0, 0, 0, 0);
-        State initialState = new State(new double[]{initialBallState.getX(), initialBallState.getY(), initialBallState.getVx(), initialBallState.getVy()});
+        State initialState = new State(MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap(0, 0, 10, 10)));
         BallState ball = initialBallState;
     
         for (int step = 0; step < 200; step++) {
