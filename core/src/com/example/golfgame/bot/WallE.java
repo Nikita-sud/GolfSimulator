@@ -2,6 +2,7 @@ package com.example.golfgame.bot;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.botsbehaviors.AdvancedBot;
+import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
 import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.bot.botsbehaviors.RuleBasedBot;
 import com.example.golfgame.bot.agents.PPOAgent;
@@ -12,6 +13,7 @@ public class WallE {
     private volatile GolfGame game;
     private BotBehavior botBehavior;
     private RuleBasedBot ruleBasedBot;
+    private HillClimbingBot hillClimbingBot;
     private AdvancedBot advancedBot;
     private PPOBot ppoBot;
 
@@ -19,6 +21,7 @@ public class WallE {
         this.game = game;
         this.ruleBasedBot = new RuleBasedBot();
         this.advancedBot = new AdvancedBot();
+        this.hillClimbingBot = new HillClimbingBot();
         PPOAgent ppoAgent = null;
 
         try {
@@ -51,7 +54,7 @@ public class WallE {
     }
 
     public void switchToRuleBased() {
-        setBotBehavior(ruleBasedBot);
+        setBotBehavior(hillClimbingBot);
     }
 
     public void switchToAdvanced() {

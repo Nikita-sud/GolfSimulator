@@ -47,23 +47,29 @@ public class PhysicsSimulator {
      * @return the new ball state
      */
     public BallState hit(float velocityMagnitude, float angle) {
+        BallState ballCopy = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
         System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
-        ball.setVx(-velocityMagnitude * Math.cos(angle));
-        ball.setVy(-velocityMagnitude * Math.sin(angle));
+        ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
+        ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
         Map<String, Double> functionVals = new HashMap<>();
 
-        while (!engine.isAtRest(ball)) {
-            functionVals.put("x", ball.getX());
-            functionVals.put("y", ball.getY());
+        while (!engine.isAtRest(ballCopy)) {
+            functionVals.put("x", ballCopy.getX());
+            functionVals.put("y", ballCopy.getY());
             if (engine.getSurfaceFunction().evaluate(functionVals) < 0) { // Water
                 System.out.println("Ball in water!");
                 inWater = true;
-                return ball;
+                return ballCopy;
             }
-            engine.update(ball, 0.001);
+            engine.update(ballCopy, 0.001);
         }
-        System.out.printf("New ball position: (%.2f, %.2f)\n", ball.getX(), ball.getY());
-        return ball;
+        System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
+        return ballCopy;
+    }
+
+    public BallState singleHit(float velocityMagnitude, float angle, BallState ballPosition){
+        resetBallPosition();
+        return hit(velocityMagnitude, angle);
     }
 
     /**
