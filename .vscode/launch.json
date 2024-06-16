@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TerrainManager",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.utils.TerrainManager",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
+            "name": "HillClimbingBot",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.bot.botsbehaviors.HillClimbingBot",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "GolfSimulation",
             "request": "launch",
             "mainClass": "com.example.golfgame.simulator.GolfSimulation",

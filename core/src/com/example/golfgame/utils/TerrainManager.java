@@ -5,6 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -338,25 +343,25 @@ public class TerrainManager {
     }
 
     /**
-     * Generates a normalized heightmap of the terrain and marks the positions of the ball and the goal.
+     * Generates a normalized heightmap of the terrain and marks the positions of the ball, the goal, and sand areas.
      *
      * @param ballX The x-coordinate of the ball.
      * @param ballY The y-coordinate of the ball.
      * @param goalX The x-coordinate of the goal.
      * @param goalY The y-coordinate of the goal.
-     * @return A 2D array representing the normalized heightmap with marked ball and goal positions.
+     * @return A 2D array representing the normalized heightmap with marked ball, goal, and sand positions.
      */
     public double[][] getNormalizedMarkedHeightMap(float ballX, float ballY, float goalX, float goalY) {
         double[][] heightMap = new double[gridWidth][gridHeight];
-    
+
         // Step 1: Calculate the height map and find min and max heights
         float minHeight = Float.MAX_VALUE;
         float maxHeight = Float.MIN_VALUE;
-    
+
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                float worldX = (x - gridWidth / 2) * scale; // Центрирование X
-                float worldZ = (y - gridHeight / 2) * scale; // Центрирование Y
+                float worldX = (x - gridWidth / 2) * scale; 
+                float worldZ = (y - gridHeight / 2) * scale;
                 float height = getTerrainHeight(worldX, worldZ);
                 heightMap[x][y] = height;
                 if (height < minHeight) {
@@ -367,8 +372,8 @@ public class TerrainManager {
                 }
             }
         }
-    
-        // Step 2: Normalize the height map to the range [-1, 1]
+
+        // Step 2: Normalize the height map to the range [-1, 1] and set heights below 0 to -1
         if (minHeight == maxHeight) {
             for (int x = 0; x < gridWidth; x++) {
                 for (int y = 0; y < gridHeight; y++) {
@@ -378,27 +383,78 @@ public class TerrainManager {
         } else {
             for (int x = 0; x < gridWidth; x++) {
                 for (int y = 0; y < gridHeight; y++) {
-                    heightMap[x][y] = 2 * ((heightMap[x][y] - minHeight) / (maxHeight - minHeight)) - 1;
+                    if (heightMap[x][y] < 0) {
+                        heightMap[x][y] = -1;
+                    } else {
+                        heightMap[x][y] = 2 * ((heightMap[x][y] - minHeight) / (maxHeight - minHeight)) - 1;
+                    }
                 }
             }
         }
-    
-        // Step 3: Mark the ball and goal positions
+
+        // Step 3: Mark the sand areas if sandAreas is not empty
+        if (sandAreas!=null) {
+            for (float[] area : sandAreas) {
+                int startX = (int)((area[0] / scale) + gridWidth / 2);
+                int startY = (int)((area[1] / scale) + gridHeight / 2);
+                int endX = (int)((area[2] / scale) + gridWidth / 2);
+                int endY = (int)((area[3] / scale) + gridHeight / 2);
+
+                for (int x = startX; x <= endX; x++) {
+                    for (int y = startY; y <= endY; y++) {
+                        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+                            heightMap[x][y] = 1; // Assuming 1 for sand areas to mark on the map
+                        }
+                    }
+                }
+            }
+        }
+
+        // Step 4: Mark the ball and goal positions
         int ballPosX = (int) ((ballX / scale) + gridWidth / 2);
         int ballPosY = (int) ((ballY / scale) + gridHeight / 2);
         int goalPosX = (int) ((goalX / scale) + gridWidth / 2);
         int goalPosY = (int) ((goalY / scale) + gridHeight / 2);
-    
-        // Assuming 2 for ball and 3 for goal to mark on the map
+
+        // Assuming 3 for ball and 5 for goal to mark on the map
         if (ballPosX >= 0 && ballPosX < gridWidth && ballPosY >= 0 && ballPosY < gridHeight) {
-            heightMap[ballPosX][ballPosY] = 2;
+            heightMap[ballPosX][ballPosY] = 3;
         }
-    
+
         if (goalPosX >= 0 && goalPosX < gridWidth && goalPosY >= 0 && goalPosY < gridHeight) {
-            heightMap[goalPosX][goalPosY] = 3;
+            heightMap[goalPosX][goalPosY] = 5;
         }
-    
+
         return heightMap;
+    }
+
+    /**
+     * Converts the height map to an image and saves it as a PNG or JPEG file.
+     *
+     * @param heightMap The height map to be converted to an image.
+     * @param fileName  The name of the file to save the image.
+     * @param format    The format of the file (PNG or JPEG).
+     */
+    public static void saveHeightMapAsImage(double[][] heightMap, String fileName, String format) {
+        int width = heightMap.length;
+        int height = heightMap[0].length;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int value = (int) ((heightMap[x][y] + 1) * 127.5); // Normalize to [0, 255]
+                int color = (value << 16) | (value << 8) | value; // Grayscale
+                image.setRGB(x, y, color);
+            }
+        }
+
+        try {
+            File outputFile = new File(fileName + "." + format);
+            ImageIO.write(image, format, outputFile);
+            System.out.println("Image saved successfully: " + outputFile.getAbsolutePath());
+        } catch (Exception e) {
+            System.err.println("Error saving the image: " + e.getMessage());
+        }
     }
 
     public double[] getState(float ballX, float ballY, float goalX, float goalY) {
@@ -411,5 +467,16 @@ public class TerrainManager {
 
     public int getTerrainHeight(){
         return gridHeight;
+    }
+    public static void main(String[] args) {
+        // Example usage:
+        double[][] exampleHeightMap = {
+            {-1, -0.5, 0, 0.5, 1},
+            {-1, -0.5, 0, 0.5, 1},
+            {-1, -0.5, 0, 0.5, 1},
+            {-1, -0.5, 0, 0.5, 1},
+            {-1, -0.5, 0, 0.5, 1}
+        };
+        saveHeightMapAsImage(exampleHeightMap, "height_map", "png");
     }
 }

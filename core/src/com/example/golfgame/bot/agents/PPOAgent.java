@@ -7,17 +7,12 @@ import com.example.golfgame.utils.BackPropResult;
 import com.example.golfgame.utils.State;
 import com.example.golfgame.utils.Transition;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class PPOAgent implements Serializable{
+public class PPOAgent implements Serializable {
     private static final long serialVersionUID = 1L;
     private PolicyNetwork policyNetwork;
     private ValueNetwork valueNetwork;
@@ -42,10 +37,10 @@ public class PPOAgent implements Serializable{
 
     public void train() {
         // Compute advantages using GAE
-        List<Double> advantages = computeAdvantages();
+        List<Double> advantages = computeAdvantagesParallel();
         
         // Compute old probabilities
-        double[] oldProbabilities = computeOldProbabilities();
+        double[] oldProbabilities = computeOldProbabilitiesParallel();
         
         // Extract necessary data
         double[][] states = new double[memory.size()][];
@@ -61,26 +56,23 @@ public class PPOAgent implements Serializable{
             actions[i][1] = memory.get(i).getAction().getForce(); 
         }
         
-        // Ensure all arrays are of the same size
-        if (states.length != advantagesArray.length || states.length != oldProbabilities.length || states.length != actions.length) {
-            throw new IllegalArgumentException("Размеры массивов не совпадают");
-        }
-        
-        // Train networks
+        // Compute policy loss and update both networks
         for (int i = 0; i < memory.size(); i++) {
-            double[] state = states[i];
+            // Forward pass for policy network
+            double[][] policyOutput = policyNetwork.forward(states[i]);
+            double policyLoss = policyNetwork.computeLoss(policyOutput, advantagesArray, oldProbabilities, epsilon, actions[i]);
+            System.out.println(i + " " + policyLoss);
             
             // Policy network update
-            double[][] policyOutput = policyNetwork.forward(state);
-            double policyLoss = policyNetwork.computeLoss(policyOutput, advantagesArray, oldProbabilities, epsilon, actions);
-            System.out.println(i + " " + policyLoss);
-            BackPropResult policyBackpropResult = policyNetwork.backprop(state, policyLoss);
+            BackPropResult policyBackpropResult = policyNetwork.backprop(states[i], policyLoss);
             policyNetwork.updateParameters(policyBackpropResult.getNablaW(), policyBackpropResult.getNablaB(), 1, memory.size());
+    
+            // Forward pass for value network
+            double[][] valueOutput = valueNetwork.forward(states[i]);
+            double valueLoss = valueNetwork.computeLoss(valueOutput, new double[]{targets[i]});
             
             // Value network update
-            double[][] valueOutput = valueNetwork.forward(state);
-            double valueLoss = valueNetwork.computeLoss(valueOutput, new double[]{targets[i]});
-            BackPropResult valueBackpropResult = valueNetwork.backprop(state, valueLoss);
+            BackPropResult valueBackpropResult = valueNetwork.backprop(states[i], valueLoss);
             valueNetwork.updateParameters(valueBackpropResult.getNablaW(), valueBackpropResult.getNablaB(), 1, memory.size());
         }
         
@@ -92,6 +84,7 @@ public class PPOAgent implements Serializable{
         return memory;
     }
 
+    @SuppressWarnings("unused")
     private List<Double> computeAdvantages() {
         List<Double> advantages = new ArrayList<>();
         double[] deltas = new double[memory.size()];
@@ -112,6 +105,7 @@ public class PPOAgent implements Serializable{
         return advantages;
     }
 
+    @SuppressWarnings("unused")
     private double[] computeOldProbabilities() {
         double[] oldProbabilities = new double[memory.size()];
         for (int i = 0; i < memory.size(); i++) {
@@ -123,19 +117,59 @@ public class PPOAgent implements Serializable{
         return oldProbabilities;
     }
 
+    private double[] computeOldProbabilitiesParallel() {
+        return memory.parallelStream()
+                     .mapToDouble(transition -> {
+                         double[] state = transition.getState1().getState();
+                         double[] action = {transition.getAction().getAngle(), transition.getAction().getForce()};
+                         double[][] policyOutput = policyNetwork.forward(state);
+                         return policyNetwork.computeProbability(policyOutput, action);
+                     })
+                     .toArray();
+    }
+    
+    private List<Double> computeAdvantagesParallel() {
+        double[] values = memory.parallelStream()
+                                .mapToDouble(transition -> valueNetwork.forward(transition.getState1().getState())[0][0])
+                                .toArray();
+        double[] nextValues = memory.parallelStream()
+                                    .mapToDouble(transition -> valueNetwork.forward(transition.getState2().getState())[0][0])
+                                    .toArray();
+        double[] deltas = new double[memory.size()];
+        for (int i = 0; i < memory.size(); i++) {
+            deltas[i] = memory.get(i).getReward() + gamma * nextValues[i] - values[i];
+        }
+        
+        List<Double> advantages = new ArrayList<>();
+        double advantage = 0.0;
+        for (int i = memory.size() - 1; i >= 0; i--) {
+            advantage = deltas[i] + gamma * lambda * advantage;
+            advantages.add(0, advantage);
+        }
+        return advantages;
+    }
+
     public Action selectAction(State state) {
         double[][] policyOutput = policyNetwork.forward(state.getState());
+        
         double mu_theta = policyOutput[0][0];
-        double sigma_theta = policyOutput[1][0];
+        double sigma_theta_raw = policyOutput[1][0];
         double mu_force = policyOutput[2][0];
-        double sigma_force = policyOutput[3][0];
+        double sigma_force_raw = policyOutput[3][0];
     
+        double sigma_theta = softplus(sigma_theta_raw);
+        double sigma_force = softplus(sigma_force_raw);
+
         double theta = mu_theta + sigma_theta * random.nextGaussian();
         double force = mu_force + sigma_force * random.nextGaussian();
-    
+
         force = Math.min(Math.max(force, 1.0), 5.0);
     
         return new Action(theta, force);
+    }
+    
+    private double softplus(double x) {
+        return Math.log(1 + Math.exp(x));
     }
 
     public Action selectRandomAction() {

@@ -17,12 +17,8 @@ public class PhysicsSimulator {
     private boolean inWater = false;
     private TerrainManager terrainManager;
 
-    private static final double LOW_SPEED_THRESHOLD_GRASS = 0.008;
-    private static final double LOW_SPEED_THRESHOLD_SAND = 1.0;
-    private double lowSpeedThreshold = LOW_SPEED_THRESHOLD_GRASS;
-    private List<BallState> ballPositionsWhenSlow = new ArrayList<>();
     private static final double GOAL_RADIUS = 2; // Radius for goal reward
-    private static final double PENALTY_WATER = -3; // Penalty for hitting water
+    // private static final double PENALTY_WATER = -3; // Penalty for hitting water
     private static final double REWARD_GOAL = 5; // Reward for reaching the goal
 
     public PhysicsSimulator(Function heightFunction, PPOAgent agent, BallState goal) {
@@ -32,7 +28,7 @@ public class PhysicsSimulator {
         this.agent = agent;
         this.goal = goal;
     }
-
+    
     public PhysicsSimulator(Function heightFunction, BallState goal) {
         this.engine = new PhysicsEngine(new RungeKutta(), heightFunction);
         this.ball = new BallState(0, 0, 0, 0);
@@ -87,18 +83,14 @@ public class PhysicsSimulator {
         // Reward calculation
         double reward = lastDistanceToGoal - distanceToGoal;
 
-        if (win) {
-            reward += REWARD_GOAL;
+        if (distanceToGoal < GOAL_RADIUS) {
+            System.out.println("");
+            System.out.println("Goal Reached");
+            System.out.println("");
+            return REWARD_GOAL;
+        } else {
+            return reward;
         }
-        if (isBallInWater) {
-            reward += PENALTY_WATER; // Assuming PENALTY_WATER is a negative value
-        }
-
-        System.out.println("Distance to goal: " + distanceToGoal);
-        System.out.println("Last distance to goal: " + lastDistanceToGoal);
-        System.out.println("Reward: " + reward);
-
-        return reward;
     }
 
     /**
@@ -157,108 +149,69 @@ public class PhysicsSimulator {
         ball.setY(y);
     }
 
-    public boolean isMovingSlowly(BallState ballState) {
-        return Math.abs(ballState.getVx()) <= lowSpeedThreshold && Math.abs(ballState.getVy()) <= lowSpeedThreshold;
-    }
-
-    public void handleLowSpeedBallMovement(BallState ballState) {
-        if (isMovingSlowly(ballState)) {
-            boolean shouldAdd = true;
-            if (!ballPositionsWhenSlow.isEmpty()) {
-                BallState lastPosition = ballPositionsWhenSlow.get(ballPositionsWhenSlow.size() - 1);
-                if (lowSpeedThreshold == LOW_SPEED_THRESHOLD_SAND ? ballState.epsilonEquals(lastPosition, 0.5) : ballState.epsilonEquals(lastPosition, 0.1)) {
-                    shouldAdd = false;
-                }
-            }
-            if (shouldAdd) {
-                ballPositionsWhenSlow.add(new BallState(ballState.getX(), ballState.getY(), ballState.getVx(), ballState.getVy()));
-            }
-        }
-    }
-
-    public void checkIfInWater(BallState ball) {
-        this.inWater = false; // Placeholder for actual water check logic
-    }
-
-    public double[] getState(float ballX, float ballY) {
-        return MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()));
-    }
-
     public double[] getState() {
         return MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()));
+    }
+    @SuppressWarnings("static-access")
+    public void image(){
+        terrainManager.saveHeightMapAsImage(terrainManager.getNormalizedMarkedHeightMap((float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()), "height_map", "png");
     }
 
     public void runSimulation(int episodes, float radius) {
         for (int episode = 0; episode < episodes; episode++) {
-            resetBallPosition();
-            float ballX = random.nextFloat() * (2 * radius) - radius;
-            float ballY = random.nextBoolean() ? (float) Math.sqrt(radius * radius - ballX * ballX) : -(float) Math.sqrt(radius * radius - ballX * ballX);
-            ballX += goal.getX();
-            ballY += goal.getY();
-            ball.setX(ballX);
-            ball.setY(ballY);
-            double totalReward = 0;
-            BallState lastPosition = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
-
-            for (int step = 0; step < 50; step++) {
-                double[] stateArray = getState();
-                State state = new State(stateArray);
-                Action action = agent.selectRandomAction();
-                BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
-                boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
-                double reward = getReward(newBallState, lastPosition, win, inWater);
-                totalReward += reward;
-                double[] newStateArray = getState();
-                State newState = new State(newStateArray);
-                Transition transition = new Transition(state, action, reward, newState);
-                agent.storeTransition(transition);
-                lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
-                if (win) {
-                    break;
-                }
-            }
-            agent.train();
-            for (int step = 0; step < 50; step++) {
-                double[] stateArray = getState();
-                State state = new State(stateArray);
-                Action action = agent.selectAction(state);
-                BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
-                boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
-                double reward = getReward(newBallState, lastPosition, win, inWater);
-                totalReward += reward;
-                double[] newStateArray = getState();
-                State newState = new State(newStateArray);
-                Transition transition = new Transition(state, action, reward, newState);
-                agent.storeTransition(transition);
-                lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
-                if (win) {
-                    break;
-                }
-            }
-            agent.train();
-            System.out.printf("Episode %d: Total Reward = %.2f\n", episode, totalReward);
+            runSingleEpisode(radius);
+            System.out.printf("Episode %d:", episode);
         }
     }
 
-    public List<Transition> play() {
-        List<Transition> transitions = new ArrayList<>();
-        State initialState = new State(MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY())));
-        for (int step = 0; step < 10; step++) {
+    private double runSingleEpisode(float radius) {
+        resetBallPosition();
+        float ballX = random.nextFloat() * (2 * radius) - radius;
+        float ballY = random.nextBoolean() ? (float) Math.sqrt(radius * radius - ballX * ballX) : -(float) Math.sqrt(radius * radius - ballX * ballX);
+        ballX += goal.getX();
+        ballY += goal.getY();
+        ball.setX(ballX);
+        ball.setY(ballY);
+        double totalReward = 0;
+        BallState lastPosition = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
+
+        for (int step = 0; step < 50; step++) {
+            double[] stateArray = getState();
+            State state = new State(stateArray);
             Action action = agent.selectRandomAction();
-            BallState nextBallState = hit((float) action.getForce(), (float) action.getAngle());
-            State nextState = new State(MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) nextBallState.getX(), (float) nextBallState.getY(), (float) goal.getX(), (float) goal.getY())));
-            boolean win = nextBallState.distanceTo(goal) < GOAL_RADIUS;
-            double reward = getReward(nextBallState, ball, win, inWater);
-            Transition transition = new Transition(initialState, action, reward, nextState);
-            System.out.println(transition.getReward());
-            transitions.add(transition);
-            initialState = nextState;
+            BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
+            boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
+            double reward = getReward(newBallState, lastPosition, win, inWater);
+            totalReward += reward;
+            double[] newStateArray = getState();
+            State newState = new State(newStateArray);
+            Transition transition = new Transition(state, action, reward, newState);
+            agent.storeTransition(transition);
+            lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
             if (win) {
                 break;
             }
         }
-        System.out.println("Done");
-        return transitions;
+        agent.train();
+        for (int step = 0; step < 50; step++) {
+            double[] stateArray = getState();
+            State state = new State(stateArray);
+            Action action = agent.selectAction(state);
+            BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
+            boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
+            double reward = getReward(newBallState, lastPosition, win, inWater);
+            totalReward += reward;
+            double[] newStateArray = getState();
+            State newState = new State(newStateArray);
+            Transition transition = new Transition(state, action, reward, newState);
+            agent.storeTransition(transition);
+            lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
+            if (win) {
+                break;
+            }
+        }
+        agent.train();
+        return totalReward;
     }
 
     public static void main(String[] args) throws IOException {
@@ -273,6 +226,7 @@ public class PhysicsSimulator {
         BallState goal = new BallState(5, 5, 0, 0);
 
         PhysicsSimulator simulator = new PhysicsSimulator(h, agent, goal);
+        // simulator.image();
         simulator.runSimulation(100, 3); // Run for 10 episodes
         agent.saveAgent("savedAgent/savedAgent.dat");
     }
