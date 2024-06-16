@@ -2,7 +2,7 @@ package com.example.golfgame;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.example.golfgame.utils.Sandbox;
+
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
@@ -11,6 +11,7 @@ import com.example.golfgame.screens.MainMenuScreen;
 import com.example.golfgame.screens.SandboxSettingsScreen;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.screens.SettingsScreen;
+import com.example.golfgame.utils.gameUtils.Sandbox;
 
 /**
  * The main class for the golf game application. It manages the different screens of the game

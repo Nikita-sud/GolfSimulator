@@ -3,10 +3,10 @@ package com.example.golfgame.bot.botsbehaviors;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
 import com.example.golfgame.bot.agents.PPOAgent;
-import com.example.golfgame.utils.Action;
 import com.example.golfgame.utils.BallState;
-import com.example.golfgame.utils.State;
-import com.example.golfgame.utils.TerrainManager;
+import com.example.golfgame.utils.gameUtils.TerrainManager;
+import com.example.golfgame.utils.ppoUtils.Action;
+import com.example.golfgame.utils.ppoUtils.State;
 
 public class PPOBot implements BotBehavior {
     private PPOAgent agent;

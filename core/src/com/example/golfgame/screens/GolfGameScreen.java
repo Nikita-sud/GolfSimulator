@@ -45,6 +45,10 @@ import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
+import com.example.golfgame.utils.gameUtils.Sandbox;
+import com.example.golfgame.utils.gameUtils.TerrainManager;
+import com.example.golfgame.utils.gameUtils.WaterSurfaceManager;
+import com.example.golfgame.utils.gameUtils.Weather;
 import com.example.golfgame.physics.*;
 import com.example.golfgame.physics.ODE.*;
 

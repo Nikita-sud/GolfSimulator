@@ -17,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.example.golfgame.GolfGame;
-import com.example.golfgame.utils.Sandbox;
+import com.example.golfgame.utils.gameUtils.Sandbox;
 
 /**
  * Represents the screen for configuring sandbox settings in the golf game.

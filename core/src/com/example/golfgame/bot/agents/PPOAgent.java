@@ -2,10 +2,11 @@ package com.example.golfgame.bot.agents;
 
 import com.example.golfgame.bot.neuralnetwork.PolicyNetwork;
 import com.example.golfgame.bot.neuralnetwork.ValueNetwork;
-import com.example.golfgame.utils.Action;
-import com.example.golfgame.utils.BackPropResult;
-import com.example.golfgame.utils.State;
-import com.example.golfgame.utils.Transition;
+import com.example.golfgame.utils.ppoUtils.Action;
+import com.example.golfgame.utils.ppoUtils.BackPropResult;
+import com.example.golfgame.utils.ppoUtils.Batch;
+import com.example.golfgame.utils.ppoUtils.State;
+import com.example.golfgame.utils.ppoUtils.Transition;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -35,6 +36,22 @@ public class PPOAgent implements Serializable {
         memory.add(transition);
     }
 
+    public void trainOnData(List<Batch> data){
+        int numberOfEpoches = data.size();
+        int epochesCounter = 0;
+        System.out.println("\n===========");
+        for(Batch batch : data){
+            for(Transition transition : batch.getBatch()){
+                memory.add(transition);
+            }
+            train();
+            System.out.println("Epoch: "+ epochesCounter+"/"+numberOfEpoches);
+            epochesCounter++;
+        }
+        System.out.println("===========\n");
+        System.out.println("Training complete.\n");
+    }
+
     public void train() {
         // Compute advantages using GAE
         List<Double> advantages = computeAdvantagesParallel();
@@ -61,7 +78,6 @@ public class PPOAgent implements Serializable {
             // Forward pass for policy network
             double[][] policyOutput = policyNetwork.forward(states[i]);
             double policyLoss = policyNetwork.computeLoss(policyOutput, advantagesArray, oldProbabilities, epsilon, actions[i]);
-            System.out.println(i + " " + policyLoss);
             
             // Policy network update
             BackPropResult policyBackpropResult = policyNetwork.backprop(states[i], policyLoss);

@@ -6,8 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import com.example.golfgame.utils.BackPropResult;
 import com.example.golfgame.utils.MatrixUtils;
+import com.example.golfgame.utils.ppoUtils.BackPropResult;
 
 public abstract class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -2,9 +2,19 @@ package com.example.golfgame.simulator;
 
 import com.example.golfgame.bot.agents.PPOAgent;
 import com.example.golfgame.utils.*;
+import com.example.golfgame.utils.gameUtils.TerrainManager;
+import com.example.golfgame.utils.ppoUtils.Action;
+import com.example.golfgame.utils.ppoUtils.Batch;
+import com.example.golfgame.utils.ppoUtils.State;
+import com.example.golfgame.utils.ppoUtils.Transition;
 import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.RungeKutta;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.io.IOException;
 import java.util.*;
 
@@ -16,24 +26,33 @@ public class PhysicsSimulator {
     private PPOAgent agent;
     private boolean inWater = false;
     private TerrainManager terrainManager;
+    private List<Batch> data = new ArrayList<>();
+    private List<Function> functions = new ArrayList<>();
 
     private static final double GOAL_RADIUS = 2; // Radius for goal reward
     // private static final double PENALTY_WATER = -3; // Penalty for hitting water
     private static final double REWARD_GOAL = 5; // Reward for reaching the goal
 
-    public PhysicsSimulator(Function heightFunction, PPOAgent agent, BallState goal) {
-        this.engine = new PhysicsEngine(new RungeKutta(), heightFunction);
+    public PhysicsSimulator(String heightFunction, PPOAgent agent) {
+        addFunction(heightFunction);
+        Function fheightFunction = new Function(heightFunction, "x","y");
+        this.engine = new PhysicsEngine(new RungeKutta(), fheightFunction);
         this.ball = new BallState(0, 0, 0, 0);
-        this.terrainManager = new TerrainManager(heightFunction, 200, 200, 1, 4);
+        this.terrainManager = new TerrainManager(fheightFunction);
         this.agent = agent;
-        this.goal = goal;
+        this.goal = new BallState(0, 0, 0, 0);
     }
     
     public PhysicsSimulator(Function heightFunction, BallState goal) {
         this.engine = new PhysicsEngine(new RungeKutta(), heightFunction);
         this.ball = new BallState(0, 0, 0, 0);
-        this.terrainManager = new TerrainManager(heightFunction, 200, 200, 1, 4);
+        this.terrainManager = new TerrainManager(heightFunction);
         this.goal = goal;
+    }
+
+    public void changeHeightFunction(Function heightFunction){
+        this.engine = new PhysicsEngine(new RungeKutta(), heightFunction);
+        this.terrainManager = new TerrainManager(heightFunction);
     }
 
     /**
@@ -157,14 +176,55 @@ public class PhysicsSimulator {
         terrainManager.saveHeightMapAsImage(terrainManager.getNormalizedMarkedHeightMap((float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()), "height_map", "png");
     }
 
-    public void runSimulation(int episodes, float radius) {
-        for (int episode = 0; episode < episodes; episode++) {
-            runSingleEpisode(radius);
-            System.out.printf("Episode %d:", episode);
-        }
+    public void addFunction(String function){
+        functions.add(new Function(function, "x","y"));
     }
 
-    private double runSingleEpisode(float radius) {
+    public void runSimulation(int episodes, float radius,int steps) {
+        for(Function function : functions){
+            changeHeightFunction(function);
+            for (int episode = 0; episode < episodes; episode++) {
+                data.add(runSingleEpisode(radius,(int) Math.round(steps*0.2),true));
+                data.add(runSingleEpisode(radius,(int) Math.round(steps*0.8),false));
+                System.out.println("Episode: " + episode);
+            }
+        }
+        agent.trainOnData(data);
+    }
+    public void runSimulationParallel(int episodes, float radius, int steps) {
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<Future<Batch>> futures = new ArrayList<>();
+        
+        for (Function function : functions) {
+            changeHeightFunction(function);
+            
+            for (int episode = 0; episode < episodes; episode++) {
+                final int ep = episode; // For lambda expression
+                Callable<Batch> task = () -> {
+                    if (ep % 2 == 0) {
+                        return runSingleEpisode(radius, (int) Math.round(steps * 0.2), true);
+                    } else {
+                        return runSingleEpisode(radius, (int) Math.round(steps * 0.8), false);
+                    }
+                };
+                futures.add(executor.submit(task));
+            }
+        }
+        
+        for (Future<Batch> future : futures) {
+            try {
+                data.add(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        executor.shutdown();
+        agent.trainOnData(data);
+    }
+
+    private Batch runSingleEpisode(float radius, int steps, boolean randomAction) {
+        List<Transition> batchTransitions = new ArrayList<>();
         resetBallPosition();
         float ballX = random.nextFloat() * (2 * radius) - radius;
         float ballY = random.nextBoolean() ? (float) Math.sqrt(radius * radius - ballX * ballX) : -(float) Math.sqrt(radius * radius - ballX * ballX);
@@ -175,10 +235,15 @@ public class PhysicsSimulator {
         double totalReward = 0;
         BallState lastPosition = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
 
-        for (int step = 0; step < 50; step++) {
+        for (int step = 0; step < steps; step++) {
             double[] stateArray = getState();
             State state = new State(stateArray);
-            Action action = agent.selectRandomAction();
+            Action action;
+            if(randomAction){
+                action = agent.selectRandomAction();
+            }else{
+                action = agent.selectAction(state);
+            }
             BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
             boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
             double reward = getReward(newBallState, lastPosition, win, inWater);
@@ -186,36 +251,23 @@ public class PhysicsSimulator {
             double[] newStateArray = getState();
             State newState = new State(newStateArray);
             Transition transition = new Transition(state, action, reward, newState);
-            agent.storeTransition(transition);
+            batchTransitions.add(transition);
             lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
             if (win) {
                 break;
             }
         }
-        agent.train();
-        for (int step = 0; step < 50; step++) {
-            double[] stateArray = getState();
-            State state = new State(stateArray);
-            Action action = agent.selectAction(state);
-            BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
-            boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
-            double reward = getReward(newBallState, lastPosition, win, inWater);
-            totalReward += reward;
-            double[] newStateArray = getState();
-            State newState = new State(newStateArray);
-            Transition transition = new Transition(state, action, reward, newState);
-            agent.storeTransition(transition);
-            lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
-            if (win) {
-                break;
-            }
-        }
-        agent.train();
-        return totalReward;
+
+        System.out.println("Total Reward: "+ totalReward);
+        return new Batch(batchTransitions);
     }
 
     public static void main(String[] args) throws IOException {
-        Function h = new Function("2", "x", "y");
+        String h = "2";
+        @SuppressWarnings("unused")
+        String[] functions = new String[]{"2(0.9-e^(-((x+10)^2+(y-10)^2)/200))-0.5",
+                                        "2(0.9-e^(-((x+0)^2+(y-10)^6)/200))-1",
+                                        "e^(-((x)^6+(y)^2)/500)-e^(-((x)^2+(y)^2)/500)+0.2"};
         int[] policyNetworkSizes = {40000, 64, 64, 4}; // Input size, hidden layers, and output size
         int[] valueNetworkSizes = {40000, 64, 64, 1};  // Input size, hidden layers, and output size
         double gamma = 0.99;
@@ -223,11 +275,10 @@ public class PhysicsSimulator {
         double epsilon = 0.2;
 
         PPOAgent agent = new PPOAgent(policyNetworkSizes, valueNetworkSizes, gamma, lambda, epsilon);
-        BallState goal = new BallState(5, 5, 0, 0);
 
-        PhysicsSimulator simulator = new PhysicsSimulator(h, agent, goal);
+        PhysicsSimulator simulator = new PhysicsSimulator(h, agent);
         // simulator.image();
-        simulator.runSimulation(100, 3); // Run for 10 episodes
+        simulator.runSimulationParallel(1000, 3, 30); // Run for 10 episodes
         agent.saveAgent("savedAgent/savedAgent.dat");
     }
 }
