@@ -41,7 +41,6 @@ import java.util.List;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
-import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -69,8 +68,8 @@ public class GolfGameScreen implements Screen, Disposable {
     private static final float BALL_HEIGHT_OFFSET = 1f;
     private static final float LOW_SPEED_THRESHOLD_GRASS = 0.008f;
     private static final float LOW_SPEED_THRESHOLD_SAND = 1.0f;
-    private static final float MIN_SPEED = 0.01f;
-    private static final float MAX_SPEED = 10.0f;
+    private static final float MIN_SPEED = 1f;
+    private static final float MAX_SPEED = 5f;
 
     // Core game objects
     private final GolfGame mainGame;
@@ -117,7 +116,6 @@ public class GolfGameScreen implements Screen, Disposable {
     private boolean isAdjustingSpeed = false;
     private boolean isBallAllowedToMove = false;
     private boolean isBallInWater = false;
-    private boolean win = false;
     private float currentSpeed = MIN_SPEED;
     private float speedAdjustmentRate = 10.0f;
     private int score = 0, lastScore = -1;
@@ -660,7 +658,6 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState.setVx(-speed * Math.cos(cameraViewAngle));
         currentBallState.setVy(-speed * Math.sin(cameraViewAngle));
         isBallInWater = false;
-        win = false;
     }
 
     /**
@@ -674,7 +671,6 @@ public class GolfGameScreen implements Screen, Disposable {
         currentBallState.setVx(-vx);
         currentBallState.setVy(-vy);
         isBallInWater = false;
-        win = false;
     }
 
     /**
@@ -763,7 +759,6 @@ public class GolfGameScreen implements Screen, Disposable {
         scoreLabel.clear();
         scoreChange();
         lastScoreLabel.setText("Last Score: " + lastScore);
-        win = true;
         resetGameState();
     }
 

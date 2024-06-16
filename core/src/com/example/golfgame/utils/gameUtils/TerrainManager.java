@@ -297,6 +297,23 @@ public class TerrainManager {
         return onSand;
     }
 
+    public boolean isBallOnSand(float x, float y) {
+        boolean onSand = false;
+        for (float[] area : sandAreas) {
+            float minX = area[0];
+            float maxX = area[2];
+            float minY = area[1];
+            float maxY = area[3];
+    
+            if (x >= minX && x <= maxX &&
+                y >= minY && y <= maxY) {
+                onSand = true;
+                break;
+            }
+        }
+        return onSand;
+    }
+
     /**
      * Determines if the given position is water.
      *

@@ -29,8 +29,9 @@ public class PhysicsSimulator {
     private List<Batch> data = new ArrayList<>();
     private List<Function> functions = new ArrayList<>();
 
-    private static final double GOAL_RADIUS = 2; // Radius for goal reward
-    // private static final double PENALTY_WATER = -3; // Penalty for hitting water
+    private static final double GOAL_RADIUS = 1.5; // Radius for goal reward
+    private static final double PENALTY_WATER = -3; // Penalty for hitting water
+    private static final double PENALTY_SAND = -1; // Penalty for being on sand
     private static final double REWARD_GOAL = 5; // Reward for reaching the goal
 
     public PhysicsSimulator(String heightFunction, PPOAgent agent) {
@@ -40,7 +41,7 @@ public class PhysicsSimulator {
         this.ball = new BallState(0, 0, 0, 0);
         this.terrainManager = new TerrainManager(fheightFunction);
         this.agent = agent;
-        this.goal = new BallState(0, 0, 0, 0);
+        this.goal = new BallState(-7, 7, 0, 0);
     }
     
     public PhysicsSimulator(Function heightFunction, BallState goal) {
@@ -61,7 +62,10 @@ public class PhysicsSimulator {
      * @param angle the angle of the hit
      * @return the new ball state
      */
+    // Method to handle hitting the ball
     public BallState hit(float velocityMagnitude, float angle) {
+        inWater = false;
+        BallState lastPosition = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
         BallState ballCopy = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
         System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
         ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
@@ -71,13 +75,20 @@ public class PhysicsSimulator {
         while (!engine.isAtRest(ballCopy)) {
             functionVals.put("x", ballCopy.getX());
             functionVals.put("y", ballCopy.getY());
-            if (engine.getSurfaceFunction().evaluate(functionVals) < 0) { // Water
+            if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
                 System.out.println("Ball in water!");
                 inWater = true;
+                ballCopy.setX(lastPosition.getX());
+                ballCopy.setY(lastPosition.getY());
                 return ballCopy;
             }
             engine.update(ballCopy, 0.001);
         }
+
+        if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand
+            System.out.println("Ball on sand!");
+        }
+
         System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
         return ballCopy;
     }
@@ -107,9 +118,18 @@ public class PhysicsSimulator {
             System.out.println("Goal Reached");
             System.out.println("");
             return REWARD_GOAL;
-        } else {
-            return reward;
         }
+        if (isBallInWater) {
+            return reward + PENALTY_WATER;
+        }
+        if (terrainManager.isBallOnSand((float) currentBall.getX(), (float) currentBall.getY())) {
+            return reward + PENALTY_SAND;
+        }
+        if (reward < 0) {
+            double penaltyFactor = Math.exp(Math.abs(reward) / 10.0); // Exponential function
+            reward -= penaltyFactor * 10; // Increase the penalty
+        }
+        return reward;
     }
 
     /**
@@ -262,23 +282,23 @@ public class PhysicsSimulator {
         return new Batch(batchTransitions);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         String h = "2";
         @SuppressWarnings("unused")
         String[] functions = new String[]{"2(0.9-e^(-((x+10)^2+(y-10)^2)/200))-0.5",
                                         "2(0.9-e^(-((x+0)^2+(y-10)^6)/200))-1",
                                         "e^(-((x)^6+(y)^2)/500)-e^(-((x)^2+(y)^2)/500)+0.2"};
-        int[] policyNetworkSizes = {40000, 64, 64, 4}; // Input size, hidden layers, and output size
-        int[] valueNetworkSizes = {40000, 64, 64, 1};  // Input size, hidden layers, and output size
-        double gamma = 0.99;
-        double lambda = 0.95;
-        double epsilon = 0.2;
+        // int[] policyNetworkSizes = {40000, 64, 64, 4}; // Input size, hidden layers, and output size
+        // int[] valueNetworkSizes = {40000, 64, 64, 1};  // Input size, hidden layers, and output size
+        // double gamma = 0.99;
+        // double lambda = 0.95;
+        // double epsilon = 0.2;
 
-        PPOAgent agent = new PPOAgent(policyNetworkSizes, valueNetworkSizes, gamma, lambda, epsilon);
-
+        PPOAgent agent = PPOAgent.loadAgent("savedAgent/savedAgent.dat");
+        
         PhysicsSimulator simulator = new PhysicsSimulator(h, agent);
         // simulator.image();
-        simulator.runSimulationParallel(1000, 3, 30); // Run for 10 episodes
+        simulator.runSimulationParallel(500, 3, 30); // Run for 10 episodes
         agent.saveAgent("savedAgent/savedAgent.dat");
     }
 }
