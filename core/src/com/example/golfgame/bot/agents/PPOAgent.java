@@ -75,13 +75,13 @@ public class PPOAgent implements Serializable{
             double policyLoss = policyNetwork.computeLoss(policyOutput, advantagesArray, oldProbabilities, epsilon, actions);
             System.out.println(i + " " + policyLoss);
             BackPropResult policyBackpropResult = policyNetwork.backprop(state, policyLoss);
-            policyNetwork.updateParameters(policyBackpropResult.getNablaW(), policyBackpropResult.getNablaB(), 0.1, memory.size());
+            policyNetwork.updateParameters(policyBackpropResult.getNablaW(), policyBackpropResult.getNablaB(), 1, memory.size());
             
             // Value network update
             double[][] valueOutput = valueNetwork.forward(state);
             double valueLoss = valueNetwork.computeLoss(valueOutput, new double[]{targets[i]});
             BackPropResult valueBackpropResult = valueNetwork.backprop(state, valueLoss);
-            valueNetwork.updateParameters(valueBackpropResult.getNablaW(), valueBackpropResult.getNablaB(), 0.1, memory.size());
+            valueNetwork.updateParameters(valueBackpropResult.getNablaW(), valueBackpropResult.getNablaB(), 1, memory.size());
         }
         
         // Clear memory after training

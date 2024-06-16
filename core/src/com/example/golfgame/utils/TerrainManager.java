@@ -401,6 +401,10 @@ public class TerrainManager {
         return heightMap;
     }
 
+    public double[] getState(float ballX, float ballY, float goalX, float goalY) {
+        return MatrixUtils.flattenArray(getNormalizedMarkedHeightMap(ballX, ballY, goalX, goalX));
+    }
+
     public int getTerrainWidth(){
         return gridWidth;
     }
