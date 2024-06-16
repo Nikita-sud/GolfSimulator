@@ -69,6 +69,8 @@ public class MatrixUtils {
         return result;
     }
 
+    
+
     /**
      * Transposes a matrix.
      *
@@ -201,14 +203,22 @@ public class MatrixUtils {
     /**
      * Applies the sigmoid function to each element of a matrix.
      *
-     * @param x The input matrix.
+     * @param z The input matrix.
      * @return A new matrix with the sigmoid function applied to each element.
      */
-    public static double[][] sigmoidVector(double[][] x) {
-        for (int i = 0; i < x.length; i++) {
-            x[i][0] = sigmoid(x[i][0]);
+    public static double[][] sigmoidVector(double[][] z) {
+        double[][] result = new double[z.length][z[0].length];
+        for (int i = 0; i < z.length; i++) {
+            for (int j = 0; j < z[i].length; j++) {
+                result[i][j] = sigmoid(-z[i][j]);
+    
+                // Проверка на NaN после применения сигмоиды
+                if (Double.isNaN(result[i][j])) {
+                    throw new IllegalStateException("NaN value encountered in sigmoid function");
+                }
+            }
         }
-        return x;
+        return result;
     }
 
     /**

@@ -106,14 +106,34 @@ public abstract class NeuralNetwork implements Serializable {
         for (int i = 0; i < input.length; i++) {
             activation[i][0] = input[i];
         }
-
+    
         for (int i = 0; i < numLayers - 1; i++) {
             double[][] z = MatrixUtils.multiplyMatrices(weights[i], activation);
+            if (containsNaN(z)) {
+                throw new IllegalStateException("NaN value encountered after z " + i);
+            }
+
             z = MatrixUtils.addBias(z, biases[i]);
+    
+            if (containsNaN(z)) {
+                throw new IllegalStateException("NaN value encountered after adding bias in layer " + i);
+            }
+    
             activation = MatrixUtils.sigmoidVector(z);
         }
-
+    
         return activation;
+    }
+    
+    private boolean containsNaN(double[][] matrix) {
+        for (double[] row : matrix) {
+            for (double value : row) {
+                if (Double.isNaN(value)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void saveNetwork(String filePath) throws IOException {

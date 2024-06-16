@@ -704,7 +704,7 @@ public class GolfGameScreen implements Screen, Disposable {
             adjustBallSpeed(deltaTime);
         }
 
-        // updateBotBehavior();
+        updateBotBehavior();
 
         // Check if the ball has reached the goal
         if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
@@ -742,16 +742,13 @@ public class GolfGameScreen implements Screen, Disposable {
         setTerrainFriction();
     }
 
-    // private void updateBotBehavior() {
-    //     environment.updateBallState(currentBallState);
-    //     if (hillClimbingBotActive) {
-    //         advancedBotPlay();
-    //     } else if (ruleBasedBotActive) {
-    //         ruleBasedbotPlay();
-    //     }
-    
-    //     checkBallStopAndUpdateNextState();
-    // }
+    private void updateBotBehavior() {
+        if (hillClimbingBotActive) {
+            advancedBotPlay();
+        } else if (ruleBasedBotActive) {
+            ruleBasedbotPlay();
+        }
+    }
 
     /**
      * Handles the event when the goal is reached.
@@ -1181,18 +1178,6 @@ public class GolfGameScreen implements Screen, Disposable {
         return (Math.abs(ballToGoal.x - camVector2.x) < 0.001) && (Math.abs(ballToGoal.y - camVector2.y) < 0.001);
     }
 
-    /**
-     * Checks if the ball has stopped and updates the next state for the bot.
-     */
-    private void checkBallStopAndUpdateNextState() {
-        if (!isBallAllowedToMove) {
-            if (wallE.getBotBehavior() instanceof PPOBot) {
-                PPOBot ppoBot = (PPOBot) wallE.getBotBehavior();
-                if (ppoBot.isWaitingForStop()) {
-                }
-            }
-        }
-    }
 
 
     public boolean isBallInWater(BallState ballState) {

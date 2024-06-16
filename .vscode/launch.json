@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "GolfSimulation",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.simulator.GolfSimulation",
+            "projectName": "Golf-core"
+        },
+        {
+            "type": "java",
             "name": "PhysicsSimulator",
             "request": "launch",
             "mainClass": "com.example.golfgame.simulator.PhysicsSimulator",
