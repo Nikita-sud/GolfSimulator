@@ -195,6 +195,10 @@ public class BallState {
         return epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance());
     }
 
+    public BallState deepCopy() {
+        return new BallState(this.x, this.y, this.vx, this.vy);
+    }
+
     @Override
     public String toString() {
         return "BallState{" +

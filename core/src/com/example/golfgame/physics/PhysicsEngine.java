@@ -267,7 +267,7 @@ public class PhysicsEngine {
 
 
     public boolean isAtRest(BallState ballState) {
-        return Math.abs(ballState.getVx()) < 0.001 && Math.abs(ballState.getVy()) < 0.001;
+        return ballState.epsilonEquals(new BallState( ballState.getX(), ballState.getY(), 0, 0), 0.0000001);
     }
     
     private boolean canOvercomeStaticFriction(BallState ballState) {

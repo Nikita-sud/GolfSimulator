@@ -18,6 +18,7 @@ public class HillClimbingBot implements BotBehavior {
     private static final float DELTAHITPOWER = 0.2f;
     private static final float DELTAANGLE = 0.05f;
     private static final float ANGLE_TOLERANCE = 0.1f;
+    
 
     public HillClimbingBot() {
         hitPower = 3;
@@ -54,11 +55,11 @@ public class HillClimbingBot implements BotBehavior {
         while (true) {
             BallState curSimResult = simulator.singleHit(hitPower, angle, game.getGolfGameScreen().getBallState());
 
-            // Try climbing in 4 directions: increasing/decreasing angle/hitPower
+            // Try climbing in 4 directions: increasing/decreasing angle/hitPower (clip to prevent negative force)
             BallState doubleIncreaseResult = simulator.singleHit(hitPower + DELTAHITPOWER, angle + DELTAANGLE, game.getGolfGameScreen().getBallState());
-            BallState angleIncreaseResult = simulator.singleHit(hitPower - DELTAHITPOWER, angle + DELTAANGLE,game.getGolfGameScreen().getBallState());
+            BallState angleIncreaseResult = simulator.singleHit((float)Math.max(0.1, hitPower - DELTAHITPOWER), angle + DELTAANGLE,game.getGolfGameScreen().getBallState());
             BallState hitPowerIncreaseResult = simulator.singleHit(hitPower + DELTAHITPOWER, angle - DELTAANGLE,game.getGolfGameScreen().getBallState());
-            BallState doubleDecreaseResult = simulator.singleHit(hitPower - DELTAHITPOWER, angle - DELTAANGLE,game.getGolfGameScreen().getBallState());
+            BallState doubleDecreaseResult = simulator.singleHit((float)Math.max(0.1, hitPower - DELTAHITPOWER), angle - DELTAANGLE,game.getGolfGameScreen().getBallState());
 
             BallState bestState = bestState(new BallState[]{doubleDecreaseResult, doubleIncreaseResult, angleIncreaseResult, hitPowerIncreaseResult, curSimResult}, goal);
 
@@ -66,16 +67,16 @@ public class HillClimbingBot implements BotBehavior {
                 break; // No improvement found
             }
 
-            if (bestState.epsilonPositionEquals(doubleIncreaseResult, 0.001)) {
+            if (bestState.epsilonPositionEquals(doubleIncreaseResult, 0)) {
                 angle += DELTAANGLE;
                 hitPower += DELTAHITPOWER;
-            } else if (bestState.epsilonPositionEquals(doubleDecreaseResult, 0.001)) {
+            } else if (bestState.epsilonPositionEquals(doubleDecreaseResult, 0)) {
                 angle -= DELTAANGLE;
                 hitPower -= DELTAHITPOWER;
-            } else if (bestState.epsilonPositionEquals(angleIncreaseResult, 0.001)) {
+            } else if (bestState.epsilonPositionEquals(angleIncreaseResult, 0)) {
                 angle += DELTAANGLE;
                 hitPower -= DELTAHITPOWER;
-            } else if (bestState.epsilonPositionEquals(hitPowerIncreaseResult, 0.001)) {
+            } else if (bestState.epsilonPositionEquals(hitPowerIncreaseResult, 0)) {
                 angle -= DELTAANGLE;
                 hitPower += DELTAHITPOWER;
             }
@@ -84,16 +85,20 @@ public class HillClimbingBot implements BotBehavior {
             if (Math.abs(bestState.getX() - goal.getX()) < 0.01 && Math.abs(bestState.getY() - goal.getY()) < 0.01) {
                 break;
             }
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private BallState bestState(BallState[] states, BallState goal) {
-        double bestCloseness = Double.MIN_VALUE;
+        double smallestDistance = Integer.MAX_VALUE;
         BallState best = null;
         for (BallState state : states) {
-            double closeness = closeness(state, goal);
-            if (closeness > bestCloseness) {
-                bestCloseness = closeness;
+            if (state.distanceTo(goal)<smallestDistance) {
+                smallestDistance = state.distanceTo(goal);
                 best = state;
             }
         }

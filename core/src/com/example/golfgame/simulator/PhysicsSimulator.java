@@ -65,14 +65,14 @@ public class PhysicsSimulator {
     // Method to handle hitting the ball
     public BallState hit(float velocityMagnitude, float angle) {
         inWater = false;
-        BallState lastPosition = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
-        BallState ballCopy = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
+        BallState lastPosition = ball.deepCopy();
+        BallState ballCopy = ball.deepCopy();
         System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
         ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
         ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
         Map<String, Double> functionVals = new HashMap<>();
-
-        while (!engine.isAtRest(ballCopy)) {
+        BallState lastBallState = ball.deepCopy();
+        do {
             functionVals.put("x", ballCopy.getX());
             functionVals.put("y", ballCopy.getY());
             if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
@@ -82,8 +82,9 @@ public class PhysicsSimulator {
                 ballCopy.setY(lastPosition.getY());
                 return ballCopy;
             }
+            lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
             engine.update(ballCopy, 0.001);
-        }
+        } while((!engine.isAtRest(ballCopy)||!(ballCopy.epsilonEquals(lastBallState, 0.000001))));
 
         if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand
             System.out.println("Ball on sand!");
@@ -154,6 +155,7 @@ public class PhysicsSimulator {
         ball.setX(0);
         ball.setY(0);
     }
+    
 
     /**
      * Performs random hit simulations within a certain radius of the goal.
