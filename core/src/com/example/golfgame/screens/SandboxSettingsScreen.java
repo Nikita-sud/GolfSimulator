@@ -129,7 +129,43 @@ public class SandboxSettingsScreen implements Screen {
                 sandboxInfoTable.add(new Label("Sandbox List:", skin)).row();
             }
         });
-        boundaryTable.add(resetSandboxList).colspan(3).padTop(10);
+        boundaryTable.add(resetSandboxList).colspan(3).padTop(10).row();
+    
+        // Adding sand friction controls
+        Label sandFrictionKineticLabel = new Label("Sand Kinetic Friction:", skin);
+        TextField sandFrictionKineticField = new TextField(""+game.getGolfGameScreen().getSandFrictionKinetic(), skin);
+        Label sandFrictionStaticLabel = new Label("Sand Static Friction:", skin);
+        TextField sandFrictionStaticField = new TextField(""+game.getGolfGameScreen().getSandFrictionStatic(), skin);
+    
+        sandFrictionKineticField.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
+                    game.getGolfGameScreen().setSandFrictionKinetic(Double.parseDouble(sandFrictionKineticField.getText()));
+                    sandFrictionKineticLabel.setText("Sand Kinetic Friction:");
+                } catch (Exception e) {
+                    sandFrictionKineticLabel.setText("Invalid Kinetic Friction");
+                }
+            }
+        });
+    
+        sandFrictionStaticField.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
+                    game.getGolfGameScreen().setSandFrictionStatic(Double.parseDouble(sandFrictionStaticField.getText()));
+                    sandFrictionStaticLabel.setText("Sand Static Friction:");
+                } catch (Exception e) {
+                    sandFrictionStaticLabel.setText("Invalid Static Friction");
+                }
+            }
+        });
+    
+        // Add sand friction controls to boundary table
+        boundaryTable.add(sandFrictionKineticLabel).colspan(3).padTop(10).row();
+        boundaryTable.add(sandFrictionKineticField).width(100).height(50).pad(10).colspan(3).row();
+        boundaryTable.add(sandFrictionStaticLabel).colspan(3).padTop(10).row();
+        boundaryTable.add(sandFrictionStaticField).width(100).height(50).pad(10).colspan(3).row();
     
         // Add the boundaryTable to the mainTable
         mainTable.add(boundaryTable).expand().center();

@@ -59,7 +59,7 @@ public class SettingsScreen implements Screen {
                 game.switchToMenu();  // Change to the main menu screen
             }
         });
-    
+
         // Create play button
         TextButton playButton = new TextButton("Play!", skin);
         playButton.addListener(new ChangeListener() {
@@ -68,7 +68,7 @@ public class SettingsScreen implements Screen {
                 game.switchToGame();  // Change to the game screen
             }
         });
-    
+
         // Create height function text field
         TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)+0.8", skin);
         heightFunction.addListener(new ChangeListener() {
@@ -81,12 +81,12 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
-    
+
         // Create goal position input fields and label
         Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
         TextField goalXPosition = new TextField("-20", skin);
         TextField goalYPosition = new TextField("20", skin);
-    
+
         goalXPosition.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -98,7 +98,7 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
-    
+
         goalYPosition.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -110,7 +110,52 @@ public class SettingsScreen implements Screen {
                 }
             }
         });
-    
+
+        // Create ball position input fields and label
+        Label ballPositionLabel = new Label("Ball Position (X, Y):", skin);
+        TextField ballXPosition = new TextField("0", skin);
+        TextField ballYPosition = new TextField("0", skin);
+
+        ballXPosition.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
+                    game.getGolfGameScreen().setBallCoords(new float[]{Float.parseFloat(ballXPosition.getText()), Float.parseFloat(ballYPosition.getText())});
+                    ballPositionLabel.setText("Ball Position (X, Y):");
+                } catch (Exception e) {
+                    ballPositionLabel.setText("Invalid X Position");
+                }
+            }
+        });
+
+        ballYPosition.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
+                    game.getGolfGameScreen().setBallCoords(new float[]{Float.parseFloat(ballXPosition.getText()), Float.parseFloat(ballYPosition.getText())});
+                    ballPositionLabel.setText("Ball Position (X, Y):");
+                } catch (Exception e) {
+                    ballPositionLabel.setText("Invalid Y Position");
+                }
+            }
+        });
+
+        // Create goal radius input field and label
+        Label goalRadiusLabel = new Label("Goal Radius:", skin);
+        TextField goalRadius = new TextField("1.5", skin);
+
+        goalRadius.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                try {
+                    game.getGolfGameScreen().setGoalRadius(Float.parseFloat(goalRadius.getText()));
+                    goalRadiusLabel.setText("Goal Radius:");
+                } catch (Exception e) {
+                    goalRadiusLabel.setText("Invalid Radius");
+                }
+            }
+        });
+
         // Create wind slider and label
         Slider windSlider = new Slider(0f, 0.001f, 0.0001f, false, skin);
         Label windLabel = new Label("Wind speed magnitude: " + String.format("%.4f", windSlider.getValue()), skin);
@@ -122,7 +167,7 @@ public class SettingsScreen implements Screen {
                 windLabel.setText("Wind speed magnitude: " + String.format("%.4f", value));
             }
         });
-    
+
         // Create sunlight slider and label
         Slider sunSlider = new Slider(0.2f, 1f, 0.001f, false, skin);
         sunSlider.setValue(1);
@@ -135,7 +180,7 @@ public class SettingsScreen implements Screen {
                 sunLabel.setText("Sunlight level: " + String.format("%.3f", value));
             }
         });
-    
+
         // Create sandbox settings button
         TextButton sandboxSettingsButton = new TextButton("Sandbox Settings", skin);
         sandboxSettingsButton.addListener(new ChangeListener() {
@@ -185,7 +230,7 @@ public class SettingsScreen implements Screen {
         Table rootTable = new Table();
         rootTable.setFillParent(true);
         rootTable.setBackground(new TextureRegionDrawable(new Texture(Gdx.files.internal("backgrounds/settingsBackground.jpeg"))));
-    
+
         // Create middle table
         Table middleTable = new Table();
         middleTable.add(heightFunction).width(200).height(50).pad(10).row();
@@ -193,14 +238,27 @@ public class SettingsScreen implements Screen {
         middleTable.add(windLabel).pad(10).row();
         middleTable.add(sunSlider).width(400).pad(10).row();
         middleTable.add(sunLabel).pad(10).row();
-    
+
         // Create goal position table
         Table goalPositionTable = new Table();
         goalPositionTable.add(goalPositionLabel).pad(10);
         goalPositionTable.add(goalXPosition).width(50).height(50).pad(10);
         goalPositionTable.add(goalYPosition).width(50).height(50).pad(10);
         middleTable.add(goalPositionTable).pad(10).row();
-    
+
+        // Create ball position table
+        Table ballPositionTable = new Table();
+        ballPositionTable.add(ballPositionLabel).pad(10);
+        ballPositionTable.add(ballXPosition).width(50).height(50).pad(10);
+        ballPositionTable.add(ballYPosition).width(50).height(50).pad(10);
+        middleTable.add(ballPositionTable).pad(10).row();
+
+        // Add goal radius input field to middle table
+        Table goalRadiusPositionTable = new Table();
+        goalRadiusPositionTable.add(goalRadiusLabel).pad(10);
+        goalRadiusPositionTable.add(goalRadius).width(50).height(50).pad(10).row();
+        middleTable.add(goalRadiusPositionTable).pad(10).row();
+
         // Add sandbox settings button to middle table
         middleTable.add(sandboxSettingsButton).pad(20).row();
 
@@ -211,15 +269,17 @@ public class SettingsScreen implements Screen {
         botTable.add(hillClimbingBotStatus).pad(10);
         botTable.add(toggleHillClimbingBot).pad(10).row();
         middleTable.add(botTable).pad(10).row();
-    
+
         // Add components to root table
         rootTable.add(mainMenuButton).width(200).height(50).bottom().left().pad(20);
         rootTable.add(middleTable).expand().center();
         rootTable.add(playButton).width(150).height(50).pad(20).bottom().right();
-    
+
         // Add root table to stage
         stage.addActor(rootTable);
     }
+
+    
     
     @Override
     public void show() {
