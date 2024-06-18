@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.IntAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -125,6 +126,9 @@ public class GolfGameScreen implements Screen, Disposable {
     private float cameraViewAngle = 0;
     private boolean ruleBasedBotActive = false;
     private boolean hillClimbingBotActive = false;
+    private float ballRotationAngleX = 0f;
+    private float ballRotationAngleY = 0f;
+    private final float ballRadius = 1f; // радиус мяча в метрах
 
     // Light settings
     private float sunlight;
@@ -256,6 +260,8 @@ public class GolfGameScreen implements Screen, Disposable {
         lastValidState = currentBallState.copy();
         grassFrictionKinetic = 0.1;
         grassFrictionStatic = 0.2;
+        ballRotationAngleX = 0f;
+        ballRotationAngleY = 0f;
     }
 
     /**
@@ -580,6 +586,8 @@ public class GolfGameScreen implements Screen, Disposable {
     public void resetGameState() {
         currentBallState.setAllComponents(0, 0, 0.001, 0.001);
         reloadTerrain(0, 0);
+        ballRotationAngleX = 0f;
+        ballRotationAngleY = 0f;
         cameraViewAngle = 0;
         cameraDistance = 10;
         mainCamera.position.set(1f, 1f, 1f);
@@ -703,44 +711,45 @@ public class GolfGameScreen implements Screen, Disposable {
         if (isAdjustingSpeed) {
             adjustBallSpeed(deltaTime);
         }
-
+    
         updateBotBehavior();
-
+    
         // Check if the ball has reached the goal
         if (currentBallState.epsilonPositionEquals(goalState, GOAL_TOLERANCE)) {
             handleGoalReached();
         }
-
+    
         // Update ball state if allowed to move
         if (isBallAllowedToMove) {
             currentBallState = gamePhysicsEngine.update(currentBallState, deltaTime);
+            updateBallRotation(deltaTime);
         }
-
+    
         ballMovementLabel.setText("Ball can move: " + isBallAllowedToMove);
-
+    
         setPositionForFlagAndStemInstances();
-
+    
         // Apply wind effects to the ball's velocity
         applyWindEffect();
-
+    
         // Update the ball's position in the world
         updateBallPosition();
-
+    
         // Update animations
         updateAnimations(deltaTime);
-
+    
         // Update the camera position
         updateCameraPosition(deltaTime);
-
+    
         // Handle ball movement when on low speed
         handleLowSpeedBallMovement();
-
+    
         // Handle ball falling below ground level
         handleBallFallingBelowGround();
-
+    
         // Set friction based on the terrain type
         setTerrainFriction();
-
+    
         // Check and handle if the ball is out of bounds
         checkAndHandleBallOutOfBounds();
     }
@@ -751,6 +760,20 @@ public class GolfGameScreen implements Screen, Disposable {
         } else if (ruleBasedBotActive) {
             ruleBasedbotPlay();
         }
+    }
+
+    private void updateBallRotation(float deltaTime) {
+        float velocityX = (float) currentBallState.getVx();
+        float velocityY = (float) currentBallState.getVy();
+        
+        float angularVelocityX = (velocityX / ballRadius) * (180f / (float) Math.PI); 
+        float angularVelocityY = (velocityY / ballRadius) * (180f / (float) Math.PI); 
+    
+        ballRotationAngleX -= angularVelocityX * deltaTime;
+        ballRotationAngleY += angularVelocityY * deltaTime;
+    
+        ballRotationAngleX %= 360;
+        ballRotationAngleY %= 360;
     }
 
     /**
@@ -804,6 +827,9 @@ public class GolfGameScreen implements Screen, Disposable {
     private void updateBallPosition() {
         float ballZ = terrainManager.getTerrainHeight((float) currentBallState.getX(), (float) currentBallState.getY()) + BALL_HEIGHT_OFFSET;
         golfBallInstance.transform.setToTranslation((float) currentBallState.getX(), ballZ, (float) currentBallState.getY());
+        
+        golfBallInstance.transform.rotate(Vector3.X, ballRotationAngleY);
+        golfBallInstance.transform.rotate(Vector3.Z, ballRotationAngleX);
     }
 
     /**
@@ -842,6 +868,8 @@ public class GolfGameScreen implements Screen, Disposable {
             scoreChange();
             isBallInWater = true;
             currentBallState.setAllComponents(lastValidState.getX(), lastValidState.getY(), lastValidState.getVx(), lastValidState.getVy());
+            ballRotationAngleX = 0f;
+            ballRotationAngleY = 0f;
             System.out.println("Ball has fallen below ground level. Resetting to last valid position.");
         } else {
             updateLastValidState();
