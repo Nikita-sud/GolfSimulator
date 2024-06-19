@@ -84,7 +84,7 @@ public class PhysicsSimulator {
             }
             lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
             engine.update(ballCopy, 0.001);
-        } while((!engine.isAtRest(ballCopy)||!(ballCopy.epsilonEquals(lastBallState, 0.000001))));
+        } while((!engine.isAtRest(ballCopy)));
 
         if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand
             System.out.println("Ball on sand!");

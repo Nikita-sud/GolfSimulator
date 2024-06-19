@@ -68,4 +68,10 @@ public class WallE {
     public BotBehavior getBotBehavior() {
         return botBehavior;
     }
+
+    public HillClimbingBot getHillClimbingBot(){
+        return hillClimbingBot;
+    }
+
+
 }
