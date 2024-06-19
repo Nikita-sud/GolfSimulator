@@ -1,12 +1,7 @@
 package com.example.golfgame.bot.botsbehaviors;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.Random;
-
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
 import com.example.golfgame.simulator.PhysicsSimulator;
@@ -18,8 +13,8 @@ public class HillClimbingBot implements BotBehavior {
     private volatile float hitPower;
     private volatile float angle;
 
-    private static final float DELTAHITPOWER = 0.5f; // Increased step size
-    private static final float DELTAANGLE = 0.2f;   // Increased step size
+    private static final float DELTAHITPOWER = 0.5f;
+    private static final float DELTAANGLE = 0.2f;
     private static final float ANGLE_TOLERANCE = 0.1f;
     private static final float GOAL_TOLERANCE = 1.5f;
 
@@ -36,29 +31,34 @@ public class HillClimbingBot implements BotBehavior {
     public float setDirection(GolfGame game) {
         System.out.println("setDirection happened");
 
-        Future<Float> future = executorService.submit(new Callable<Float>() {
-            @Override
-            public Float call() {
-                System.out.println("Thread running");
-                climb(game);
-                return angle;
-            }
-        });
+        CompletableFuture<Float> future = CompletableFuture.supplyAsync(() -> {
+            System.out.println("Thread running");
+            climb(game);
+            isDirectionSet = true;  // Set the flag to true after climbing
+            return angle;
+        }, executorService);
 
         try {
             return future.get(); // This will block until the callable is done
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
+        } finally {
+            shutdownExecutor(); // Ensure the executor is properly shut down
         }
 
         return angle;
     }
 
+    public void shutdownExecutor() {
+        executorService.shutdown();
+    }
+    
+
     @Override
     public void hit(GolfGame game) {
         if (Math.abs(game.getGolfGameScreen().getCameraAngle() - angle) < ANGLE_TOLERANCE) {
             game.getGolfGameScreen().performHit(hitPower);
-            isDirectionSet = false;
+            isDirectionSet = false; // Reset the flag after hitting
         }
     }
 
@@ -80,7 +80,6 @@ public class HillClimbingBot implements BotBehavior {
             BallState curSimResult = simulator.singleHit(hitPower, angle, game.getGolfGameScreen().getBallState());
             System.out.printf("Current Sim Result: (%.2f, %.2f) with force %.2f and angle %.2f\n", curSimResult.getX(), curSimResult.getY(), hitPower, angle);
 
-            // Check if the current result is within the goal tolerance
             if (curSimResult.epsilonPositionEquals(goal, GOAL_TOLERANCE)) {
                 System.out.println("Goal reached within tolerance!");
                 return true;
@@ -143,8 +142,7 @@ public class HillClimbingBot implements BotBehavior {
             }
         }
 
-        // Introduce random jumps to escape local minima
-        for (int i = 0; i < 5; i++) { // Try 5 random jumps
+        for (int i = 0; i < 5; i++) {
             float randomHitPower = Math.max(0.1f, originalHitPower + (random.nextFloat() - 0.5f) * 4 * DELTAHITPOWER);
             float randomAngle = originalAngle + (random.nextFloat() - 0.5f) * 4 * DELTAANGLE;
 

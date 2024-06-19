@@ -1,6 +1,7 @@
 package com.example.golfgame.bot;
 
 import com.example.golfgame.GolfGame;
+import com.example.golfgame.bot.botsbehaviors.AStarBot;
 import com.example.golfgame.bot.botsbehaviors.AdvancedBot;
 import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
 import com.example.golfgame.bot.botsbehaviors.PPOBot;
@@ -14,6 +15,7 @@ public class WallE {
     private BotBehavior botBehavior;
     private RuleBasedBot ruleBasedBot;
     private HillClimbingBot hillClimbingBot;
+    private AStarBot aStarBot;
     private AdvancedBot advancedBot;
     private PPOBot ppoBot;
 
@@ -22,6 +24,7 @@ public class WallE {
         this.ruleBasedBot = new RuleBasedBot();
         this.advancedBot = new AdvancedBot();
         this.hillClimbingBot = new HillClimbingBot();
+        this.aStarBot = new AStarBot();
         PPOAgent ppoAgent = null;
 
         try {
@@ -54,7 +57,7 @@ public class WallE {
     }
 
     public void switchToRuleBased() {
-        setBotBehavior(hillClimbingBot);
+        setBotBehavior(aStarBot);
     }
 
     public void switchToAdvanced() {
