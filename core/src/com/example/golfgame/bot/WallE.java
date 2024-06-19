@@ -54,7 +54,7 @@ public class WallE {
     }
 
     public void switchToRuleBased() {
-        setBotBehavior(ruleBasedBot);
+        setBotBehavior(hillClimbingBot);
     }
 
     public void switchToAdvanced() {
