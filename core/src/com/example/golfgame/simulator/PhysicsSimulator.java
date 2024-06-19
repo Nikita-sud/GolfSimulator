@@ -34,6 +34,8 @@ public class PhysicsSimulator {
     private static final double PENALTY_SAND = -1; // Penalty for being on sand
     private static final double REWARD_GOAL = 5; // Reward for reaching the goal
 
+    private static final int HISTORY_SIZE = 10;
+
     public PhysicsSimulator(String heightFunction, PPOAgent agent) {
         addFunction(heightFunction);
         Function fheightFunction = new Function(heightFunction, "x","y");
@@ -56,7 +58,7 @@ public class PhysicsSimulator {
         this.terrainManager = new TerrainManager(heightFunction);
     }
 
-    /**
+/**
      * Performs a hit simulation.
      * @param velocityMagnitude the magnitude of the velocity
      * @param angle the angle of the hit
@@ -71,7 +73,12 @@ public class PhysicsSimulator {
         ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
         ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
         Map<String, Double> functionVals = new HashMap<>();
-        BallState lastBallState = ball.deepCopy();
+        LinkedList<BallState> lastBallStates = new LinkedList<>();
+        
+        while (lastBallStates.size() < HISTORY_SIZE) {
+            lastBallStates.add(ballCopy.deepCopy());
+        }
+
         do {
             functionVals.put("x", ballCopy.getX());
             functionVals.put("y", ballCopy.getY());
@@ -82,11 +89,14 @@ public class PhysicsSimulator {
                 ballCopy.setY(lastPosition.getY());
                 return ballCopy;
             }
-            lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
+            lastBallStates.add(ballCopy.deepCopy());
+            if (lastBallStates.size() > HISTORY_SIZE) {
+                lastBallStates.poll();
+            }
             engine.update(ballCopy, 0.001);
-        } while((!engine.isAtRest(ballCopy)));
+        } while (!ballCopy.epsilonEquals(lastBallStates.peek(), 0));
 
-        if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand
+        if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float) ballCopy.getY())) { // Sand
             System.out.println("Ball on sand!");
         }
 
@@ -95,7 +105,7 @@ public class PhysicsSimulator {
     }
 
     public BallState singleHit(float velocityMagnitude, float angle, BallState ballPosition){
-        resetBallPosition();
+        resetBallPosition(ballPosition);
         return hit(velocityMagnitude, angle);
     }
 
@@ -154,6 +164,12 @@ public class PhysicsSimulator {
     private void resetBallPosition() {
         ball.setX(0);
         ball.setY(0);
+    }
+
+    private void resetBallPosition(BallState newPosition){
+        ball = newPosition.deepCopy();
+        ball.setVx(0);
+        ball.setVy(0);
     }
     
 
