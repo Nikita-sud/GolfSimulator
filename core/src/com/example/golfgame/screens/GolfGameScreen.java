@@ -38,9 +38,13 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
+import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -68,7 +72,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private static final float LOW_SPEED_THRESHOLD_GRASS = 0.008f;
     private static final float LOW_SPEED_THRESHOLD_SAND = 1.0f;
     private static final float MIN_SPEED = 1f;
-    private static final float MAX_SPEED = 5f;
+    private static final float MAX_SPEED = 10f;
 
     // Core game objects
     private final GolfGame mainGame;
@@ -140,6 +144,8 @@ public class GolfGameScreen implements Screen, Disposable {
 
     // Bots
     private WallE wallE;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private Future<?> ruleBasedBotFuture = null;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -757,8 +763,10 @@ public class GolfGameScreen implements Screen, Disposable {
         if (hillClimbingBotActive) {
             advancedBotPlay();
         } else if (ruleBasedBotActive) {
-            ruleBasedbotPlay();
-        }
+            if (ruleBasedBotFuture == null || ruleBasedBotFuture.isDone()) {
+                ruleBasedBotFuture = executorService.submit(this::ruleBasedbotPlay);
+            }
+        }   
     }
 
     private void updateBallRotation(float deltaTime) {
@@ -907,9 +915,24 @@ public class GolfGameScreen implements Screen, Disposable {
     private void ruleBasedbotPlay() {
         if (!isBallAllowedToMove) {
             wallE.switchToRuleBased();
+            System.out.println("About to call setDirection");
             wallE.setDirection();
-            wallE.hit();
+            waitForHillClimbDirectionSetAndHit();
         }
+    }
+
+    private void waitForHillClimbDirectionSetAndHit(){
+        // Run a separate thread to periodically check if the direction is set
+        new Thread(() -> {
+            while (wallE.getHillClimbingBot().isDirectionSet()) {
+                try {
+                    Thread.sleep(10); // 10 milliseconds
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            wallE.hit();
+        }).start();
     }
 
     /**
@@ -1313,5 +1336,6 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.dispose();
         mainShadowLight.dispose();
         shadowModelBatch.dispose();
+        
     }
 }

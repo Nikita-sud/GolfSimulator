@@ -1,5 +1,7 @@
 package com.example.golfgame.bot.botsbehaviors;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -19,6 +21,9 @@ public class HillClimbingBot implements BotBehavior {
     private static final float DELTAANGLE = 0.05f;
     private static final float ANGLE_TOLERANCE = 0.1f;
     
+    private boolean isDirectionSet = false;
+
+    private ExecutorService executorService = Executors. newSingleThreadExecutor();
 
     public HillClimbingBot() {
         hitPower = 3;
@@ -27,24 +32,33 @@ public class HillClimbingBot implements BotBehavior {
 
     @Override
     public float setDirection(GolfGame game) {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future<?> future = executorService.submit(() -> climb(game));
+        System.out.println("setDirection happened");
+
+        Future<Float> future = executorService.submit(new Callable<Float>() {
+            @Override
+            public Float call() {
+                System.out.println("Thread running");
+                climb(game);
+                return angle;
+            }
+        });
 
         try {
-            future.get(); // Wait for the climb method to finish
-        } catch (Exception e) {
+            return future.get(); // This will block until the callable is done
+        } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
-        } finally {
-            executorService.shutdown();
         }
 
         return angle;
     }
 
+
+
     @Override
     public void hit(GolfGame game) {
         if (Math.abs(game.getGolfGameScreen().getCameraAngle() - angle) < ANGLE_TOLERANCE) {
             game.getGolfGameScreen().performHit(hitPower);
+            isDirectionSet = false;
         }
     }
 
@@ -54,7 +68,7 @@ public class HillClimbingBot implements BotBehavior {
 
         while (true) {
             BallState curSimResult = simulator.singleHit(hitPower, angle, game.getGolfGameScreen().getBallState());
-
+            System.out.println(curSimResult);
             // Try climbing in 4 directions: increasing/decreasing angle/hitPower (clip to prevent negative force)
             BallState doubleIncreaseResult = simulator.singleHit(hitPower + DELTAHITPOWER, angle + DELTAANGLE, game.getGolfGameScreen().getBallState());
             BallState angleIncreaseResult = simulator.singleHit((float)Math.max(0.1, hitPower - DELTAHITPOWER), angle + DELTAANGLE,game.getGolfGameScreen().getBallState());
@@ -91,6 +105,10 @@ public class HillClimbingBot implements BotBehavior {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean isDirectionSet(){
+        return isDirectionSet;
     }
 
     private BallState bestState(BallState[] states, BallState goal) {
