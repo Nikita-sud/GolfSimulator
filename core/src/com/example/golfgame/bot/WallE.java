@@ -10,6 +10,8 @@ import com.example.golfgame.bot.agents.PPOAgent;
 
 import java.io.IOException;
 
+import org.nd4j.nativeblas.Nd4jCpu.read_list;
+
 public class WallE {
     private volatile GolfGame game;
     private BotBehavior botBehavior;
@@ -24,7 +26,8 @@ public class WallE {
         this.ruleBasedBot = new RuleBasedBot();
         this.advancedBot = new AdvancedBot();
         this.hillClimbingBot = new HillClimbingBot();
-        this.aStarBot = new AStarBot();
+        this.aStarBot = new AStarBot(game);
+
         PPOAgent ppoAgent = null;
 
         try {
@@ -61,11 +64,11 @@ public class WallE {
     }
 
     public void switchToAdvanced() {
-        setBotBehavior(advancedBot);
+        setBotBehavior(aStarBot);
     }
 
     public void switchToPPO() {
-        setBotBehavior(ppoBot);
+        setBotBehavior(aStarBot);
     }
 
     public BotBehavior getBotBehavior() {
@@ -76,5 +79,7 @@ public class WallE {
         return hillClimbingBot;
     }
 
-
+    public AStarBot getAStarBot(){
+        return aStarBot;
+    }
 }

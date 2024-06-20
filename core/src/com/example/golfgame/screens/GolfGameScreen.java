@@ -917,7 +917,8 @@ public class GolfGameScreen implements Screen, Disposable {
             wallE.switchToRuleBased();
             System.out.println("About to call setDirection");
             wallE.setDirection();
-            waitForHillClimbDirectionSetAndHit();
+            wallE.hit();
+            // waitForHillClimbDirectionSetAndHit();
         }
     }
 
@@ -934,6 +935,8 @@ public class GolfGameScreen implements Screen, Disposable {
             wallE.hit();
         }).start();
     }
+
+    
 
     /**
      * Executes the advanced bot logic for playing the game.
