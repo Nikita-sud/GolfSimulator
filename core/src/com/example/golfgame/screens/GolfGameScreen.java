@@ -792,6 +792,7 @@ public class GolfGameScreen implements Screen, Disposable {
         scoreLabel.clear();
         scoreChange();
         lastScoreLabel.setText("Last Score: " + lastScore);
+        wallE.getAStarBot().resetSteps();
         resetGameState();
     }
 

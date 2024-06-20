@@ -2,7 +2,7 @@ package com.example.golfgame.bot;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.botsbehaviors.AStarBot;
-import com.example.golfgame.bot.botsbehaviors.AdvancedBot;
+// import com.example.golfgame.bot.botsbehaviors.AdvancedBot;
 import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
 import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.bot.botsbehaviors.RuleBasedBot;
@@ -10,7 +10,7 @@ import com.example.golfgame.bot.agents.PPOAgent;
 
 import java.io.IOException;
 
-import org.nd4j.nativeblas.Nd4jCpu.read_list;
+// import org.nd4j.nativeblas.Nd4jCpu.read_list;
 
 public class WallE {
     private volatile GolfGame game;
@@ -18,13 +18,13 @@ public class WallE {
     private RuleBasedBot ruleBasedBot;
     private HillClimbingBot hillClimbingBot;
     private AStarBot aStarBot;
-    private AdvancedBot advancedBot;
+    // private AdvancedBot advancedBot;
     private PPOBot ppoBot;
 
     public WallE(GolfGame game) {
         this.game = game;
         this.ruleBasedBot = new RuleBasedBot();
-        this.advancedBot = new AdvancedBot();
+        // this.advancedBot = new AdvancedBot();
         this.hillClimbingBot = new HillClimbingBot();
         this.aStarBot = new AStarBot(game);
 
@@ -61,14 +61,17 @@ public class WallE {
 
     public void switchToRuleBased() {
         setBotBehavior(aStarBot);
+        if(!aStarBot.isPathFound()){
+            aStarBot.initializePath(game);
+        }
     }
 
     public void switchToAdvanced() {
-        setBotBehavior(aStarBot);
+        setBotBehavior(ppoBot);
     }
 
     public void switchToPPO() {
-        setBotBehavior(aStarBot);
+        setBotBehavior(ppoBot);
     }
 
     public BotBehavior getBotBehavior() {

@@ -9,6 +9,9 @@ import com.example.golfgame.utils.ApproximateStateComparator;
 
 import java.util.*;
 
+import org.nd4j.nativeblas.Nd4jCpu.boolean_and;
+import org.nd4j.nativeblas.Nd4jCpu.pad;
+
 public class AStarBot implements BotBehavior {
     private static final float SHOT_ANGLE_STEP = 15f;
     private static final float SPEED_STEP = 1f;
@@ -22,13 +25,14 @@ public class AStarBot implements BotBehavior {
     private List<Node> path;
     private int currentStep;
     private boolean isDirectionSet = false;
+    private boolean pathFound = false;
 
     public AStarBot(GolfGame game) {
-        this.openList = new PriorityQueue<>(Comparator.comparingDouble(Node::getCost));
+        this.openList = new PriorityQueue<>(
+    Comparator.<Node>comparingDouble(Node::getCost));
         this.closedList = new TreeSet<>(Comparator.comparing(Node::getState, new ApproximateStateComparator(GolfGameScreen.getGoalTolerance())));
         this.path = new ArrayList<>();
         this.currentStep = 0;
-        initializePath(game);
     }
 
     public void initializePath(GolfGame game) {
@@ -94,14 +98,20 @@ public class AStarBot implements BotBehavior {
             }
 
             closedList.add(currentNode);
-
+            boolean win = false;
+            Node winNode = currentNode;
             for (Node neighbor : getNeighbors(currentNode)) {
                 boolean inClosedList = closedList.stream().anyMatch(n -> n.getState().epsilonPositionEquals(neighbor.getState(), GolfGameScreen.getGoalTolerance()));
                 if (inClosedList) {
                     continue;
                 }
+                if (neighbor.getState().epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance())) {
+                    winNode = neighbor;
+                    win = true;
+                    break;
+                }
 
-                double tentativeGCost = currentNode.getGCost() + distance(currentNode.getState(), neighbor.getState());
+                double tentativeGCost = currentNode.getGCost() + currentNode.getState().distanceTo(neighbor.getState());
 
                 boolean inOpenList = openList.stream().anyMatch(n -> n.getState().epsilonPositionEquals(neighbor.getState(), GolfGameScreen.getGoalTolerance()));
 
@@ -115,8 +125,13 @@ public class AStarBot implements BotBehavior {
                     }
                 }
             }
-        }
+            if (win) {
+                newPath = reconstructPath(winNode);
+                break;
+            }
 
+        }
+        pathFound = true;
         return newPath;
     }
 
@@ -124,8 +139,9 @@ public class AStarBot implements BotBehavior {
         return Math.sqrt(Math.pow(from.getX() - to.getX(), 2) + Math.pow(from.getY() - to.getY(), 2));
     }
 
-    private double distance(BallState from, BallState to) {
-        return Math.sqrt(Math.pow(from.getX() - to.getX(), 2) + Math.pow(from.getY() - to.getY(), 2));
+    public void resetSteps(){
+        this.currentStep=1;
+        this.isDirectionSet = false;
     }
 
     private List<Node> getNeighbors(Node node) {
@@ -156,6 +172,10 @@ public class AStarBot implements BotBehavior {
         return isDirectionSet;
     }
 
+    public boolean isPathFound(){
+        return pathFound;
+    }
+
     private static class Node {
         private BallState state;
         private Node parent;
@@ -163,6 +183,7 @@ public class AStarBot implements BotBehavior {
         private double hCost;
         private float speed;
         private float angle;
+        private double cost;
 
         public Node(BallState state, Node parent, double gCost, double hCost, float speed, float angle) {
             this.state = state;
@@ -171,6 +192,7 @@ public class AStarBot implements BotBehavior {
             this.hCost = hCost;
             this.speed = speed;
             this.angle = angle;
+            this.cost = gCost + hCost;
         }
 
         public BallState getState() {
@@ -190,7 +212,7 @@ public class AStarBot implements BotBehavior {
         }
 
         public double getCost() {
-            return gCost + hCost;
+            return cost;
         }
 
         public float getSpeed() {

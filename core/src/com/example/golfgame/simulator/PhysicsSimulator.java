@@ -13,6 +13,9 @@ import com.example.golfgame.physics.ODE.RungeKutta;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import org.nd4j.nativeblas.Nd4jCpu.boolean_and;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.io.IOException;
@@ -108,7 +111,10 @@ public class PhysicsSimulator {
         resetBallPosition(ballPosition);
         return hit(velocityMagnitude, angle);
     }
-
+    
+    public boolean isBallInWater(){
+        return inWater;
+    }
     /**
      * Computes the reward based on the ball state.
      * @param currentBall the current ball state
