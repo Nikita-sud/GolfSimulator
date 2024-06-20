@@ -8,9 +8,8 @@ import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.ApproximateStateComparator;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
-import org.nd4j.nativeblas.Nd4jCpu.boolean_and;
-import org.nd4j.nativeblas.Nd4jCpu.pad;
 
 public class AStarBot implements BotBehavior {
     private static final float SHOT_ANGLE_STEP = 15f;
@@ -85,53 +84,53 @@ public class AStarBot implements BotBehavior {
         openList.clear();
         closedList.clear();
         List<Node> newPath = new ArrayList<>();
-
+    
         Node startNode = new Node(startState, null, 0, heuristic(startState, goalState), 0, 0);
         openList.add(startNode);
-
+    
         while (!openList.isEmpty()) {
             Node currentNode = openList.poll();
-
+    
             if (currentNode.getState().epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance())) {
                 newPath = reconstructPath(currentNode);
+                pathFound = true; // Переместил сюда
                 break;
             }
-
+    
             closedList.add(currentNode);
             boolean win = false;
             Node winNode = currentNode;
             for (Node neighbor : getNeighbors(currentNode)) {
-                boolean inClosedList = closedList.stream().anyMatch(n -> n.getState().epsilonPositionEquals(neighbor.getState(), GolfGameScreen.getGoalTolerance()));
-                if (inClosedList) {
+                if (closedList.contains(neighbor)) {
                     continue;
+                }
+    
+                double tentativeGCost = currentNode.getGCost() + currentNode.getState().distanceTo(neighbor.getState());
+    
+                boolean inOpenList = openList.stream().anyMatch(n -> n.getState().epsilonPositionEquals(neighbor.getState(), 0.1));
+    
+                if (!inOpenList || tentativeGCost < neighbor.getGCost()) {
+                    neighbor.setParent(currentNode);
+                    neighbor.setGCost(tentativeGCost);
+                    neighbor.setFCost(tentativeGCost + neighbor.getHCost());
+    
+                    if (!inOpenList) {
+                        openList.add(neighbor);
+                    }
                 }
                 if (neighbor.getState().epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance())) {
                     winNode = neighbor;
                     win = true;
                     break;
                 }
-
-                double tentativeGCost = currentNode.getGCost() + currentNode.getState().distanceTo(neighbor.getState());
-
-                boolean inOpenList = openList.stream().anyMatch(n -> n.getState().epsilonPositionEquals(neighbor.getState(), GolfGameScreen.getGoalTolerance()));
-
-                if (!inOpenList || tentativeGCost < neighbor.getGCost()) {
-                    neighbor.setParent(currentNode);
-                    neighbor.setGCost(tentativeGCost);
-                    neighbor.setFCost(tentativeGCost + neighbor.getHCost());
-
-                    if (!inOpenList) {
-                        openList.add(neighbor);
-                    }
-                }
             }
             if (win) {
                 newPath = reconstructPath(winNode);
+                pathFound = true; // Переместил сюда
                 break;
             }
-
         }
-        pathFound = true;
+    
         return newPath;
     }
 
@@ -145,15 +144,19 @@ public class AStarBot implements BotBehavior {
     }
 
     private List<Node> getNeighbors(Node node) {
-        List<Node> neighbors = new ArrayList<>();
+        List<Node> neighbors = Collections.synchronizedList(new ArrayList<>()); // Чтобы избежать проблем с многопоточностью
         BallState currentState = node.getState();
 
-        for (float angle = 0; angle < 360; angle += SHOT_ANGLE_STEP) {
+        // Создаем поток всех возможных комбинаций углов и скоростей
+        IntStream.range(0, 360 / (int) SHOT_ANGLE_STEP).parallel().forEach(i -> {
+            float angle = i * SHOT_ANGLE_STEP;
             for (float speed = MIN_SPEED; speed <= MAX_SPEED; speed += SPEED_STEP) {
                 BallState newState = simulator.singleHit(speed, angle, currentState);
-                neighbors.add(new Node(newState, node, node.getGCost(), heuristic(newState, game.getGolfGameScreen().getGoalState()), speed, angle));
+                Node neighbor = new Node(newState, node, node.getGCost(), heuristic(newState, game.getGolfGameScreen().getGoalState()), speed, angle);
+                neighbors.add(neighbor);
             }
-        }
+        });
+        
         return neighbors;
     }
 
@@ -227,12 +230,29 @@ public class AStarBot implements BotBehavior {
             this.parent = parent;
         }
 
+        // Методы в классе Node
         public void setGCost(double gCost) {
             this.gCost = gCost;
+            // this.cost = this.gCost + this.hCost; // Пересчитываем cost
         }
 
         public void setFCost(double fCost) {
             this.hCost = fCost;
+            // this.cost = this.gCost + this.hCost; // Пересчитываем cost
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return Objects.equals(state, node.state);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(state);
         }
     }
+
 }
