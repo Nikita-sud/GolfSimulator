@@ -21,6 +21,7 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.utils.Function;
@@ -33,7 +34,7 @@ import com.example.golfgame.utils.MatrixUtils;
  */
 public class TerrainManager {
     private Function heightFunction;
-    private Texture grassTexture, sandTexture, holeTexture;
+    private Texture grassTexture, sandTexture, holeTexture, redLineTexture;
     private int gridWidth, gridHeight;
     private List<float[]> sandAreas;
     private float[] holeArea;
@@ -52,11 +53,12 @@ public class TerrainManager {
      * @param scale          The scale factor for the terrain.
      * @param parts          The number of parts the terrain is divided into.
      */
-    public TerrainManager(Function heightFunction, Texture grassTexture, Texture sandTexture, Texture holeTexture, int gridWidth, int gridHeight, float scale, int parts) {
+    public TerrainManager(Function heightFunction, Texture grassTexture, Texture sandTexture, Texture holeTexture, Texture redLineTexture, int gridWidth, int gridHeight, float scale, int parts) {
         this.heightFunction = heightFunction;
         this.grassTexture = grassTexture;
         this.sandTexture = sandTexture;
         this.holeTexture = holeTexture;
+        this.redLineTexture = redLineTexture;
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.scale = scale;
@@ -272,6 +274,42 @@ public class TerrainManager {
         }
     
         return sandInstances;
+    }
+
+    public ModelInstance createRedLineModel(List<Vector2> points) {
+        ModelBuilder modelBuilder = new ModelBuilder();
+        
+        // Start building the model
+        modelBuilder.begin();
+        
+        redLineTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
+        Material redMaterial = new Material(TextureAttribute.createDiffuse(redLineTexture), ColorAttribute.createSpecular(1, 1, 1, 1));
+        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_TRIANGLES, Usage.Position | Usage.ColorUnpacked, redMaterial);
+    
+        // Add vertices and texture coordinates for each point
+        for (Vector2 point : points) {
+            float x = point.x;
+            float z = point.y;
+            float y = getTerrainHeight(x, z) + 10; // Use getTerrainHeight method to determine the y value
+            meshBuilder.vertex(x, y, z);
+        }
+    
+        // Add indices to form triangles between each consecutive point
+        for (int i = 0; i < points.size() - 1; i++) {
+            int bl = i;
+            int br = i + 1;
+            int tl = (i == 0) ? i : i - 1;
+            int tr = i + 2;
+            
+            if (tr < points.size()) {
+                meshBuilder.index((short)tl, (short)bl, (short)br); // Triangle 1
+                meshBuilder.index((short)tl, (short)br, (short)tr); // Triangle 2
+            }
+        }
+    
+        // End the model building
+        Model lineModel = modelBuilder.end();
+        return new ModelInstance(lineModel);
     }
 
     /**

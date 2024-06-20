@@ -24,6 +24,7 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -54,6 +55,7 @@ import com.example.golfgame.utils.gameUtils.WaterSurfaceManager;
 import com.example.golfgame.utils.gameUtils.Weather;
 import com.example.golfgame.physics.*;
 import com.example.golfgame.physics.ODE.*;
+import com.example.golfgame.simulator.PhysicsSimulator;
 
 /**
  * Represents the main game screen where the golf game takes place.
@@ -89,7 +91,7 @@ public class GolfGameScreen implements Screen, Disposable {
 
     // Models and instances
     private Model golfBallModel, flagModel, flagStemModel;
-    private ModelInstance golfBallInstance, flagInstance, flagStemInstance;
+    private ModelInstance golfBallInstance, flagInstance, flagStemInstance, lineInstance;
     private List<ModelInstance> golfCourseInstances, sandInstances, waterSurfaces;
     private ModelInstance holeInstance;
 
@@ -111,6 +113,9 @@ public class GolfGameScreen implements Screen, Disposable {
     private Label facingLabel, scoreLabel, lastScoreLabel, ballMovementLabel;
     private ProgressBar speedProgressBar;
     private Dialog pauseDialog;
+    private ShapeRenderer shapeRenderer;
+    private List<Vector2> path;
+    private boolean shouldRenderPath = false;
 
     // Animations
     private FlagAnimation flagAnimation;
@@ -173,6 +178,7 @@ public class GolfGameScreen implements Screen, Disposable {
         assetManager.load("textures/grassTexture.jpeg", Texture.class);
         assetManager.load("textures/sandTexture.jpeg", Texture.class);
         assetManager.load("textures/holeTexture.png", Texture.class);
+        assetManager.load("textures/redLine.png", Texture.class);
         assetManager.load("models/sphere.obj", Model.class);
         assetManager.load("models/flag.obj", Model.class);
         assetManager.load("models/flagStem.obj", Model.class);
@@ -277,6 +283,7 @@ public class GolfGameScreen implements Screen, Disposable {
             assetManager.get("textures/grassTexture.jpeg", Texture.class),
             assetManager.get("textures/sandTexture.jpeg", Texture.class),
             assetManager.get("textures/holeTexture.png", Texture.class),
+            assetManager.get("textures/redLine.png", Texture.class),
             200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50);
     }
@@ -311,7 +318,6 @@ public class GolfGameScreen implements Screen, Disposable {
         gameEnvironment.shadowMap = mainShadowLight;
 
         shadowModelBatch = new ModelBatch(new DepthShaderProvider());
-
         golfBallInstance = new ModelInstance(golfBallModel);
         initializeModelInstance(golfBallInstance, Color.WHITE);
 
@@ -327,7 +333,7 @@ public class GolfGameScreen implements Screen, Disposable {
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
-
+        lineInstance = terrainManager.createHoleTerrainModel(10, 10);
         waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
         waterAnimations = new ArrayList<>();
         for (ModelInstance waterSurface : waterSurfaces) {
@@ -433,10 +439,11 @@ public class GolfGameScreen implements Screen, Disposable {
 
         TextButton settingsButton = createSettingsButton();
         TextButton pauseButton = createPauseButton();
+        TextButton pathButton = createPathButton();
 
         buttonTable.add(settingsButton).width(100).height(50).pad(10);
         buttonTable.add(pauseButton).width(100).height(50).pad(10);
-
+        buttonTable.add(pathButton).width(100).height(50).pad(10);
         stage.addActor(buttonTable);
     }
 
@@ -474,6 +481,23 @@ public class GolfGameScreen implements Screen, Disposable {
             }
         });
         return pauseButton;
+    }
+
+    /**
+     * Creates the path button for the UI
+     * 
+     * @return the created oath button
+     */
+    private TextButton createPathButton(){
+        TextButton pathButton = new TextButton("Path", skin);
+        pathButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                shouldRenderPath = true;
+                lineInstance = terrainManager.createRedLineModel(new PhysicsSimulator(terrainHeightFunction, goalState).hitWithPath(10, cameraViewAngle).getValue());
+            }
+        });
+        return pathButton;
     }
 
     /**
@@ -572,6 +596,7 @@ public class GolfGameScreen implements Screen, Disposable {
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
+        lineInstance = terrainManager.createHoleTerrainModel(10, 10);
         waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
     }
 
@@ -1034,7 +1059,8 @@ public class GolfGameScreen implements Screen, Disposable {
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
         shadowModelBatch.render(flagStemInstance, gameEnvironment);
         shadowModelBatch.render(flagInstance, gameEnvironment);
-
+        shadowModelBatch.render(lineInstance);
+  
         // End rendering shadows
         shadowModelBatch.end();
         mainShadowLight.end();
@@ -1050,6 +1076,10 @@ public class GolfGameScreen implements Screen, Disposable {
         for (ModelInstance sandInstance : sandInstances) {
             mainModelBatch.render(sandInstance, gameEnvironment);
         }
+        
+        
+        mainModelBatch.render(lineInstance, gameEnvironment);
+    
         // Render other game elements for main scene
         mainModelBatch.render(holeInstance, gameEnvironment);
         mainModelBatch.render(golfBallInstance, gameEnvironment);
@@ -1060,10 +1090,10 @@ public class GolfGameScreen implements Screen, Disposable {
         for (ModelInstance waterSurface : waterSurfaces) {
             mainModelBatch.render(waterSurface, gameEnvironment);
         }
-
         // End rendering main scene
         mainModelBatch.end();
     }
+
 
     @Override
     public void resize(int width, int height) {
@@ -1256,7 +1286,9 @@ public class GolfGameScreen implements Screen, Disposable {
         return (Math.abs(ballToGoal.x - camVector2.x) < 0.001) && (Math.abs(ballToGoal.y - camVector2.y) < 0.001);
     }
 
-
+    public void setPath(List<Vector2> path) {
+        this.path = path;
+    }
 
     public boolean isBallInWater(BallState ballState) {
         return isBallInWater;
@@ -1343,6 +1375,7 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.dispose();
         mainShadowLight.dispose();
         shadowModelBatch.dispose();
+        shapeRenderer.dispose();
         
     }
 }
