@@ -65,7 +65,6 @@
             "request": "launch",
             "mainClass": "com.example.golfgame.DesktopLauncher",
             "projectName": "Golf-desktop",
-            "vmArgs": "-XstartOnFirstThread",
             "args": ""
         }
     ]

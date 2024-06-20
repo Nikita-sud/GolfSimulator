@@ -1,5 +1,6 @@
 package com.example.golfgame.simulator;
 
+import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.agents.PPOAgent;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.gameUtils.TerrainManager;
@@ -9,6 +10,7 @@ import com.example.golfgame.utils.ppoUtils.State;
 import com.example.golfgame.utils.ppoUtils.Transition;
 import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.RungeKutta;
+import com.example.golfgame.screens.GolfGameScreen;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +84,10 @@ public class PhysicsSimulator {
                 ballCopy.setY(lastPosition.getY());
                 return ballCopy;
             }
+            if (GolfGameScreen.validGoal(ballCopy, goal)){ // Goal
+                System.out.println("Goal reached in simulator!");
+                return ballCopy;
+            }
             lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
             engine.update(ballCopy, 0.001);
         } while((!engine.isAtRest(ballCopy)));
@@ -95,7 +101,7 @@ public class PhysicsSimulator {
     }
 
     public BallState singleHit(float velocityMagnitude, float angle, BallState ballPosition){
-        resetBallPosition();
+        resetBallPosition(ballPosition);
         return hit(velocityMagnitude, angle);
     }
 
@@ -154,6 +160,11 @@ public class PhysicsSimulator {
     private void resetBallPosition() {
         ball.setX(0);
         ball.setY(0);
+    }
+
+    private void resetBallPosition(BallState ballPosition){
+        ball.setX(ballPosition.getX());
+        ball.setY(ballPosition.getY());
     }
     
 

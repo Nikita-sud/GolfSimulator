@@ -787,12 +787,19 @@ public class GolfGameScreen implements Screen, Disposable {
      * Handles the event when the goal is reached.
      */
     private void handleGoalReached() {
+        if (!validGoal(currentBallState, goalState)){
+            return;
+        }
         lastScore = score;
         score = 0;
         scoreLabel.clear();
         scoreChange();
         lastScoreLabel.setText("Last Score: " + lastScore);
         resetGameState();
+    }
+
+    public static boolean validGoal(BallState ball, BallState goal){
+        return ball.epsilonPositionEquals(goal, GOAL_TOLERANCE)&&Math.abs(ball.getVx())<1&&Math.abs(ball.getVy())<2;
     }
 
     private void checkAndHandleBallOutOfBounds() {

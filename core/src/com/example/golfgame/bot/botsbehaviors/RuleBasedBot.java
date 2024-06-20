@@ -13,6 +13,23 @@ public class RuleBasedBot implements BotBehavior {
 
     @Override
     public float setDirection(GolfGame game) {
+
+        float targetAngle = findTargetAngle(game);
+        
+        // Get the current camera angle
+        float currentAngle = game.getGolfGameScreen().getCameraAngle();
+        // Smoothly adjust the camera angle
+        float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);;
+
+        return adjustedAngle;
+    }
+
+    public float findTargetAngle(GolfGame game){
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // Get goal state and normalize
         BallState goal = game.getGolfGameScreen().getGoalState().copy();
         BallState ball = game.getGolfGameScreen().getBallState().copy();
@@ -49,12 +66,7 @@ public class RuleBasedBot implements BotBehavior {
 
         float targetAngle = straightTargetAngle+firstOrderTerrainConstant*(float)avgSlope+secondOrderTerrainConstant*(float)avgSecondSlope; 
 
-// Get the current camera angle
-        float currentAngle = game.getGolfGameScreen().getCameraAngle();
-        // Smoothly adjust the camera angle
-        float adjustedAngle = smoothAngleTransition(currentAngle, targetAngle);;
-
-        return adjustedAngle;
+        return targetAngle;
     }
 
     private float smoothAngleTransition(float currentAngle, float targetAngle) {
