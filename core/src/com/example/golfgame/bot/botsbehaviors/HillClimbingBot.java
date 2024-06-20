@@ -125,7 +125,7 @@ public class HillClimbingBot implements BotBehavior {
             };
 
             for (int i = 0; i < neighbors.length; i++) {
-                System.out.printf("Neighbor %d: (%.2f, %.2f) with force %.2f and angle %.2f\n", i, neighbors[i].getX(), neighbors[i].getY(), neighbors[i].getVx(), neighbors[i].getVy());
+                System.out.printf("Neighbor %d: (%.2f, %.2f) ", i, neighbors[i].getX(), neighbors[i].getY());
             }
 
             BallState bestState = bestState(neighbors, goal);
