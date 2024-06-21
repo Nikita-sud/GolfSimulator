@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -278,39 +279,47 @@ public class TerrainManager {
 
     public ModelInstance createRedLineModel(List<Vector2> points) {
         ModelBuilder modelBuilder = new ModelBuilder();
-        
+
         // Start building the model
         modelBuilder.begin();
-        
-        redLineTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-        Material redMaterial = new Material(TextureAttribute.createDiffuse(redLineTexture), ColorAttribute.createSpecular(1, 1, 1, 1));
-        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_TRIANGLES, Usage.Position | Usage.ColorUnpacked, redMaterial);
-    
-        // Add vertices and texture coordinates for each point
-        for (Vector2 point : points) {
+
+        // Define a simple red material
+        Material redMaterial = new Material(ColorAttribute.createDiffuse(Color.RED));
+
+        // Define usage for position and color
+        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_LINES, Usage.Position | Usage.ColorUnpacked, redMaterial);
+
+        // Add vertices for each point
+        for (int i = 0; i < points.size(); i++) {
+            Vector2 point = points.get(i);
             float x = point.x;
             float z = point.y;
-            float y = getTerrainHeight(x, z) + 10; // Use getTerrainHeight method to determine the y value
-            meshBuilder.vertex(x, y, z);
+            float y = getTerrainHeight(x, z)+0.1f; // Use getTerrainHeight method to determine the y value
+
+            // Add vertex with position and color
+            meshBuilder.vertex(x, y, z, 1.0f, 0.0f, 0.0f, 1.0f);
         }
-    
-        // Add indices to form triangles between each consecutive point
+
+        // Create line segments between consecutive points
         for (int i = 0; i < points.size() - 1; i++) {
-            int bl = i;
-            int br = i + 1;
-            int tl = (i == 0) ? i : i - 1;
-            int tr = i + 2;
-            
-            if (tr < points.size()) {
-                meshBuilder.index((short)tl, (short)bl, (short)br); // Triangle 1
-                meshBuilder.index((short)tl, (short)br, (short)tr); // Triangle 2
-            }
+            meshBuilder.index((short)i, (short)(i + 1));
         }
-    
+
         // End the model building
         Model lineModel = modelBuilder.end();
         return new ModelInstance(lineModel);
     }
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Checks if a given position is on a sand area.

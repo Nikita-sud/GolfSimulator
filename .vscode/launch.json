@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "test",
+            "request": "launch",
+            "mainClass": "test",
+            "projectName": ""
+        },
+        {
+            "type": "java",
             "name": "TerrainManager",
             "request": "launch",
             "mainClass": "com.example.golfgame.utils.TerrainManager",
