@@ -280,7 +280,7 @@ public class GolfGameScreen implements Screen, Disposable {
         terrainManager = new TerrainManager(terrainHeightFunction,
             assetManager.get("textures/grassTexture.jpeg", Texture.class),
             assetManager.get("textures/sandTexture.jpeg", Texture.class),
-            assetManager.get("textures/redLine.png", Texture.class),
+            assetManager.get("textures/holeTexture.png", Texture.class),
             assetManager.get("textures/redLine.png", Texture.class),
             200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50);
