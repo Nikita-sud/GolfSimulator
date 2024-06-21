@@ -284,27 +284,36 @@ public class TerrainManager {
         
         redLineTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
         Material redMaterial = new Material(TextureAttribute.createDiffuse(redLineTexture), ColorAttribute.createSpecular(1, 1, 1, 1));
-        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_TRIANGLES, Usage.Position | Usage.ColorUnpacked, redMaterial);
+        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_TRIANGLES, Usage.Position | Usage.Normal | Usage.TextureCoordinates, redMaterial);
+    
+        float lineWidth = 0.1f;
     
         // Add vertices and texture coordinates for each point
-        for (Vector2 point : points) {
-            float x = point.x;
-            float z = point.y;
-            float y = getTerrainHeight(x, z) + 10; // Use getTerrainHeight method to determine the y value
-            meshBuilder.vertex(x, y, z);
-        }
-    
-        // Add indices to form triangles between each consecutive point
         for (int i = 0; i < points.size() - 1; i++) {
-            int bl = i;
-            int br = i + 1;
-            int tl = (i == 0) ? i : i - 1;
-            int tr = i + 2;
-            
-            if (tr < points.size()) {
-                meshBuilder.index((short)tl, (short)bl, (short)br); // Triangle 1
-                meshBuilder.index((short)tl, (short)br, (short)tr); // Triangle 2
-            }
+            Vector2 point1 = points.get(i);
+            Vector2 point2 = points.get(i + 1);
+    
+            float x1 = point1.x;
+            float z1 = point1.y;
+            float y1 = getTerrainHeight(x1, z1) + 0.1f; // немного выше поверхности
+    
+            float x2 = point2.x;
+            float z2 = point2.y;
+            float y2 = getTerrainHeight(x2, z2) + 0.1f;
+    
+            Vector3 normal = new Vector3(0, 1, 0);
+            Vector2 uv1 = new Vector2(0, 0);
+            Vector2 uv2 = new Vector2(1, 0);
+            Vector2 uv3 = new Vector2(0, 1);
+            Vector2 uv4 = new Vector2(1, 1);
+    
+            meshBuilder.vertex(x1 - lineWidth, y1, z1 - lineWidth, normal.x, normal.y, normal.z, uv1.x, uv1.y);
+            meshBuilder.vertex(x1 + lineWidth, y1, z1 + lineWidth, normal.x, normal.y, normal.z, uv2.x, uv2.y);
+            meshBuilder.vertex(x2 - lineWidth, y2, z2 - lineWidth, normal.x, normal.y, normal.z, uv3.x, uv3.y);
+            meshBuilder.vertex(x2 + lineWidth, y2, z2 + lineWidth, normal.x, normal.y, normal.z, uv4.x, uv4.y);
+    
+            meshBuilder.index((short) (i * 4), (short) (i * 4 + 1), (short) (i * 4 + 2)); 
+            meshBuilder.index((short) (i * 4 + 1), (short) (i * 4 + 3), (short) (i * 4 + 2));
         }
     
         // End the model building
