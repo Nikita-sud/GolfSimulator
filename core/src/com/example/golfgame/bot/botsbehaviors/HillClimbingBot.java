@@ -1,5 +1,6 @@
 package com.example.golfgame.bot.botsbehaviors;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -7,12 +8,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.Random;
 
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.simulator.PhysicsSimulator;
 import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.Function;
+import com.example.golfgame.utils.gameUtils.TerrainManager;
 
 public class HillClimbingBot implements BotBehavior {
 
@@ -27,6 +31,8 @@ public class HillClimbingBot implements BotBehavior {
     private static final float MIN_FORCE = 1.0f;  // Minimum force
 
     private static final float GOAL_TOLERANCE = 1.5f;
+
+    private static final Random random = new Random(1);
     
     private boolean isDirectionSet = false;
 
@@ -153,6 +159,10 @@ public class HillClimbingBot implements BotBehavior {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
+            // Create a new instance of the red line model to avoid threading issues
+            List<Vector2> simRes = simulator.hitWithPath(hitPower, angle).getValue();
+
         }
         return false;
     }

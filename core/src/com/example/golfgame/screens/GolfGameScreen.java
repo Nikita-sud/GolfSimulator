@@ -492,7 +492,9 @@ public class GolfGameScreen implements Screen, Disposable {
         pathButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                List<Vector2> result = new PhysicsSimulator(terrainHeightFunction, goalState).hitWithPath(10, cameraViewAngle).getValue();
+                PhysicsSimulator simulator = new PhysicsSimulator(terrainHeightFunction, goalState);
+                simulator.setPosition((float)currentBallState.getX(), (float)currentBallState.getY());
+                List<Vector2> result = simulator.hitWithPath(10, cameraViewAngle).getValue();
                 lineInstance = terrainManager.createRedLineModel(result);
             }
         });
@@ -1349,6 +1351,9 @@ public class GolfGameScreen implements Screen, Disposable {
         this.sandFrictionStatic = staticFriction;
     }
 
+    public void setLineInstance(ModelInstance line){
+        lineInstance = line;
+    }
     /**
      * Sets the hill-climbing bot activeness.
      *
