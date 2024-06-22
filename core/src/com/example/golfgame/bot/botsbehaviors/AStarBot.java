@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 
 
 public class AStarBot implements BotBehavior {
-    private static final float SHOT_ANGLE_STEP = 15f;
+    private static final float SHOT_ANGLE_STEP = 5f;
     private static final float SPEED_STEP = 1f;
     private static final float MIN_SPEED = 1;
     private static final float MAX_SPEED = 5;
@@ -28,7 +28,8 @@ public class AStarBot implements BotBehavior {
 
     public AStarBot(GolfGame game) {
         this.openList = new PriorityQueue<>(
-    Comparator.<Node>comparingDouble(Node::getCost));
+            Comparator.<Node>comparingDouble(Node::getCost)
+                .thenComparingDouble(Node::getHCost));
         this.closedList = new TreeSet<>(Comparator.comparing(Node::getState, new ApproximateStateComparator(GolfGameScreen.getGoalTolerance())));
         this.path = new ArrayList<>();
         this.currentStep = 0;
@@ -112,8 +113,8 @@ public class AStarBot implements BotBehavior {
                 if (!inOpenList || tentativeGCost < neighbor.getGCost()) {
                     neighbor.setParent(currentNode);
                     neighbor.setGCost(tentativeGCost);
-                    neighbor.setFCost(tentativeGCost + neighbor.getHCost());
-    
+                    neighbor.setHCost(heuristic(neighbor.getState(), goalState)); // обновляем hCost
+                    
                     if (!inOpenList) {
                         openList.add(neighbor);
                     }
@@ -183,58 +184,66 @@ public class AStarBot implements BotBehavior {
         private Node parent;
         private double gCost;
         private double hCost;
+        private double fCost; // добавляем поле для полной стоимости
         private float speed;
         private float angle;
-
+    
         public Node(BallState state, Node parent, double gCost, double hCost, float speed, float angle) {
             this.state = state;
             this.parent = parent;
             this.gCost = gCost;
             this.hCost = hCost;
+            this.fCost = gCost + hCost; // вычисляем полную стоимость сразу
             this.speed = speed;
             this.angle = angle;
         }
-
+    
         public BallState getState() {
             return state;
         }
-
+    
         public Node getParent() {
             return parent;
         }
-
+    
         public double getGCost() {
             return gCost;
         }
-
+    
         public double getHCost() {
             return hCost;
         }
-
-        public double getCost() {
-            return gCost + hCost;
+    
+        public double getFCost() {
+            return fCost; // добавляем метод для получения полной стоимости
         }
-
+    
         public float getSpeed() {
             return speed;
         }
-
+    
         public float getAngle() {
             return angle;
         }
-
+    
         public void setParent(Node parent) {
             this.parent = parent;
         }
-
+    
         public void setGCost(double gCost) {
             this.gCost = gCost;
+            this.fCost = gCost + hCost; // обновляем полную стоимость
         }
-
-        public void setFCost(double fCost) {
-            this.hCost = fCost;
+    
+        public void setHCost(double hCost) {
+            this.hCost = hCost;
+            this.fCost = gCost + hCost; // обновляем полную стоимость
         }
-
+    
+        public double getCost() {
+            return this.fCost; // метод для получения полной стоимости
+        }
+    
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -242,7 +251,7 @@ public class AStarBot implements BotBehavior {
             Node node = (Node) o;
             return Objects.equals(state, node.state);
         }
-
+    
         @Override
         public int hashCode() {
             return Objects.hash(state);
