@@ -90,7 +90,7 @@ public class PhysicsSimulator {
                 return ballCopy;
             }
             lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, 0.001);
+            engine.update(ballCopy, 0.0166);
         } while((!engine.isAtRest(ballCopy)));
 
         if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand

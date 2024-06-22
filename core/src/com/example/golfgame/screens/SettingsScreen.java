@@ -41,7 +41,7 @@ public class SettingsScreen implements Screen {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
-        curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+0.8", "x", "y");  // Default height function
+        curHeightFunction = new Function("sin(0.1x)*cos(0.1y)+1", "x", "y");  // Default height function
         music = assetManager.get("assets/music/settings.mp3", Music.class);
 
         setupUI();
@@ -70,14 +70,14 @@ public class SettingsScreen implements Screen {
         });
 
         // Create height function text field
-        TextField heightFunction = new TextField("sin(0.3x)*cos(0.3y)+0.8", skin);
+        TextField heightFunction = new TextField("sin(0.1x)*cos(0.1y)+1", skin);
         heightFunction.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 try {
                     curHeightFunction = new Function(heightFunction.getText(), "x", "y");
                 } catch (Exception e) {
-                    curHeightFunction = new Function("sin(0.3x)*cos(0.3y)+0.8", "x", "y");
+                    curHeightFunction = new Function("sin(0.1x)*cos(0.1y)+1", "x", "y");
                 }
             }
         });

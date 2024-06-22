@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.Random;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
@@ -22,6 +23,8 @@ public class HillClimbingBot implements BotBehavior {
 
     private volatile float hitPower;
     private volatile float angle;
+
+    private volatile static boolean running = true;
 
     private static final float DELTAHITPOWER = 0.2f;
     private static final float DELTAANGLE = 0.1f;
@@ -107,12 +110,10 @@ public class HillClimbingBot implements BotBehavior {
         expandSearchRange(simulator, game, goal, random);
         hillClimb(simulator, game, goal);
     }
-
     private boolean hillClimb(PhysicsSimulator simulator, GolfGame game, BallState goal) {
         boolean improved = true;
-        while (improved) {
+        while (running&&improved) {
             improved = false;
-
             BallState curSimResult = simulator.singleHit(hitPower, angle, game.getGolfGameScreen().getBallState());
             System.out.printf("Current Sim Result: (%.2f, %.2f) with force %.2f and angle %.2f\n", curSimResult.getX(), curSimResult.getY(), hitPower, angle);
 
@@ -129,10 +130,6 @@ public class HillClimbingBot implements BotBehavior {
                 simulator.singleHit(hitPower, angle - DELTAANGLE, game.getGolfGameScreen().getBallState()),
                 curSimResult
             };
-
-            for (int i = 0; i < neighbors.length; i++) {
-                System.out.printf("Neighbor %d: (%.2f, %.2f) ", i, neighbors[i].getX(), neighbors[i].getY());
-            }
 
             BallState bestState = bestState(neighbors, goal);
 
@@ -160,12 +157,17 @@ public class HillClimbingBot implements BotBehavior {
                 e.printStackTrace();
             }
 
-            // Create a new instance of the red line model to avoid threading issues
-            List<Vector2> simRes = simulator.hitWithPath(hitPower, angle).getValue();
-
+            // Use Gdx.app.postRunnable to ensure OpenGL calls are made in the rendering thread
+            Gdx.app.postRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    game.getGolfGameScreen().setLineInstance(game.getGolfGameScreen().getTerrainManager().createRedLineModel(simulator.hitWithPath(hitPower, angle).getValue()));
+                }
+            });
         }
         return false;
     }
+
 
     private void expandSearchRange(PhysicsSimulator simulator, GolfGame game, BallState goal, Random random) {
         float originalHitPower = hitPower;
@@ -176,10 +178,18 @@ public class HillClimbingBot implements BotBehavior {
                 if (deltaPower == 0 && deltaAngle == 0) continue;
 
                 BallState newState = simulator.singleHit(Math.max(0.1f, originalHitPower + deltaPower), originalAngle + deltaAngle, game.getGolfGameScreen().getBallState());
+                List<Vector2> path = simulator.hitWithPath(Math.max(0.1f, originalHitPower + deltaAngle), originalAngle + deltaAngle).getValue();
+                Gdx.app.postRunnable(new Runnable() {
+                    @Override
+                    public void run() {
+                        game.getGolfGameScreen().setLineInstance(game.getGolfGameScreen().getTerrainManager().createRedLineModel(path));
+                    }
+                });
                 if (newState.distanceTo(goal) < simulator.singleHit(hitPower, angle, game.getGolfGameScreen().getBallState()).distanceTo(goal)) {
                     hitPower = Math.max(0.1f, originalHitPower + deltaPower);
                     angle = originalAngle + deltaAngle;
                 }
+
             }
         }
 
@@ -193,6 +203,12 @@ public class HillClimbingBot implements BotBehavior {
                 hitPower = randomHitPower;
                 angle = randomAngle;
             }
+            Gdx.app.postRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    game.getGolfGameScreen().setLineInstance(game.getGolfGameScreen().getTerrainManager().createRedLineModel(simulator.hitWithPath(hitPower, angle).getValue()));
+                }
+            });
         }
     }
 
@@ -204,6 +220,9 @@ public class HillClimbingBot implements BotBehavior {
         double smallestDistance = Integer.MAX_VALUE;
         BallState best = null;
         for (BallState state : states) {
+            if (GolfGameScreen.validGoal(state, goal)){
+                return state;
+            }
             if (state.distanceTo(goal)<smallestDistance) {
                 smallestDistance = state.distanceTo(goal);
                 best = state;

@@ -331,7 +331,6 @@ public class GolfGameScreen implements Screen, Disposable {
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
-        lineInstance = terrainManager.createRedLineModel(new PhysicsSimulator(terrainHeightFunction, goalState).hitWithPath(10, 0).getValue());
         waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
         waterAnimations = new ArrayList<>();
         for (ModelInstance waterSurface : waterSurfaces) {
@@ -422,7 +421,6 @@ public class GolfGameScreen implements Screen, Disposable {
      * Initializes the UI components for the game.
      */
     private void initializeUIComponents() {
-        lineInstance = terrainManager.createRedLineModel(new PhysicsSimulator(terrainHeightFunction, goalState).hitWithPath(10, 0).getValue());
         initializeButtons();
         initializeLabels();
         initializeProgressBar();
@@ -597,7 +595,6 @@ public class GolfGameScreen implements Screen, Disposable {
         golfCourseInstances = terrainManager.createGrassTerrainModels(0, 0);
         sandInstances = terrainManager.createSandTerrainModels(0, 0);
         holeInstance = terrainManager.createHoleTerrainModel(0, 0);
-        lineInstance = terrainManager.createRedLineModel(new PhysicsSimulator(terrainHeightFunction, goalState).hitWithPath(10, 0).getValue());
         waterSurfaces = waterSurfaceManager.createWaterSurface(0, 0);
     }
 
@@ -825,7 +822,12 @@ public class GolfGameScreen implements Screen, Disposable {
     }
 
     public static boolean validGoal(BallState ball, BallState goal){
-        return ball.epsilonPositionEquals(goal, GOAL_TOLERANCE)&&Math.abs(ball.getVx())<1&&Math.abs(ball.getVy())<2;
+        return ball.epsilonPositionEquals(goal, GOAL_TOLERANCE)&&Math.abs(ball.getVx())<3.5&&Math.abs(ball.getVy())<3.5;
+    }
+
+    public static boolean validSimulatorGoal(BallState ball, BallState goal){
+        return ball.epsilonPositionEquals(goal, GOAL_TOLERANCE-0.5)&&Math.abs(ball.getVx())<3.5&&Math.abs(ball.getVy())<3.5;
+
     }
 
     private void checkAndHandleBallOutOfBounds() {
@@ -948,7 +950,6 @@ public class GolfGameScreen implements Screen, Disposable {
     private void ruleBasedbotPlay() {
         if (!isBallAllowedToMove) {
             wallE.switchToRuleBased();
-            System.out.println("About to call setDirection");
             wallE.setDirection();
             waitForHillClimbDirectionSetAndHit();
         }
@@ -1056,7 +1057,9 @@ public class GolfGameScreen implements Screen, Disposable {
             shadowModelBatch.render(sandInstance, gameEnvironment);
         }
         // Render other game elements for shadows
-        shadowModelBatch.render(lineInstance, gameEnvironment);
+        if (lineInstance!=null){
+            shadowModelBatch.render(lineInstance, gameEnvironment);
+        }
         shadowModelBatch.render(holeInstance, gameEnvironment);
         shadowModelBatch.render(golfBallInstance, gameEnvironment);
         shadowModelBatch.render(flagStemInstance, gameEnvironment);
@@ -1079,7 +1082,9 @@ public class GolfGameScreen implements Screen, Disposable {
         }
 
         // Render other game elements for main scene
-        mainModelBatch.render(lineInstance, gameEnvironment);
+        if (lineInstance!=null){
+            mainModelBatch.render(lineInstance, gameEnvironment);
+        }
         mainModelBatch.render(holeInstance, gameEnvironment);
         mainModelBatch.render(golfBallInstance, gameEnvironment);
         mainModelBatch.render(flagStemInstance, gameEnvironment);
@@ -1386,6 +1391,5 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.dispose();
         mainShadowLight.dispose();
         shadowModelBatch.dispose();
-
     }
 }

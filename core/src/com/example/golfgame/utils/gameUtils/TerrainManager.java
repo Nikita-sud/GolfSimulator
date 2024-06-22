@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -275,52 +275,41 @@ public class TerrainManager {
     
         return sandInstances;
     }
-
+    
     public ModelInstance createRedLineModel(List<Vector2> points) {
         ModelBuilder modelBuilder = new ModelBuilder();
-        
+
         // Start building the model
         modelBuilder.begin();
+
+        // Define a simple red material
+        Material redMaterial = new Material(ColorAttribute.createDiffuse(Color.RED));
         
-        redLineTexture.setWrap(Texture.TextureWrap.Repeat, Texture.TextureWrap.Repeat);
-        Material redMaterial = new Material(TextureAttribute.createDiffuse(redLineTexture), ColorAttribute.createSpecular(1, 1, 1, 1));
-        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_TRIANGLES, Usage.Position | Usage.Normal | Usage.TextureCoordinates, redMaterial);
-    
-        float lineWidth = 0.1f;
-    
-        // Add vertices and texture coordinates for each point
-        for (int i = 0; i < points.size() - 1; i++) {
-            Vector2 point1 = points.get(i);
-            Vector2 point2 = points.get(i + 1);
-    
-            float x1 = point1.x;
-            float z1 = point1.y;
-            float y1 = getTerrainHeight(x1, z1) + 0.1f; // немного выше поверхности
-    
-            float x2 = point2.x;
-            float z2 = point2.y;
-            float y2 = getTerrainHeight(x2, z2) + 0.1f;
-    
-            Vector3 normal = new Vector3(0, 1, 0);
-            Vector2 uv1 = new Vector2(0, 0);
-            Vector2 uv2 = new Vector2(1, 0);
-            Vector2 uv3 = new Vector2(0, 1);
-            Vector2 uv4 = new Vector2(1, 1);
-    
-            meshBuilder.vertex(x1 - lineWidth, y1, z1 - lineWidth, normal.x, normal.y, normal.z, uv1.x, uv1.y);
-            meshBuilder.vertex(x1 + lineWidth, y1, z1 + lineWidth, normal.x, normal.y, normal.z, uv2.x, uv2.y);
-            meshBuilder.vertex(x2 - lineWidth, y2, z2 - lineWidth, normal.x, normal.y, normal.z, uv3.x, uv3.y);
-            meshBuilder.vertex(x2 + lineWidth, y2, z2 + lineWidth, normal.x, normal.y, normal.z, uv4.x, uv4.y);
-    
-            meshBuilder.index((short) (i * 4), (short) (i * 4 + 1), (short) (i * 4 + 2)); 
-            meshBuilder.index((short) (i * 4 + 1), (short) (i * 4 + 3), (short) (i * 4 + 2));
+        // Define usage for position and color
+        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_LINES, Usage.Position | Usage.ColorUnpacked, redMaterial);
+        
+        // Add vertices for each point
+        for (int i = 0; i < points.size(); i++) {
+            Vector2 point = points.get(i);
+            float x = point.x;
+            float z = point.y;
+            float y = getTerrainHeight(x, z) + 0.1f; // Use getTerrainHeight method to determine the y value
+                        
+            // Add vertex with position and color
+            meshBuilder.vertex(x, y, z, 1.0f, 0.0f, 0.0f, 1.0f);
         }
-    
+
+        // Create line segments between consecutive points
+        for (int i = 0; i < points.size() - 1; i++) {
+            meshBuilder.index((short)i, (short)(i + 1));
+        }
+        
         // End the model building
         Model lineModel = modelBuilder.end();
         return new ModelInstance(lineModel);
     }
-
+    
+    
     /**
      * Checks if a given position is on a sand area.
      *
