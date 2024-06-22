@@ -277,37 +277,44 @@ public class TerrainManager {
     }
     
     public ModelInstance createRedLineModel(List<Vector2> points) {
+        final int MAX_VERTICES = 65536 / 7; // Adjust this if needed based on your usage
         ModelBuilder modelBuilder = new ModelBuilder();
-
+    
         // Start building the model
         modelBuilder.begin();
-
+    
         // Define a simple red material
         Material redMaterial = new Material(ColorAttribute.createDiffuse(Color.RED));
-        
-        // Define usage for position and color
-        MeshPartBuilder meshBuilder = modelBuilder.part("red_line", GL20.GL_LINES, Usage.Position | Usage.ColorUnpacked, redMaterial);
-        
-        // Add vertices for each point
-        for (int i = 0; i < points.size(); i++) {
-            Vector2 point = points.get(i);
-            float x = point.x;
-            float z = point.y;
-            float y = getTerrainHeight(x, z) + 0.1f; // Use getTerrainHeight method to determine the y value
-                        
-            // Add vertex with position and color
-            meshBuilder.vertex(x, y, z, 1.0f, 0.0f, 0.0f, 1.0f);
+    
+        for (int start = 0; start < points.size(); start += MAX_VERTICES) {
+            int end = Math.min(start + MAX_VERTICES, points.size());
+    
+            // Define usage for position and color
+            MeshPartBuilder meshBuilder = modelBuilder.part("red_line_part_" + start, GL20.GL_LINES, Usage.Position | Usage.ColorUnpacked, redMaterial);
+    
+            // Add vertices for each point in the current segment
+            for (int i = start; i < end; i++) {
+                Vector2 point = points.get(i);
+                float x = point.x;
+                float z = point.y;
+                float y = getTerrainHeight(x, z) + 0.1f; // Use getTerrainHeight method to determine the y value
+    
+                // Add vertex with position and color
+                meshBuilder.vertex(x, y, z, 1.0f, 0.0f, 0.0f, 1.0f);
+            }
+    
+            // Create line segments between consecutive points in the current segment
+            for (int i = start; i < end - 1; i++) {
+                meshBuilder.index((short)(i - start), (short)(i - start + 1));
+            }
         }
-
-        // Create line segments between consecutive points
-        for (int i = 0; i < points.size() - 1; i++) {
-            meshBuilder.index((short)i, (short)(i + 1));
-        }
-        
+    
         // End the model building
         Model lineModel = modelBuilder.end();
         return new ModelInstance(lineModel);
     }
+    
+    
     
     
     /**

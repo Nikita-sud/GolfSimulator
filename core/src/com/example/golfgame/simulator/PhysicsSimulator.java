@@ -90,7 +90,7 @@ public class PhysicsSimulator {
                 return ballCopy;
             }
             lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, 0.001);
+            engine.update(ballCopy, 0.01667);
         } while((!engine.isAtRest(ballCopy)));
 
         if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand
@@ -127,7 +127,7 @@ public class PhysicsSimulator {
                 return new Pair<>(ballCopy, path);
             }
             lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, 0.001);
+            engine.update(ballCopy, 0.01667);
             path.add(new Vector2((float)ballCopy.getX(), (float)ballCopy.getY()));
         } while (!ballCopy.epsilonEquals(lastBallState, 0));
 
