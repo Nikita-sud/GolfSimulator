@@ -10,6 +10,7 @@ import com.example.golfgame.utils.ppoUtils.Batch;
 import com.example.golfgame.utils.ppoUtils.State;
 import com.example.golfgame.utils.ppoUtils.Transition;
 import com.example.golfgame.physics.PhysicsEngine;
+import com.example.golfgame.physics.ODE.ODE;
 import com.example.golfgame.physics.ODE.RungeKutta;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.badlogic.gdx.math.Vector2;
@@ -37,6 +38,8 @@ public class PhysicsSimulator {
     private static final double PENALTY_SAND = -1; // Penalty for being on sand
     private static final double REWARD_GOAL = 5; // Reward for reaching the goal
 
+    private static final float engineStepSize = 0.001f;
+
     public PhysicsSimulator(String heightFunction, PPOAgent agent) {
         addFunction(heightFunction);
         Function fheightFunction = new Function(heightFunction, "x","y");
@@ -54,52 +57,74 @@ public class PhysicsSimulator {
         this.goal = goal;
     }
 
+    public PhysicsSimulator(Function heightFunction, BallState goal, ODE solver){
+        this.engine = new PhysicsEngine(solver, heightFunction);
+        this.ball = new BallState(0, 0, 0.001, 0.001);
+        this.terrainManager = new TerrainManager(heightFunction);
+        this.goal = goal;
+    }
+
     public void changeHeightFunction(Function heightFunction){
         this.engine = new PhysicsEngine(new RungeKutta(), heightFunction);
         this.terrainManager = new TerrainManager(heightFunction);
     }
 
-    /**
-     * Performs a hit simulation.
-     * @param velocityMagnitude the magnitude of the velocity
-     * @param angle the angle of the hit
-     * @return the new ball state
-     */
-    // Method to handle hitting the ball
-    public BallState hit(float velocityMagnitude, float angle) {
-        inWater = false;
-        BallState lastPosition = ball.deepCopy();
-        BallState ballCopy = ball.deepCopy();
-        System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
-        ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
-        ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
-        Map<String, Double> functionVals = new HashMap<>();
-        BallState lastBallState = ball.deepCopy();
-        do {
-            functionVals.put("x", ballCopy.getX());
-            functionVals.put("y", ballCopy.getY());
-            if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
-                System.out.println("Ball in water!");
-                inWater = true;
-                ballCopy.setX(lastPosition.getX());
-                ballCopy.setY(lastPosition.getY());
-                return ballCopy;
-            }
-            if (GolfGameScreen.validGoal(ballCopy, goal)){ // Goal
-                System.out.println("Goal reached in simulator!");
-                return ballCopy;
-            }
-            lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, 0.01667);
-        } while((!engine.isAtRest(ballCopy)));
+/**
+ * Performs a hit simulation.
+ * @param velocityMagnitude the magnitude of the velocity
+ * @param angle the angle of the hit
+ * @return the new ball state
+ */
+public BallState hit(float velocityMagnitude, float angle) {
+    inWater = false;
+    BallState ballCopy = ball.deepCopy();
+    System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
+    ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
+    ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
 
-        if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float)ballCopy.getY())) { // Sand
-            System.out.println("Ball on sand!");
+    Map<String, Double> functionVals = new HashMap<>();
+    BallState lastBallState = ballCopy.deepCopy(); // Use ballCopy directly
+
+    while (true) {
+        functionVals.put("x", ballCopy.getX());
+        functionVals.put("y", ballCopy.getY());
+
+        // Check if the ball is in water
+        if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) {
+            System.out.println("Ball in water!");
+            inWater = true;
+            ballCopy.setX(lastBallState.getX());
+            ballCopy.setY(lastBallState.getY());
+            return ballCopy;
         }
 
-        System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
-        return ballCopy;
+        // Check if the ball has reached the goal
+        if (GolfGameScreen.validSimulatorGoal(ballCopy, goal)) {
+            System.out.println("Goal reached in simulator!");
+            return ballCopy;
+        }
+
+        // Update the last ball state before updating the current ball state
+        lastBallState.set(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
+
+        // Update the ball state
+        engine.update(ballCopy, engineStepSize);
+
+        // Check if the ball is at rest
+        if (engine.isAtRest(ballCopy)) {
+            break;
+        }
     }
+
+    // Check if the ball is on sand
+    if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float) ballCopy.getY())) {
+        System.out.println("Ball on sand!");
+    }
+
+    System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
+    return ballCopy;
+}
+
 
     /**
      * Performs a hit simulation and returns the path.
@@ -127,7 +152,7 @@ public class PhysicsSimulator {
                 return new Pair<>(ballCopy, path);
             }
             lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, 0.01667);
+            engine.update(ballCopy, engineStepSize);
             path.add(new Vector2((float)ballCopy.getX(), (float)ballCopy.getY()));
         } while (!ballCopy.epsilonEquals(lastBallState, 0));
 

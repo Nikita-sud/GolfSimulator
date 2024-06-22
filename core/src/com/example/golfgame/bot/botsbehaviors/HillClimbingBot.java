@@ -12,6 +12,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
+import com.example.golfgame.physics.ODE.Ralston;
+import com.example.golfgame.physics.ODE.RungeKutta;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.simulator.PhysicsSimulator;
 import com.example.golfgame.utils.BallState;
@@ -25,7 +27,7 @@ public class HillClimbingBot implements BotBehavior {
 
     private static final float DELTAHITPOWER = 0.2f;
     private static final float DELTAANGLE = 0.1f;
-    private static final float ANGLE_TOLERANCE = 0.1f;
+    private static final float ANGLE_TOLERANCE = 0.01f;
 
     private static final float MAX_FORCE = 10.0f; // Maximum force
     private static final float MIN_FORCE = 1.0f;  // Minimum force
@@ -96,7 +98,7 @@ public class HillClimbingBot implements BotBehavior {
 
     private void climb(GolfGame game) {
         BallState goal = game.getGolfGameScreen().getGoalState();
-        PhysicsSimulator simulator = new PhysicsSimulator(game.getGolfGameScreen().getHeightFunction(), goal);
+        PhysicsSimulator simulator = new PhysicsSimulator(game.getGolfGameScreen().getHeightFunction(), goal, new RungeKutta());
         Random random = new Random();
 
         if (hillClimb(simulator, game, goal)) return;
@@ -111,7 +113,7 @@ public class HillClimbingBot implements BotBehavior {
             System.out.printf("Current Sim Result: (%.2f, %.2f) with force %.2f and angle %.2f\n", curSimResult.getX(), curSimResult.getY(), hitPower, angle);
 
             // Check if the current result is within the goal tolerance
-            if (GolfGameScreen.validGoal(curSimResult, goal)) {
+            if (GolfGameScreen.validSimulatorGoal(curSimResult, goal)) {
                 System.out.println("Goal reached within tolerance!");
                 return true;
             }
@@ -142,12 +144,6 @@ public class HillClimbingBot implements BotBehavior {
 
             if (Math.abs(bestState.getX() - goal.getX()) < 0.01 && Math.abs(bestState.getY() - goal.getY()) < 0.01) {
                 break;
-            }
-
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
 
             // Use Gdx.app.postRunnable to ensure OpenGL calls are made in the rendering thread

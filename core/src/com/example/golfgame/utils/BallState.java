@@ -80,6 +80,13 @@ public class BallState {
         this.vy = vy;
     }
 
+    public void set(double x, double y, double vx, double vy){
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+    }
+
     /**
      * Returns the x-coordinate of the ball.
      *

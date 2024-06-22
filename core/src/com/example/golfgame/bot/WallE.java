@@ -58,11 +58,11 @@ public class WallE {
     }
 
     public void switchToAdvanced() {
-        setBotBehavior(advancedBot);
+        setBotBehavior(ruleBasedBot);
     }
 
     public void switchToPPO() {
-        setBotBehavior(ppoBot);
+        setBotBehavior(ruleBasedBot);
     }
 
     public BotBehavior getBotBehavior() {
