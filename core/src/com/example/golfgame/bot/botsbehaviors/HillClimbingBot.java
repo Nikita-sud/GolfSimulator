@@ -9,15 +9,12 @@ import java.util.concurrent.Future;
 import java.util.Random;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.simulator.PhysicsSimulator;
 import com.example.golfgame.utils.BallState;
-import com.example.golfgame.utils.Function;
-import com.example.golfgame.utils.gameUtils.TerrainManager;
 
 public class HillClimbingBot implements BotBehavior {
 
@@ -32,10 +29,6 @@ public class HillClimbingBot implements BotBehavior {
 
     private static final float MAX_FORCE = 10.0f; // Maximum force
     private static final float MIN_FORCE = 1.0f;  // Minimum force
-
-    private static final float GOAL_TOLERANCE = 1.5f;
-
-    private static final Random random = new Random(1);
     
     private boolean isDirectionSet = false;
 
@@ -229,15 +222,5 @@ public class HillClimbingBot implements BotBehavior {
             }
         }
         return best;
-    }
-
-    private float closeness(BallState simResult, BallState goal) {
-        return (float) (1 / simResult.distanceTo(goal));
-    }
-
-    public static void main(String[] args) {
-        Function h = new Function("cos(0.3x)*sin(0.5y)+10", "x", "y");
-        PhysicsSimulator sim = new PhysicsSimulator(h, new BallState(5, 5, 0, 0));
-        HillClimbingBot hc = new HillClimbingBot();
     }
 }

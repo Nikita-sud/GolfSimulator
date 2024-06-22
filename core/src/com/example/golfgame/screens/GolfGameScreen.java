@@ -36,7 +36,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -45,7 +44,6 @@ import java.util.concurrent.Future;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
-import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -113,7 +111,6 @@ public class GolfGameScreen implements Screen, Disposable {
     private Label facingLabel, scoreLabel, lastScoreLabel, ballMovementLabel;
     private ProgressBar speedProgressBar;
     private Dialog pauseDialog;
-    private List<Vector2> path;
 
     // Animations
     private FlagAnimation flagAnimation;
@@ -1098,16 +1095,6 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.end();
     }
 
-
-
-
-
-
-
-
-
-
-
     @Override
     public void resize(int width, int height) {
         mainCamera.viewportWidth = width;
@@ -1297,10 +1284,6 @@ public class GolfGameScreen implements Screen, Disposable {
         Vector2 ballToGoal = new Vector2((float) (goalState.getX() - currentBallState.getX()), (float) (goalState.getY() - currentBallState.getY())).nor();
         Vector2 camVector2 = new Vector2(mainCamera.direction.x, mainCamera.direction.z).nor();
         return (Math.abs(ballToGoal.x - camVector2.x) < 0.001) && (Math.abs(ballToGoal.y - camVector2.y) < 0.001);
-    }
-
-    public void setPath(List<Vector2> path) {
-        this.path = path;
     }
 
     public boolean isBallInWater(BallState ballState) {
