@@ -25,9 +25,13 @@ public class RuleBasedBot implements BotBehavior {
     }
 
     public float findTargetAngle(GolfGame game){
+        return findTargetAngle(game, game.getGolfGameScreen().getBallState());
+    }
+
+    public float findTargetAngle(GolfGame game, BallState initiBallState){
         // Get goal state and normalize
         BallState goal = game.getGolfGameScreen().getGoalState().copy();
-        BallState ball = game.getGolfGameScreen().getBallState().copy();
+        BallState ball = initiBallState;
         goal.setX(goal.getX() - ball.getX()); // Adjust relative to ball's position
         goal.setY(goal.getY() - ball.getY()); // Adjust relative to ball's position
         goal.positionNor();

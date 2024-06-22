@@ -41,7 +41,7 @@ public class SettingsScreen implements Screen {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
-        curHeightFunction = new Function("sin(0.1x)*cos(0.1y)+1", "x", "y");  // Default height function
+        curHeightFunction = new Function("e^(-((x)^6+(y)^2)/500)-e^(-((x)^2+(y)^2)/500)+0.6", "x", "y");  // Default height function
         music = assetManager.get("assets/music/settings.mp3", Music.class);
 
         setupUI();
@@ -70,21 +70,21 @@ public class SettingsScreen implements Screen {
         });
 
         // Create height function text field
-        TextField heightFunction = new TextField("sin(0.1x)*cos(0.1y)+1", skin);
+        TextField heightFunction = new TextField("e^(-((x)^6+(y)^2)/500)-e^(-((x)^2+(y)^2)/500)+0.6", skin);
         heightFunction.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 try {
                     curHeightFunction = new Function(heightFunction.getText(), "x", "y");
                 } catch (Exception e) {
-                    curHeightFunction = new Function("sin(0.1x)*cos(0.1y)+1", "x", "y");
+                    curHeightFunction = new Function("e^(-((x)^6+(y)^2)/500)-e^(-((x)^2+(y)^2)/500)+0.6", "x", "y");
                 }
             }
         });
 
         // Create goal position input fields and label
         Label goalPositionLabel = new Label("Goal Position (X, Y):", skin);
-        TextField goalXPosition = new TextField("-20", skin);
+        TextField goalXPosition = new TextField("-10", skin);
         TextField goalYPosition = new TextField("20", skin);
 
         goalXPosition.addListener(new ChangeListener() {

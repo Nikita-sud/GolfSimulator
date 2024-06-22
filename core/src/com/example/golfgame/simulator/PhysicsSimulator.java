@@ -126,43 +126,56 @@ public BallState hit(float velocityMagnitude, float angle) {
 }
 
 
-    /**
-     * Performs a hit simulation and returns the path.
-     * @param velocityMagnitude the magnitude of the velocity
-     * @param angle the angle of the hit
-     * @return a Pair containing the final BallState and the path of the ball as a list of Vector2 points
-     */
-    public Pair<BallState, List<Vector2>> hitWithPath(float velocityMagnitude, float angle) {
-        inWater = false;
-        BallState lastPosition = ball.deepCopy();
-        BallState ballCopy = ball.deepCopy();
-        System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
-        ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
-        ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
-        List<Vector2> path = new ArrayList<>();
-        path.add(new Vector2((float)ballCopy.getX(), (float)ballCopy.getY()));
+/**
+ * Performs a hit simulation and returns the path.
+ * @param velocityMagnitude the magnitude of the velocity
+ * @param angle the angle of the hit
+ * @return a Pair containing the final BallState and the path of the ball as a list of Vector2 points
+ */
+public Pair<BallState, List<Vector2>> hitWithPath(float velocityMagnitude, float angle) {
+    inWater = false;
+    BallState ballCopy = ball.deepCopy();
+    System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
+    ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
+    ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
+    List<Vector2> path = new ArrayList<>();
+    path.add(new Vector2((float) ballCopy.getX(), (float) ballCopy.getY()));
 
-        BallState lastBallState = null;
-        do {
-            if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
-                System.out.println("Ball in water!");
-                inWater = true;
-                ballCopy.setX(lastPosition.getX());
-                ballCopy.setY(lastPosition.getY());
-                return new Pair<>(ballCopy, path);
-            }
-            lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, engineStepSize);
-            path.add(new Vector2((float)ballCopy.getX(), (float)ballCopy.getY()));
-        } while (!ballCopy.epsilonEquals(lastBallState, 0));
+    BallState lastBallState = ballCopy.deepCopy(); // Initialize lastBallState
 
-        if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float) ballCopy.getY())) { // Sand
-            System.out.println("Ball on sand!");
+    while (true) {
+        if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
+            System.out.println("Ball in water!");
+            inWater = true;
+            ballCopy.setX(lastBallState.getX());
+            ballCopy.setY(lastBallState.getY());
+            return new Pair<>(ballCopy, path);
         }
 
-        System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
-        return new Pair<>(ballCopy, path);
+        // Save the current state before updating
+        lastBallState.set(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
+
+        // Update the ball state
+        engine.update(ballCopy, engineStepSize);
+
+        // Add the new position to the path
+        path.add(new Vector2((float) ballCopy.getX(), (float) ballCopy.getY()));
+
+        // Check if the ball is at rest
+        if (engine.isAtRest(ballCopy)) {
+            break;
+        }
     }
+
+    // Check if the ball is on sand
+    if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float) ballCopy.getY())) {
+        System.out.println("Ball on sand!");
+    }
+
+    System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
+    return new Pair<>(ballCopy, path);
+}
+
 
     public BallState singleHit(float velocityMagnitude, float angle, BallState ballPosition){
         resetBallPosition(ballPosition);

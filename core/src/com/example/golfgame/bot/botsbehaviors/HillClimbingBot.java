@@ -159,6 +159,7 @@ public class HillClimbingBot implements BotBehavior {
 
 
     private void expandSearchRange(PhysicsSimulator simulator, GolfGame game, BallState goal, Random random) {
+        System.out.println("EXPANDING SEARCH RANGE-------");
         float originalHitPower = hitPower;
         float originalAngle = angle;
 
