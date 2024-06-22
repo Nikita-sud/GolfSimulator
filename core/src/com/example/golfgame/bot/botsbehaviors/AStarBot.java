@@ -72,10 +72,10 @@ public class AStarBot implements BotBehavior {
             float speed = currentNode.getSpeed();
             game.getGolfGameScreen().performHit(speed);
 
-            currentStep++; // Переходим к следующему шагу
+            currentStep++; 
 
             if (currentStep >= path.size()) {
-                isDirectionSet = false; // Завершили выполнение всех шагов
+                isDirectionSet = false;
             }
         }
     }
@@ -126,7 +126,7 @@ public class AStarBot implements BotBehavior {
             }
             if (win) {
                 newPath = reconstructPath(winNode);
-                pathFound = true; // Переместил сюда
+                pathFound = true;
                 break;
             }
         }
@@ -144,10 +144,9 @@ public class AStarBot implements BotBehavior {
     }
 
     private List<Node> getNeighbors(Node node) {
-        List<Node> neighbors = Collections.synchronizedList(new ArrayList<>()); // Чтобы избежать проблем с многопоточностью
+        List<Node> neighbors = Collections.synchronizedList(new ArrayList<>());
         BallState currentState = node.getState();
 
-        // Создаем поток всех возможных комбинаций углов и скоростей
         IntStream.range(0, 360 / (int) SHOT_ANGLE_STEP).parallel().forEach(i -> {
             float angle = i * SHOT_ANGLE_STEP;
             for (float speed = MIN_SPEED; speed <= MAX_SPEED; speed += SPEED_STEP) {
@@ -186,7 +185,6 @@ public class AStarBot implements BotBehavior {
         private double hCost;
         private float speed;
         private float angle;
-        private double cost;
 
         public Node(BallState state, Node parent, double gCost, double hCost, float speed, float angle) {
             this.state = state;
@@ -195,7 +193,6 @@ public class AStarBot implements BotBehavior {
             this.hCost = hCost;
             this.speed = speed;
             this.angle = angle;
-            this.cost = gCost + hCost;
         }
 
         public BallState getState() {
@@ -215,7 +212,7 @@ public class AStarBot implements BotBehavior {
         }
 
         public double getCost() {
-            return cost;
+            return gCost + hCost;
         }
 
         public float getSpeed() {
@@ -230,15 +227,12 @@ public class AStarBot implements BotBehavior {
             this.parent = parent;
         }
 
-        // Методы в классе Node
         public void setGCost(double gCost) {
             this.gCost = gCost;
-            // this.cost = this.gCost + this.hCost; // Пересчитываем cost
         }
 
         public void setFCost(double fCost) {
             this.hCost = fCost;
-            // this.cost = this.gCost + this.hCost; // Пересчитываем cost
         }
 
         @Override
