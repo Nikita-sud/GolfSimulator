@@ -10,14 +10,14 @@ import com.example.golfgame.utils.ApproximateStateComparator;
 import java.util.*;
 import java.util.stream.IntStream;
 
-
 public class AStarBot implements BotBehavior {
-    private static final float SHOT_ANGLE_STEP = 5f;
+    private static final float SHOT_ANGLE_STEP = 15f;
     private static final float SPEED_STEP = 1f;
     private static final float MIN_SPEED = 1;
     private static final float MAX_SPEED = 5;
 
     private PriorityQueue<Node> openList;
+    private Set<Node> openSet;
     private TreeSet<Node> closedList;
     private GolfGame game;
     private PhysicsSimulator simulator;
@@ -30,6 +30,7 @@ public class AStarBot implements BotBehavior {
         this.openList = new PriorityQueue<>(
             Comparator.<Node>comparingDouble(Node::getCost)
                 .thenComparingDouble(Node::getHCost));
+        this.openSet = new HashSet<>();
         this.closedList = new TreeSet<>(Comparator.comparing(Node::getState, new ApproximateStateComparator(GolfGameScreen.getGoalTolerance())));
         this.path = new ArrayList<>();
         this.currentStep = 0;
@@ -83,18 +84,21 @@ public class AStarBot implements BotBehavior {
 
     private List<Node> buildPath(BallState startState, BallState goalState) {
         openList.clear();
+        openSet.clear();
         closedList.clear();
         List<Node> newPath = new ArrayList<>();
     
         Node startNode = new Node(startState, null, 0, heuristic(startState, goalState), 0, 0);
         openList.add(startNode);
+        openSet.add(startNode);
     
         while (!openList.isEmpty()) {
             Node currentNode = openList.poll();
+            openSet.remove(currentNode);
     
             if (currentNode.getState().epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance())) {
                 newPath = reconstructPath(currentNode);
-                pathFound = true; // Переместил сюда
+                pathFound = true;
                 break;
             }
     
@@ -102,21 +106,20 @@ public class AStarBot implements BotBehavior {
             boolean win = false;
             Node winNode = currentNode;
             for (Node neighbor : getNeighbors(currentNode)) {
-                if (closedList.contains(neighbor)) {
+                if (isNodeCloseToSet(neighbor, closedList)) {
                     continue;
                 }
     
                 double tentativeGCost = currentNode.getGCost() + currentNode.getState().distanceTo(neighbor.getState());
     
-                boolean inOpenList = openList.stream().anyMatch(n -> n.getState().epsilonPositionEquals(neighbor.getState(), 0.1));
-    
-                if (!inOpenList || tentativeGCost < neighbor.getGCost()) {
+                if (!isNodeCloseToSet(neighbor, openSet) || tentativeGCost < neighbor.getGCost()) {
                     neighbor.setParent(currentNode);
                     neighbor.setGCost(tentativeGCost);
-                    neighbor.setHCost(heuristic(neighbor.getState(), goalState)); // обновляем hCost
-                    
-                    if (!inOpenList) {
+                    neighbor.setHCost(heuristic(neighbor.getState(), goalState));
+    
+                    if (!isNodeCloseToSet(neighbor, openSet)) {
                         openList.add(neighbor);
+                        openSet.add(neighbor);
                     }
                 }
                 if (neighbor.getState().epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance())) {
@@ -135,6 +138,15 @@ public class AStarBot implements BotBehavior {
         return newPath;
     }
 
+    private boolean isNodeCloseToSet(Node node, Set<Node> nodeSet) {
+        for (Node existingNode : nodeSet) {
+            if (node.equals(existingNode)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private double heuristic(BallState from, BallState to) {
         return Math.sqrt(Math.pow(from.getX() - to.getX(), 2) + Math.pow(from.getY() - to.getY(), 2));
     }
@@ -147,16 +159,18 @@ public class AStarBot implements BotBehavior {
     private List<Node> getNeighbors(Node node) {
         List<Node> neighbors = Collections.synchronizedList(new ArrayList<>());
         BallState currentState = node.getState();
-
+    
         IntStream.range(0, 360 / (int) SHOT_ANGLE_STEP).parallel().forEach(i -> {
             float angle = i * SHOT_ANGLE_STEP;
             for (float speed = MIN_SPEED; speed <= MAX_SPEED; speed += SPEED_STEP) {
                 BallState newState = simulator.singleHit(speed, angle, currentState);
-                Node neighbor = new Node(newState, node, node.getGCost(), heuristic(newState, game.getGolfGameScreen().getGoalState()), speed, angle);
-                neighbors.add(neighbor);
+                if (!newState.equals(currentState)) { 
+                    Node neighbor = new Node(newState.copy(), node, node.getGCost(), heuristic(newState, game.getGolfGameScreen().getGoalState()), speed, angle);
+                    neighbors.add(neighbor);
+                }
             }
         });
-        
+    
         return neighbors;
     }
 
@@ -184,16 +198,18 @@ public class AStarBot implements BotBehavior {
         private Node parent;
         private double gCost;
         private double hCost;
-        private double fCost; // добавляем поле для полной стоимости
+        private double fCost;
         private float speed;
         private float angle;
+    
+        private static final double DISTANCE_THRESHOLD = 2; 
     
         public Node(BallState state, Node parent, double gCost, double hCost, float speed, float angle) {
             this.state = state;
             this.parent = parent;
-            this.gCost = gCost;
-            this.hCost = hCost;
-            this.fCost = gCost + hCost; // вычисляем полную стоимость сразу
+            this.gCost = roundToHundredths(gCost);
+            this.hCost = roundToHundredths(hCost);
+            this.fCost = this.gCost + this.hCost;
             this.speed = speed;
             this.angle = angle;
         }
@@ -214,8 +230,8 @@ public class AStarBot implements BotBehavior {
             return hCost;
         }
     
-        public double getFCost() {
-            return fCost; // добавляем метод для получения полной стоимости
+        public double getCost() {
+            return fCost;
         }
     
         public float getSpeed() {
@@ -231,17 +247,13 @@ public class AStarBot implements BotBehavior {
         }
     
         public void setGCost(double gCost) {
-            this.gCost = gCost;
-            this.fCost = gCost + hCost; // обновляем полную стоимость
+            this.gCost = roundToHundredths(gCost);
+            this.fCost = this.gCost + this.hCost;
         }
     
         public void setHCost(double hCost) {
-            this.hCost = hCost;
-            this.fCost = gCost + hCost; // обновляем полную стоимость
-        }
-    
-        public double getCost() {
-            return this.fCost; // метод для получения полной стоимости
+            this.hCost = roundToHundredths(hCost);
+            this.fCost = this.gCost + this.hCost;
         }
     
         @Override
@@ -249,13 +261,17 @@ public class AStarBot implements BotBehavior {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Node node = (Node) o;
-            return Objects.equals(state, node.state);
+            return Math.abs(state.getX() - node.state.getX()) < DISTANCE_THRESHOLD &&
+                   Math.abs(state.getY() - node.state.getY()) < DISTANCE_THRESHOLD;
         }
     
         @Override
         public int hashCode() {
-            return Objects.hash(state);
+            return Objects.hash(Math.round(state.getX() / DISTANCE_THRESHOLD), Math.round(state.getY() / DISTANCE_THRESHOLD));
+        }
+    
+        private double roundToHundredths(double value) {
+            return Math.round(value * 100.0) / 100.0;
         }
     }
-
 }

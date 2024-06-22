@@ -1,5 +1,7 @@
 package com.example.golfgame.utils;
 
+import java.util.Objects;
+
 import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.screens.GolfGameScreen;
 
@@ -135,8 +137,8 @@ public class BallState {
                Math.abs(this.y - other.y) <= epsilon;
     }
 
-    public BallState copy(){
-        return new BallState(x, y, vx, vy);
+    public BallState copy() {
+        return new BallState(this.x, this.y, this.vx, this.vy);
     }
 
     /**
@@ -207,5 +209,18 @@ public class BallState {
                ", vx=" + vx +
                ", vy=" + vy +
                '}';
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BallState ballState = (BallState) o;
+        return Double.compare(ballState.x, x) == 0 &&
+               Double.compare(ballState.y, y) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, vx, vy);
     }
 }
