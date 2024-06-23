@@ -17,8 +17,8 @@ public class BallState {
     /**
      * Constructs a new BallState with specified initial position and velocity.
      *
-     * @param x the initial x-coordinate of the ball.
-     * @param y the initial y-coordinate of the ball.
+     * @param x  the initial x-coordinate of the ball.
+     * @param y  the initial y-coordinate of the ball.
      * @param vx the initial velocity of the ball along the x-axis.
      * @param vy the initial velocity of the ball along the y-axis.
      */
@@ -32,8 +32,8 @@ public class BallState {
     /**
      * Sets all components of the ball's state.
      *
-     * @param x the new x-coordinate of the ball.
-     * @param y the new y-coordinate of the ball.
+     * @param x  the new x-coordinate of the ball.
+     * @param y  the new y-coordinate of the ball.
      * @param vx the new velocity of the ball along the x-axis.
      * @param vy the new velocity of the ball along the y-axis.
      */
@@ -80,7 +80,15 @@ public class BallState {
         this.vy = vy;
     }
 
-    public void set(double x, double y, double vx, double vy){
+    /**
+     * Sets all components of the ball's state.
+     *
+     * @param x  the new x-coordinate of the ball.
+     * @param y  the new y-coordinate of the ball.
+     * @param vx the new velocity of the ball along the x-axis.
+     * @param vy the new velocity of the ball along the y-axis.
+     */
+    public void set(double x, double y, double vx, double vy) {
         this.x = x;
         this.y = y;
         this.vx = vx;
@@ -126,7 +134,7 @@ public class BallState {
     /**
      * Checks if the state of this ball is approximately equal to another state, within a given tolerance.
      *
-     * @param other the BallState to compare with.
+     * @param other   the BallState to compare with.
      * @param epsilon the tolerance for the comparison of each double value.
      * @return true if the states are considered equal within the given tolerance, otherwise false.
      */
@@ -137,71 +145,111 @@ public class BallState {
                Math.abs(this.vy - other.vy) <= epsilon;
     }
 
-    public boolean epsilonPositionEquals(BallState other, double epsilon){
+    /**
+     * Checks if the position of this ball is approximately equal to another position, within a given tolerance.
+     *
+     * @param other   the BallState to compare with.
+     * @param epsilon the tolerance for the comparison of each double value.
+     * @return true if the positions are considered equal within the given tolerance, otherwise false.
+     */
+    public boolean epsilonPositionEquals(BallState other, double epsilon) {
         return Math.abs(this.x - other.x) <= epsilon &&
                Math.abs(this.y - other.y) <= epsilon;
     }
 
-    public BallState copy(){
+    /**
+     * Creates and returns a copy of this BallState.
+     *
+     * @return a new BallState object with the same position and velocity as this one.
+     */
+    public BallState copy() {
         return new BallState(x, y, vx, vy);
     }
 
     /**
-     * computes inner/dot product between BallState position vectors
-     * @return computed inner product
+     * Computes the dot product of the position vectors of this BallState and another.
+     *
+     * @param other the BallState to compute the dot product with.
+     * @return the computed dot product.
      */
-    public float positionDot(BallState other){
-        float posX = (float)(x*other.getX());
-        float posY = (float)(y*other.getY());
-        return posX+posY;
+    public float positionDot(BallState other) {
+        float posX = (float)(x * other.getX());
+        float posY = (float)(y * other.getY());
+        return posX + posY;
     }
 
     /**
-     * computes (euclidean) magnitude of position vector of ball state object
-     * @return computed magnitude
+     * Computes the magnitude of the position vector of this BallState.
+     *
+     * @return the computed magnitude.
      */
-    public float positionMag(){
-        return (float)Math.sqrt(Math.pow(x, 2)+Math.pow(y, 2));
+    public float positionMag() {
+        return (float) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
     }
 
     /**
-     * computes (euclidean) magnitude of velocity vector of ball state object
-     * @return computed magnitude
+     * Computes the magnitude of the velocity vector of this BallState.
+     *
+     * @return the computed magnitude.
      */
-    public float velocityMag(){
-        return (float)Math.sqrt(Math.pow(vx, 2)+Math.pow(vy, 2));
+    public float velocityMag() {
+        return (float) Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2));
     }
 
     /**
-     * normalizes the position vector of BallState object
+     * Normalizes the position vector of this BallState.
      */
-    public void positionNor(){
-        Vector2 pos = new Vector2((float)x, (float)y).nor();
+    public void positionNor() {
+        Vector2 pos = new Vector2((float) x, (float) y).nor();
         x = pos.x;
         y = pos.y;
     }
 
     /**
      * Calculates the Euclidean distance to another BallState position.
-     * @param other The other BallState to calculate the distance to.
-     * @return The distance to the other BallState.
+     *
+     * @param other the other BallState to calculate the distance to.
+     * @return the distance to the other BallState.
      */
     public double distanceTo(BallState other) {
         return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
     }
 
+    /**
+     * Checks if the ball is in water using the game screen.
+     *
+     * @param gameScreen the game screen to check the water status.
+     * @return true if the ball is in water, false otherwise.
+     */
     public boolean isInWater(GolfGameScreen gameScreen) {
         return gameScreen.isBallInWater(this);
     }
 
+    /**
+     * Checks if the ball is out of bounds using the game screen.
+     *
+     * @param gameScreen the game screen to check the out-of-bounds status.
+     * @return true if the ball is out of bounds, false otherwise.
+     */
     public boolean isOutOfBounds(GolfGameScreen gameScreen) {
         return gameScreen.isBallOutOfBounds(this);
     }
 
+    /**
+     * Checks if the ball is in the goal.
+     *
+     * @param goalState the BallState representing the goal position.
+     * @return true if the ball is in the goal, false otherwise.
+     */
     public boolean isInGoal(BallState goalState) {
         return epsilonPositionEquals(goalState, GolfGameScreen.getGoalTolerance());
     }
 
+    /**
+     * Creates and returns a deep copy of this BallState.
+     *
+     * @return a new BallState object with the same position and velocity as this one.
+     */
     public BallState deepCopy() {
         return new BallState(this.x, this.y, this.vx, this.vy);
     }

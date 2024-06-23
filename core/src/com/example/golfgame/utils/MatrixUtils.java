@@ -11,6 +11,7 @@ public class MatrixUtils {
      * @param vector The input vector.
      * @param bias   The bias vector.
      * @return A new vector with the bias added to each element.
+     * @throws IllegalArgumentException if the vector and bias dimensions do not match.
      */
     public static double[] addBias(double[] vector, double[] bias) {
         if (vector.length != bias.length) {
@@ -55,7 +56,9 @@ public class MatrixUtils {
         int secondMatrixCols = secondMatrix[0].length;
 
         if (firstMatrixCols != secondMatrixRows) {
-            throw new IllegalArgumentException("Matrix multiplication dimensions do not match: " + firstMatrixRows+","+firstMatrixCols+" and "+secondMatrixRows+","+secondMatrixCols+" not compatible");
+            throw new IllegalArgumentException("Matrix multiplication dimensions do not match: " +
+                                               firstMatrixRows + "," + firstMatrixCols + " and " +
+                                               secondMatrixRows + "," + secondMatrixCols + " not compatible");
         }
 
         double[][] result = new double[firstMatrixRows][secondMatrixCols];
@@ -69,10 +72,15 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Applies the softplus function to a single value.
+     *
+     * @param x The input value.
+     * @return The result of applying the softplus function to the input value.
+     */
     public double softplus(double x) {
         return Math.log(1 + Math.exp(x));
     }
-    
 
     /**
      * Transposes a matrix.
@@ -208,6 +216,7 @@ public class MatrixUtils {
      *
      * @param z The input matrix.
      * @return A new matrix with the sigmoid function applied to each element.
+     * @throws IllegalStateException if a NaN value is encountered after applying the sigmoid function.
      */
     public static double[][] sigmoidVector(double[][] z) {
         double[][] result = new double[z.length][z[0].length];
@@ -215,7 +224,7 @@ public class MatrixUtils {
             for (int j = 0; j < z[i].length; j++) {
                 result[i][j] = sigmoid(-z[i][j]);
     
-                // Проверка на NaN после применения сигмоиды
+                // Check for NaN after applying the sigmoid
                 if (Double.isNaN(result[i][j])) {
                     throw new IllegalStateException("NaN value encountered in sigmoid function");
                 }
@@ -257,6 +266,12 @@ public class MatrixUtils {
         return sigmoid(x) * (1 - sigmoid(x));
     }
 
+    /**
+     * Flattens a two-dimensional array into a one-dimensional array.
+     *
+     * @param array The input two-dimensional array.
+     * @return The flattened one-dimensional array.
+     */
     public static double[] flattenArray(double[][] array) {
         int rows = array.length;
         int cols = array[0].length;
@@ -287,6 +302,14 @@ public class MatrixUtils {
         return delta;
     }
 
+    /**
+     * Scales a value to a specified range using the sigmoid function.
+     *
+     * @param value The input value.
+     * @param min   The minimum value of the range.
+     * @param max   The maximum value of the range.
+     * @return The scaled value.
+     */
     public static double scaleToRange(double value, double min, double max) {
         return min + (max - min) * sigmoid(value);
     }
@@ -317,6 +340,7 @@ public class MatrixUtils {
      * @param matrix The input matrix.
      * @param vector The input vector.
      * @return The resulting vector.
+     * @throws IllegalArgumentException if the matrix and vector dimensions do not match.
      */
     public static double[] multiplyMatrixAndVector(double[][] matrix, double[] vector) {
         int rows = matrix.length;
@@ -347,6 +371,12 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Converts a two-dimensional matrix to a one-dimensional vector.
+     *
+     * @param x The input two-dimensional matrix.
+     * @return The resulting one-dimensional vector.
+     */
     public static double[] getOneDimentionalVector(double[][] x) {
         double[] result = new double[x.length];
         for (int i = 0; i < x.length; i++) {
@@ -355,8 +385,15 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Adds two matrices element-wise.
+     *
+     * @param firstMatrix  The first matrix.
+     * @param secondMatrix The second matrix.
+     * @return The result of the element-wise addition.
+     */
     public static double[][] vectorAddition(double[][] firstMatrix, double[][] secondMatrix) {
-        if (firstMatrix.length != secondMatrix.length && firstMatrix[0].length != secondMatrix[0].length) {
+        if (firstMatrix.length != secondMatrix.length || firstMatrix[0].length != secondMatrix[0].length) {
             System.out.println("The matrices' sizes don't match");
             return null;
         }
@@ -370,6 +407,12 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Finds the index of the maximum value in a two-dimensional array.
+     *
+     * @param array The input array.
+     * @return The index of the maximum value.
+     */
     public static int argMax(double[][] array) {
         int maxIndex = 0;
         double max = array[0][0];
@@ -382,6 +425,12 @@ public class MatrixUtils {
         return maxIndex;
     }
 
+    /**
+     * Finds the index of the maximum value in a one-dimensional array.
+     *
+     * @param array The input array.
+     * @return The index of the maximum value.
+     */
     public static int argMax(double[] array) {
         int maxIndex = 0;
         double max = array[0];
@@ -394,6 +443,12 @@ public class MatrixUtils {
         return maxIndex;
     }
 
+    /**
+     * Applies the softmax function to each element of a matrix.
+     *
+     * @param z The input matrix.
+     * @return A new matrix with the softmax function applied to each element.
+     */
     public static double[][] softmaxVector(double[][] z) {
         double max = Double.NEGATIVE_INFINITY;
         for (double[] value : z) {
@@ -415,6 +470,12 @@ public class MatrixUtils {
         return softmax;
     }
 
+    /**
+     * Computes the Jacobian matrix of the softmax function.
+     *
+     * @param softmax The softmax vector.
+     * @return The Jacobian matrix of the softmax function.
+     */
     public static double[][] primeSoftmaxVector(double[][] softmax) {
         int n = softmax.length;
         double[][] jacobianMatrix = new double[n][n];
@@ -430,6 +491,13 @@ public class MatrixUtils {
         return jacobianMatrix;
     }
     
+    /**
+     * Subtracts one matrix from another.
+     *
+     * @param a The first matrix.
+     * @param b The second matrix.
+     * @return The result of the matrix subtraction.
+     */
     public static double[][] subtract(double[][] a, double[][] b) {
         int rows = a.length;
         int cols = a[0].length;
@@ -444,6 +512,13 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Subtracts a vector from each row of a matrix.
+     *
+     * @param a The input matrix.
+     * @param b The vector to subtract.
+     * @return The resulting matrix.
+     */
     public static double[][] subtract(double[][] a, double[] b) {
         int rows = a.length;
         int cols = a[0].length;
@@ -458,6 +533,12 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Applies the derivative of the sigmoid function to each element of a matrix.
+     *
+     * @param z The input matrix.
+     * @return A new matrix with the derivative of the sigmoid function applied to each element.
+     */
     public static double[][] sigmoidPrimeVector(double[][] z) {
         double[][] sigmoid = sigmoidVector(z);
         double[][] result = new double[z.length][z[0].length];
@@ -469,6 +550,13 @@ public class MatrixUtils {
         return result;
     }
 
+    /**
+     * Multiplies each element of a matrix by a scalar.
+     *
+     * @param matrix The input matrix.
+     * @param scalar The scalar value.
+     * @return A new matrix with each element multiplied by the scalar.
+     */
     public static double[][] scalarMultiply(double[][] matrix, double scalar) {
         double[][] result = new double[matrix.length][matrix[0].length];
         for (int i = 0; i < matrix.length; i++) {

@@ -13,6 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * The PPOAgent class implements a Proximal Policy Optimization (PPO) agent.
+ * It uses policy and value networks to learn and select actions based on states.
+ */
 public class PPOAgent implements Serializable {
     private static final long serialVersionUID = 1L;
     private PolicyNetwork policyNetwork;
@@ -23,6 +27,15 @@ public class PPOAgent implements Serializable {
     private double epsilon; // Clipping parameter for PPO
     private Random random = new Random(1);
 
+    /**
+     * Constructs a PPOAgent with the specified parameters.
+     *
+     * @param policyNetworkSizes sizes of the layers in the policy network
+     * @param valueNetworkSizes sizes of the layers in the value network
+     * @param gamma discount factor
+     * @param lambda GAE parameter
+     * @param epsilon clipping parameter for PPO
+     */
     public PPOAgent(int[] policyNetworkSizes, int[] valueNetworkSizes, double gamma, double lambda, double epsilon) {
         this.policyNetwork = new PolicyNetwork(policyNetworkSizes);
         this.valueNetwork = new ValueNetwork(valueNetworkSizes);
@@ -32,10 +45,20 @@ public class PPOAgent implements Serializable {
         this.epsilon = epsilon;
     }
 
+    /**
+     * Stores a transition in the agent's memory.
+     *
+     * @param transition the transition to store
+     */
     public void storeTransition(Transition transition) {
         memory.add(transition);
     }
 
+    /**
+     * Trains the agent on the provided data batches.
+     *
+     * @param data the list of data batches to train on
+     */
     public void trainOnData(List<Batch> data){
         int numberOfEpoches = data.size();
         int epochesCounter = 0;
@@ -52,6 +75,9 @@ public class PPOAgent implements Serializable {
         System.out.println("Training complete.\n");
     }
 
+    /**
+     * Trains the agent using stored transitions in memory.
+     */
     public void train() {
         // Compute advantages using GAE
         List<Double> advantages = computeAdvantagesParallel();
@@ -96,10 +122,20 @@ public class PPOAgent implements Serializable {
         memory.clear();
     }
 
+    /**
+     * Retrieves the agent's memory of transitions.
+     *
+     * @return the list of transitions stored in memory
+     */
     public List<Transition> getMemory() {
         return memory;
     }
 
+    /**
+     * Computes the advantages using Generalized Advantage Estimation (GAE).
+     *
+     * @return the list of computed advantages
+     */
     @SuppressWarnings("unused")
     private List<Double> computeAdvantages() {
         List<Double> advantages = new ArrayList<>();
@@ -121,6 +157,11 @@ public class PPOAgent implements Serializable {
         return advantages;
     }
 
+    /**
+     * Computes the old probabilities for actions using the policy network.
+     *
+     * @return an array of old probabilities
+     */
     @SuppressWarnings("unused")
     private double[] computeOldProbabilities() {
         double[] oldProbabilities = new double[memory.size()];
@@ -133,6 +174,11 @@ public class PPOAgent implements Serializable {
         return oldProbabilities;
     }
 
+    /**
+     * Computes the old probabilities for actions using the policy network in parallel.
+     *
+     * @return an array of old probabilities
+     */
     private double[] computeOldProbabilitiesParallel() {
         return memory.parallelStream()
                      .mapToDouble(transition -> {
@@ -144,6 +190,11 @@ public class PPOAgent implements Serializable {
                      .toArray();
     }
     
+    /**
+     * Computes the advantages using Generalized Advantage Estimation (GAE) in parallel.
+     *
+     * @return the list of computed advantages
+     */
     private List<Double> computeAdvantagesParallel() {
         double[] values = memory.parallelStream()
                                 .mapToDouble(transition -> valueNetwork.forward(transition.getState1().getState())[0][0])
@@ -165,6 +216,12 @@ public class PPOAgent implements Serializable {
         return advantages;
     }
 
+    /**
+     * Selects an action based on the current state using the policy network.
+     *
+     * @param state the current state
+     * @return the selected action
+     */
     public Action selectAction(State state) {
         double[][] policyOutput = policyNetwork.forward(state.getState());
         
@@ -184,22 +241,47 @@ public class PPOAgent implements Serializable {
         return new Action(theta, force);
     }
     
+    /**
+     * Applies the softplus activation function to the input.
+     *
+     * @param x the input value
+     * @return the output value after applying softplus
+     */
     private double softplus(double x) {
         return Math.log(1 + Math.exp(x));
     }
 
+    /**
+     * Selects a random action within the specified bounds.
+     *
+     * @return the randomly selected action
+     */
     public Action selectRandomAction() {
         double theta = random.nextDouble() * 2 * Math.PI;
         double force = random.nextDouble() * (5 - 1) + 1;
         return new Action(theta, force);
     }
 
+    /**
+     * Saves the PPOAgent to a file.
+     *
+     * @param filePath the path of the file to save the agent
+     * @throws IOException if an I/O error occurs
+     */
     public void saveAgent(String filePath) throws IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
             oos.writeObject(this);
         }
     }
 
+    /**
+     * Loads a PPOAgent from a file.
+     *
+     * @param filePath the path of the file to load the agent
+     * @return the loaded PPOAgent
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the class of the serialized object cannot be found
+     */
     public static PPOAgent loadAgent(String filePath) throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
             return (PPOAgent) ois.readObject();

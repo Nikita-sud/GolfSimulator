@@ -9,6 +9,10 @@ import java.util.Random;
 import com.example.golfgame.utils.MatrixUtils;
 import com.example.golfgame.utils.ppoUtils.BackPropResult;
 
+/**
+ * Abstract class representing a neural network for machine learning tasks.
+ * Provides methods for forward propagation, backpropagation, and parameter updates.
+ */
 public abstract class NeuralNetwork implements Serializable {
     private static final long serialVersionUID = 1L;
     protected int numLayers;
@@ -16,6 +20,11 @@ public abstract class NeuralNetwork implements Serializable {
     protected double[][][] weights;
     protected double[][] biases;
 
+    /**
+     * Constructs a neural network with the specified layer sizes.
+     *
+     * @param sizes an array specifying the number of neurons in each layer
+     */
     public NeuralNetwork(int[] sizes) {
         this.numLayers = sizes.length;
         this.sizes = sizes;
@@ -36,6 +45,14 @@ public abstract class NeuralNetwork implements Serializable {
         }
     }
 
+    /**
+     * Updates the parameters of the neural network using the provided gradients.
+     *
+     * @param nabla_w the gradients for the weights
+     * @param nabla_b the gradients for the biases
+     * @param eta the learning rate
+     * @param miniBatchSize the size of the mini-batch
+     */
     public void updateParameters(double[][][] nabla_w, double[][] nabla_b, double eta, int miniBatchSize) {
         for (int j = 0; j < weights.length; j++) {
             for (int m = 0; m < weights[j].length; m++) {
@@ -52,6 +69,13 @@ public abstract class NeuralNetwork implements Serializable {
         }
     }
 
+    /**
+     * Performs backpropagation to compute the gradients for the weights and biases.
+     *
+     * @param input the input vector
+     * @param loss the loss value
+     * @return a BackPropResult object containing the gradients for weights and biases
+     */
     public BackPropResult backprop(double[] input, double loss) {
         double[][] nabla_b = new double[this.biases.length][];
         for (int i = 0; i < this.biases.length; i++) {
@@ -101,6 +125,13 @@ public abstract class NeuralNetwork implements Serializable {
         return new BackPropResult(nabla_w, nabla_b);
     }
 
+    /**
+     * Performs forward propagation through the network with the given input.
+     *
+     * @param input the input vector
+     * @return the output vector
+     * @throws IllegalStateException if NaN values are encountered during computation
+     */
     public double[][] forward(double[] input) {
         double[][] activation = new double[input.length][1];
         for (int i = 0; i < input.length; i++) {
@@ -124,7 +155,13 @@ public abstract class NeuralNetwork implements Serializable {
     
         return activation;
     }
-    
+
+    /**
+     * Checks if the given matrix contains NaN values.
+     *
+     * @param matrix the matrix to check
+     * @return true if the matrix contains NaN values, false otherwise
+     */
     private boolean containsNaN(double[][] matrix) {
         for (double[] row : matrix) {
             for (double value : row) {
@@ -136,12 +173,26 @@ public abstract class NeuralNetwork implements Serializable {
         return false;
     }
 
+    /**
+     * Saves the neural network to a file.
+     *
+     * @param filePath the path to the file where the network should be saved
+     * @throws IOException if an I/O error occurs
+     */
     public void saveNetwork(String filePath) throws IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
             oos.writeObject(this);
         }
     }
 
+    /**
+     * Loads a neural network from a file.
+     *
+     * @param filePath the path to the file from which the network should be loaded
+     * @return the loaded NeuralNetwork object
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if the class of the serialized object cannot be found
+     */
     public static NeuralNetwork loadNetwork(String filePath) throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
             return (NeuralNetwork) ois.readObject();

@@ -13,6 +13,11 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages the creation and properties of water surfaces in the golf game.
+ * This includes generating a grid water surface model with specified dimensions
+ * and grid resolution.
+ */
 public class WaterSurfaceManager {
     private float width, depth;
     private int gridResolution;
@@ -36,7 +41,7 @@ public class WaterSurfaceManager {
      *
      * @param centerX the X-coordinate of the center of the water surface
      * @param centerZ the Z-coordinate of the center of the water surface
-     * @return a new {@link ModelInstance} representing the water surface, which can be rendered in a 3D scene
+     * @return a list of {@link ModelInstance} representing the water surface, which can be rendered in a 3D scene
      */
     public List<ModelInstance> createWaterSurface(float centerX, float centerZ) {
         ModelBuilder modelBuilder = new ModelBuilder();
@@ -57,7 +62,7 @@ public class WaterSurfaceManager {
                     for (int x = 0; x <= partWidth; x++) {
                         float worldX = centerX + (x + px * partWidth) - halfTotalWidth;
                         float worldZ = centerZ + (z + pz * partDepth) - halfTotalDepth;
-                        float height = 0; // Initial height for the water surface
+                        float height = -0.1f; // Initial height for the water surface
 
                         meshBuilder.vertex(new float[]{worldX, height, worldZ, 0, 1, 0});
                     }

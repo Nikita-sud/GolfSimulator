@@ -278,7 +278,6 @@ public class GolfGameScreen implements Screen, Disposable {
             assetManager.get("textures/grassTexture.jpeg", Texture.class),
             assetManager.get("textures/sandTexture.jpeg", Texture.class),
             assetManager.get("textures/holeTexture.png", Texture.class),
-            assetManager.get("textures/redLine.png", Texture.class),
             200, 200, 1.0f, 4);
         waterSurfaceManager = new WaterSurfaceManager(200.0f, 200.0f, 50);
     }
@@ -421,6 +420,7 @@ public class GolfGameScreen implements Screen, Disposable {
         initializeButtons();
         initializeLabels();
         initializeProgressBar();
+        initializeResetButton();
     }
 
     /**
@@ -439,6 +439,36 @@ public class GolfGameScreen implements Screen, Disposable {
         buttonTable.add(pauseButton).width(100).height(50).pad(10);
         buttonTable.add(pathButton).width(100).height(50).pad(10);
         stage.addActor(buttonTable);
+    }
+
+    /**
+     * Initializes the reset button and places it in the bottom right corner.
+     */
+    private void initializeResetButton() {
+        Table resetButtonTable = new Table();
+        resetButtonTable.setFillParent(true);
+        resetButtonTable.bottom().right();
+
+        TextButton resetButton = createResetButton();
+        resetButtonTable.add(resetButton).width(100).height(50).pad(10);
+
+        stage.addActor(resetButtonTable);
+    }
+
+    /**
+     * Creates the reset button for the UI.
+     *
+     * @return the created reset button
+     */
+    private TextButton createResetButton() {
+        TextButton resetButton = new TextButton("Reset", skin);
+        resetButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                resetGameState();
+            }
+        });
+        return resetButton;
     }
 
     /**
@@ -611,6 +641,7 @@ public class GolfGameScreen implements Screen, Disposable {
     public void resetGameState() {
         currentBallState.setAllComponents(0, 0, 0.001, 0.001);
         reloadTerrain(0, 0);
+        isBallAllowedToMove = false;
         ballRotationAngleX = 0f;
         ballRotationAngleY = 0f;
         cameraViewAngle = 0;
@@ -619,8 +650,10 @@ public class GolfGameScreen implements Screen, Disposable {
         mainCamera.lookAt(0f, 0f, 0f);
         mainCamera.update();
         score = 0;
+        lastScore = -1;
         scoreLabel.clear();
         scoreLabel.setText("Score: " + score);
+        lastScoreLabel.setText("Last Score: " + lastScore);
     }
 
     /**
@@ -779,6 +812,9 @@ public class GolfGameScreen implements Screen, Disposable {
         checkAndHandleBallOutOfBounds();
     }
 
+    /**
+     * Updates the behavior of the bot based on its current state.
+     */
     private void updateBotBehavior() {
         if (hillClimbingBotActive) {
             advancedBotPlay();
@@ -789,6 +825,11 @@ public class GolfGameScreen implements Screen, Disposable {
         }   
     }
 
+    /**
+     * Updates the rotation of the ball based on its velocity and the elapsed time.
+     *
+     * @param deltaTime the time elapsed since the last frame
+     */
     private void updateBallRotation(float deltaTime) {
         float velocityX = (float) currentBallState.getVx();
         float velocityY = (float) currentBallState.getVy();
@@ -818,15 +859,31 @@ public class GolfGameScreen implements Screen, Disposable {
         resetGameState();
     }
 
+    /**
+     * Checks if the ball has reached the goal.
+     *
+     * @param ball the current ball state
+     * @param goal the goal state
+     * @return true if the ball has reached the goal, false otherwise
+     */
     public static boolean validGoal(BallState ball, BallState goal){
         return ball.epsilonPositionEquals(goal, GOAL_TOLERANCE)&&Math.abs(ball.getVx())<3.5&&Math.abs(ball.getVy())<3.5;
     }
 
+    /**
+     * Checks if the ball has reached the goal in the simulator.
+     *
+     * @param ball the current ball state
+     * @param goal the goal state
+     * @return true if the ball has reached the goal in the simulator, false otherwise
+     */
     public static boolean validSimulatorGoal(BallState ball, BallState goal){
         return ball.epsilonPositionEquals(goal, GOAL_TOLERANCE-0.5)&&Math.abs(ball.getVx())<3.5&&Math.abs(ball.getVy())<3.5;
-
     }
 
+    /**
+     * Checks if the ball is out of bounds and handles it accordingly.
+     */
     private void checkAndHandleBallOutOfBounds() {
         if (isBallOutOfBounds(currentBallState)) {
             // Увеличение счета
@@ -952,6 +1009,9 @@ public class GolfGameScreen implements Screen, Disposable {
         }
     }
 
+    /**
+     * Waits for the HillClimb direction to be set and then hits the ball.
+     */
     private void waitForHillClimbDirectionSetAndHit(){
         // Run a separate thread to periodically check if the direction is set
         new Thread(() -> {
@@ -971,7 +1031,7 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void advancedBotPlay() {
         if (!isBallAllowedToMove) {
-            wallE.switchToPPO();    
+            wallE.switchToAdvanced();    
             wallE.setDirection();
             wallE.hit();
         }
@@ -1286,14 +1346,26 @@ public class GolfGameScreen implements Screen, Disposable {
         return (Math.abs(ballToGoal.x - camVector2.x) < 0.001) && (Math.abs(ballToGoal.y - camVector2.y) < 0.001);
     }
 
+    /**
+     * Checks if the ball is currently in water.
+     *
+     * @param ballState the current state of the ball
+     * @return true if the ball is in water, false otherwise
+     */
     public boolean isBallInWater(BallState ballState) {
         return isBallInWater;
     }
 
+    /**
+     * Checks if the ball is out of bounds.
+     *
+     * @param ballState the current state of the ball
+     * @return true if the ball is out of bounds, false otherwise
+     */
     public boolean isBallOutOfBounds(BallState ballState) {
         float x = (float) ballState.getX();
         float y = (float) ballState.getY();
-        return x > terrainManager.getTerrainWidth()/2  || y > terrainManager.getTerrainHeight()/2;
+        return x > terrainManager.getTerrainWidth() / 2 || y > terrainManager.getTerrainHeight() / 2;
     }
 
     /**
@@ -1331,17 +1403,33 @@ public class GolfGameScreen implements Screen, Disposable {
         hillClimbingBotActive = !hillClimbingBotActive;
     }
 
+    /**
+     * Sets the kinetic friction for sand terrain.
+     *
+     * @param kineticFriction the kinetic friction coefficient to set
+     */
     public void setSandFrictionKinetic(double kineticFriction) {
         this.sandFrictionKinetic = kineticFriction;
     }
-    
+
+    /**
+     * Sets the static friction for sand terrain.
+     *
+     * @param staticFriction the static friction coefficient to set
+     */
     public void setSandFrictionStatic(double staticFriction) {
         this.sandFrictionStatic = staticFriction;
     }
 
-    public void setLineInstance(ModelInstance line){
+    /**
+     * Sets the line instance for rendering the path.
+     *
+     * @param line the line instance to set
+     */
+    public void setLineInstance(ModelInstance line) {
         lineInstance = line;
     }
+
     /**
      * Sets the hill-climbing bot activeness.
      *
@@ -1351,9 +1439,15 @@ public class GolfGameScreen implements Screen, Disposable {
         hillClimbingBotActive = activeness;
     }
 
-    public Function getHeightFunction(){
+    /**
+     * Gets the current height function for the terrain.
+     *
+     * @return the current height function
+     */
+    public Function getHeightFunction() {
         return terrainHeightFunction;
     }
+
     @Override
     public void pause() {
     }

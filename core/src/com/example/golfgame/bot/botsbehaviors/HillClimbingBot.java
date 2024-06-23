@@ -12,12 +12,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
-import com.example.golfgame.physics.ODE.Ralston;
 import com.example.golfgame.physics.ODE.RungeKutta;
 import com.example.golfgame.screens.GolfGameScreen;
 import com.example.golfgame.simulator.PhysicsSimulator;
 import com.example.golfgame.utils.BallState;
 
+/**
+ * HillClimbingBot implements a bot that uses hill climbing algorithm to optimize the hit angle and power
+ * for achieving the goal state in a golf game.
+ */
 public class HillClimbingBot implements BotBehavior {
 
     private volatile float hitPower;
@@ -36,8 +39,11 @@ public class HillClimbingBot implements BotBehavior {
 
     private RuleBasedBot helper;
 
-    private ExecutorService executorService = Executors. newSingleThreadExecutor();
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    /**
+     * Constructs a HillClimbingBot with initial hit power and angle.
+     */
     public HillClimbingBot() {
         hitPower = 3;
         angle = 0;
@@ -45,6 +51,12 @@ public class HillClimbingBot implements BotBehavior {
         helper = new RuleBasedBot();
     }
 
+    /**
+     * Sets the direction using hill climbing algorithm.
+     *
+     * @param game the GolfGame instance
+     * @return the calculated angle
+     */
     @Override
     public float setDirection(GolfGame game) {
         System.out.println("setDirection happened");
@@ -53,7 +65,8 @@ public class HillClimbingBot implements BotBehavior {
             @Override
             public Float call() {
                 System.out.println("Thread running");
-                initializeAngle(game); initializeForce(game); // Initial guesses for force and angle
+                initializeAngle(game); 
+                initializeForce(game); // Initial guesses for force and angle
                 climb(game);
                 return angle;
             }
@@ -68,6 +81,11 @@ public class HillClimbingBot implements BotBehavior {
         return angle;
     }
 
+    /**
+     * Initializes the force based on the distance to the goal.
+     *
+     * @param game the GolfGame instance
+     */
     private void initializeForce(GolfGame game) {
         BallState ballState = game.getGolfGameScreen().getBallState();
         BallState goal = game.getGolfGameScreen().getGoalState();
@@ -80,14 +98,22 @@ public class HillClimbingBot implements BotBehavior {
         System.out.printf("Initial guess for force based on distance (%.2f) is: %.2f\n", distance, hitPower);
     }
 
+    /**
+     * Initializes the angle using a rule-based estimate.
+     *
+     * @param game the GolfGame instance
+     */
     private void initializeAngle(GolfGame game){
         // Initial guess based on rule-based estimate
-        angle =(float) (helper.findTargetAngle(game)%(2*Math.PI));
+        angle =(float) (helper.findTargetAngle(game) % (2 * Math.PI));
         System.out.printf("Initial guess for angle is: %.2f\n", angle);
     }
 
-
-
+    /**
+     * Hits the ball if the camera angle is close to the calculated angle.
+     *
+     * @param game the GolfGame instance
+     */
     @Override
     public void hit(GolfGame game) {
         if (Math.abs(game.getGolfGameScreen().getCameraAngle() - angle) < ANGLE_TOLERANCE) {
@@ -96,6 +122,11 @@ public class HillClimbingBot implements BotBehavior {
         }
     }
 
+    /**
+     * Performs hill climbing to optimize the hit power and angle.
+     *
+     * @param game the GolfGame instance
+     */
     private void climb(GolfGame game) {
         BallState goal = game.getGolfGameScreen().getGoalState();
         PhysicsSimulator simulator = new PhysicsSimulator(game.getGolfGameScreen().getHeightFunction(), goal, new RungeKutta());
@@ -105,9 +136,18 @@ public class HillClimbingBot implements BotBehavior {
         expandSearchRange(simulator, game, goal, random);
         hillClimb(simulator, game, goal);
     }
+
+    /**
+     * Performs the hill climbing algorithm.
+     *
+     * @param simulator the PhysicsSimulator instance
+     * @param game the GolfGame instance
+     * @param goal the goal BallState
+     * @return true if the goal is reached, false otherwise
+     */
     private boolean hillClimb(PhysicsSimulator simulator, GolfGame game, BallState goal) {
         boolean improved = true;
-        while (running&&improved) {
+        while (running && improved) {
             improved = false;
             BallState curSimResult = simulator.singleHit(hitPower, angle, game.getGolfGameScreen().getBallState());
             System.out.printf("Current Sim Result: (%.2f, %.2f) with force %.2f and angle %.2f\n", curSimResult.getX(), curSimResult.getY(), hitPower, angle);
@@ -157,7 +197,14 @@ public class HillClimbingBot implements BotBehavior {
         return false;
     }
 
-
+    /**
+     * Expands the search range to escape local minima and improves the solution.
+     *
+     * @param simulator the PhysicsSimulator instance
+     * @param game the GolfGame instance
+     * @param goal the goal BallState
+     * @param random the Random instance for generating random values
+     */
     private void expandSearchRange(PhysicsSimulator simulator, GolfGame game, BallState goal, Random random) {
         float originalHitPower = hitPower;
         float originalAngle = angle;
@@ -178,12 +225,11 @@ public class HillClimbingBot implements BotBehavior {
                     hitPower = Math.max(0.1f, originalHitPower + deltaPower);
                     angle = originalAngle + deltaAngle;
                 }
-
             }
         }
 
         // Introduce random jumps to escape local minima
-        for (int i = 0; i < 5; i++) { // Try 5 random jumps
+        for (int I = 0; I < 5; I++) { // Try 5 random jumps
             float randomHitPower = Math.max(0.1f, originalHitPower + (random.nextFloat() - 0.5f) * 4 * DELTAHITPOWER);
             float randomAngle = originalAngle + (random.nextFloat() - 0.5f) * 4 * DELTAANGLE;
 
@@ -201,10 +247,22 @@ public class HillClimbingBot implements BotBehavior {
         }
     }
 
+    /**
+     * Checks if the direction is set.
+     *
+     * @return true if the direction is set, false otherwise
+     */
     public boolean isDirectionSet(){
         return isDirectionSet;
     }
 
+    /**
+     * Finds the best state from the neighbors.
+     *
+     * @param states the array of BallState representing neighbors
+     * @param goal the goal BallState
+     * @return the best BallState
+     */
     private BallState bestState(BallState[] states, BallState goal) {
         double smallestDistance = Integer.MAX_VALUE;
         BallState best = null;
@@ -212,7 +270,7 @@ public class HillClimbingBot implements BotBehavior {
             if (GolfGameScreen.validGoal(state, goal)){
                 return state;
             }
-            if (state.distanceTo(goal)<smallestDistance) {
+            if (state.distanceTo(goal) < smallestDistance) {
                 smallestDistance = state.distanceTo(goal);
                 best = state;
             }

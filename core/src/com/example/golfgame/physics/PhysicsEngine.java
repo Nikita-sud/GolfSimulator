@@ -24,18 +24,24 @@ public class PhysicsEngine {
     private double deltaDirection = 0.01; // Increment for numerical derivative in given direction
 
     /**
-     * Constructs a PhysicsEngine with a specific ODE solver, a surface function, and a coefficient of friction.
+     * Constructs a PhysicsEngine with a specific ODE solver and a surface function.
      *
      * @param solver the differential equation solver to use
      * @param surfaceFunction the function representing the surface's height as a function of x and y
-     * @param mu_k the coefficient of kinetic friction
      */
-
     public PhysicsEngine(ODE solver, Function surfaceFunction) {
         this.solver = solver;
         this.surfaceFunction = surfaceFunction;
     }
 
+    /**
+     * Constructs a PhysicsEngine with a specific ODE solver, a surface function, and coefficients of friction.
+     *
+     * @param solver the differential equation solver to use
+     * @param surfaceFunction the function representing the surface's height as a function of x and y
+     * @param mu_k the coefficient of kinetic friction
+     * @param mu_s the coefficient of static friction
+     */
     public PhysicsEngine(ODE solver, Function surfaceFunction, double mu_k, double mu_s) {
         this.solver = solver;
         this.surfaceFunction = surfaceFunction;
@@ -43,6 +49,12 @@ public class PhysicsEngine {
         this.mu_s = mu_s;
     }
 
+    /**
+     * Sets the coefficients of friction.
+     *
+     * @param mu_k the coefficient of kinetic friction
+     * @param mu_s the coefficient of static friction
+     */
     public void setFriction(double mu_k, double mu_s) {
         this.mu_k = mu_k;
         this.mu_s = mu_s;
@@ -61,22 +73,17 @@ public class PhysicsEngine {
         Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
         Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         
-        double h = deltaX; // Assuming deltaX is your small step for the derivative
+        double h = deltaX;
     
-        // Setting values for function evaluation at x + h and x - h
         valuesOneStepAhead.put("x", x + h);
         valuesOneStepAhead.put("y", y);
         valuesOneStepBehind.put("x", x - h);
         valuesOneStepBehind.put("y", y);
-    
-        // Setting values for function evaluation at x + 2h and x - 2h
         valuesTwoStepsAhead.put("x", x + 2 * h);
         valuesTwoStepsAhead.put("y", y);
         valuesTwoStepsBehind.put("x", x - 2 * h);
         valuesTwoStepsBehind.put("y", y);
     
-        // Five-point central difference formula:
-        // f'(x) ≈ (−f(x+2h) + 8f(x+h) − 8f(x−h) + f(x−2h)) / 12h
         double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
                              + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
                              - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
@@ -85,7 +92,6 @@ public class PhysicsEngine {
     
         return derivative;
     }
-    
 
     /**
      * Calculates the derivative of the surface function along the y-axis at a given point.
@@ -100,22 +106,17 @@ public class PhysicsEngine {
         Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
         Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         
-        double h = deltaY; // Assuming deltaY is your small step for the derivative
+        double h = deltaY;
     
-        // Setting values for function evaluation at y + h and y - h
         valuesOneStepAhead.put("x", x);
         valuesOneStepAhead.put("y", y + h);
         valuesOneStepBehind.put("x", x);
         valuesOneStepBehind.put("y", y - h);
-    
-        // Setting values for function evaluation at y + 2h and y - 2h
         valuesTwoStepsAhead.put("x", x);
         valuesTwoStepsAhead.put("y", y + 2 * h);
         valuesTwoStepsBehind.put("x", x);
         valuesTwoStepsBehind.put("y", y - 2 * h);
     
-        // Five-point central difference formula for the derivative with respect to y:
-        // f'(y) ≈ (−f(y+2h) + 8f(y+h) − 8f(y−h) + f(y−2h)) / 12h
         double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
                              + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
                              - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
@@ -125,9 +126,8 @@ public class PhysicsEngine {
         return derivative;
     }
 
-    
     /**
-     * Calulates the derivative of the surface function along the direction vector at a given point.
+     * Calculates the derivative of the surface function along the direction vector at a given point.
      * 
      * @param x the x-coordinate at which to calculate the derivative
      * @param y the y-coordinate at which to calculate the derivative
@@ -141,26 +141,23 @@ public class PhysicsEngine {
         Map<String, Double> valuesTwoStepsAhead = new HashMap<>();
         Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         
-        double h = deltaDirection; // Assuming deltaDirection is your small step for the derivative
-        valuesOneStepAhead.put("x", x+ xDirection*h);
-        valuesOneStepAhead.put("y", y + yDirection*h);
-        valuesOneStepBehind.put("x", x- xDirection*h);
-        valuesOneStepBehind.put("y", y - yDirection*h);
+        double h = deltaDirection;
+        valuesOneStepAhead.put("x", x + xDirection * h);
+        valuesOneStepAhead.put("y", y + yDirection * h);
+        valuesOneStepBehind.put("x", x - xDirection * h);
+        valuesOneStepBehind.put("y", y - yDirection * h);
+        valuesTwoStepsAhead.put("x", x + xDirection * 2 * h);
+        valuesTwoStepsAhead.put("y", y + yDirection * 2 * h);
+        valuesTwoStepsBehind.put("x", x - xDirection * 2 * h);
+        valuesTwoStepsBehind.put("y", y - yDirection * 2 * h);
 
-        valuesTwoStepsAhead.put("x", x+ xDirection*2*h);
-        valuesTwoStepsAhead.put("y", y + yDirection*2* h);
-        valuesTwoStepsBehind.put("x", x - xDirection*2*h);
-        valuesTwoStepsBehind.put("y", y - yDirection*2*h);
-
-        // Five point centered difference
         double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
-        + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
-        - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
-        + surfaceFunction.evaluate(valuesTwoStepsBehind)) 
-       / (12 * h);
+                             + 8 * surfaceFunction.evaluate(valuesOneStepAhead)
+                             - 8 * surfaceFunction.evaluate(valuesOneStepBehind)
+                             + surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+                            / (12 * h);
 
-       return derivative;
-
+        return derivative;
     }
 
     /**
@@ -168,9 +165,9 @@ public class PhysicsEngine {
      * 
      * @param x the x-coordinate at which to calculate the second derivative
      * @param y the y-coordinate at which to calculate the second derivative
-     * @param xDirection
-     * @param yDirection
-     * @return
+     * @param xDirection x-component of the direction
+     * @param yDirection y-component of the direction
+     * @return the second derivative along the direction axis
      */
     public double secondDerivative(double x, double y, double xDirection, double yDirection){
         Map<String, Double> valuesOneStepAhead = new HashMap<>();
@@ -179,31 +176,27 @@ public class PhysicsEngine {
         Map<String, Double> valuesTwoStepsBehind = new HashMap<>();
         Map<String, Double> currentValues = new HashMap<>();
         
-        double h = deltaDirection; // Assuming deltaDirection is your small step for the derivative
-        valuesOneStepAhead.put("x", x+ xDirection*h);
-        valuesOneStepAhead.put("y", y + yDirection*h);
-        valuesOneStepBehind.put("x", x- xDirection*h);
-        valuesOneStepBehind.put("y", y - yDirection*h);
-
-        valuesTwoStepsAhead.put("x", x+ xDirection*2*h);
-        valuesTwoStepsAhead.put("y", y + yDirection*2* h);
-        valuesTwoStepsBehind.put("x", x - xDirection*2*h);
-        valuesTwoStepsBehind.put("y", y - yDirection*2*h);
-
+        double h = deltaDirection;
+        valuesOneStepAhead.put("x", x + xDirection * h);
+        valuesOneStepAhead.put("y", y + yDirection * h);
+        valuesOneStepBehind.put("x", x - xDirection * h);
+        valuesOneStepBehind.put("y", y - yDirection * h);
+        valuesTwoStepsAhead.put("x", x + xDirection * 2 * h);
+        valuesTwoStepsAhead.put("y", y + yDirection * 2 * h);
+        valuesTwoStepsBehind.put("x", x - xDirection * 2 * h);
+        valuesTwoStepsBehind.put("y", y - yDirection * 2 * h);
         currentValues.put("x", x);
         currentValues.put("y", y);
 
-        // Five point centered difference for second derivative
         double derivative = (-surfaceFunction.evaluate(valuesTwoStepsAhead) 
-        + 16 * surfaceFunction.evaluate(valuesOneStepAhead)
-        - 30 * surfaceFunction.evaluate(currentValues)
-        + 16* surfaceFunction.evaluate(valuesOneStepBehind)
-        - surfaceFunction.evaluate(valuesTwoStepsBehind)) 
-       / (12 * Math.pow(h, 2));
+                             + 16 * surfaceFunction.evaluate(valuesOneStepAhead)
+                             - 30 * surfaceFunction.evaluate(currentValues)
+                             + 16 * surfaceFunction.evaluate(valuesOneStepBehind)
+                             - surfaceFunction.evaluate(valuesTwoStepsBehind)) 
+                            / (12 * Math.pow(h, 2));
 
-       return derivative;
+        return derivative;
     }
-    
 
     /**
      * Generates a map of differential equations representing the dynamics of the ball based on its current state.
@@ -212,14 +205,15 @@ public class PhysicsEngine {
      * @return a map of differential equations for each state variable
      */
     public Map<String, Function> getDifferentialEquations(BallState ballState) {
-        Map<String, Double> vars = new HashMap<>();
         double dx = derivativeX(ballState.getX(), ballState.getY());
         double dy = derivativeY(ballState.getX(), ballState.getY());
-        vars.put("vx", ballState.getVx());
-        vars.put("vy", ballState.getVy());
 
-        String expressionVx = ((-g*dx)/(1+Math.pow(dx, 2)+Math.pow(dy, 2)))+"-"+((mu_k*g)/(Math.sqrt(1+Math.pow(dx, 2)+Math.pow(dy, 2))))+"*(vx/sqrt(vx^2 + vy^2 + ("+dx+"*vx"+"+"+dy+"*vy)^2))";
-        String expressionVy = ((-g*dy)/(1+Math.pow(dx, 2)+Math.pow(dy, 2))+"-"+(mu_k*g)/(Math.sqrt(1+Math.pow(dx, 2)+Math.pow(dy, 2))))+"*(vy/sqrt(vx^2 + vy^2 + ("+dx+"*vx"+"+"+dy+"*vy)^2))";
+        String expressionVx = ((-g * dx) / (1 + Math.pow(dx, 2) + Math.pow(dy, 2))) + "-"
+                + ((mu_k * g) / (Math.sqrt(1 + Math.pow(dx, 2) + Math.pow(dy, 2)))) + "*(vx/sqrt(vx^2 + vy^2 + (" + dx
+                + "*vx" + "+" + dy + "*vy)^2))";
+        String expressionVy = ((-g * dy) / (1 + Math.pow(dx, 2) + Math.pow(dy, 2)) + "-" + (mu_k * g)
+                / (Math.sqrt(1 + Math.pow(dx, 2) + Math.pow(dy, 2)))) + "*(vy/sqrt(vx^2 + vy^2 + (" + dx + "*vx" + "+"
+                + dy + "*vy)^2))";
 
         Map<String, Function> differentials = new HashMap<>();
         differentials.put("x", new Function("vx", "vx"));
@@ -235,51 +229,71 @@ public class PhysicsEngine {
      *
      * @param ballState the initial state of the ball
      * @param stepSize the time step size for the simulation
-     * @param duration the total time duration for the simulation
      * @return the final state of the ball after simulation
      */
-
     public BallState update(BallState ballState, double stepSize) {
         if (isAtRest(ballState)) {
-            // Check if the force exceeds static friction threshold to start moving
             if (canOvercomeStaticFriction(ballState)) {
                 return updateWithKineticFriction(ballState, stepSize);
             }
-            // No movement, return current state
             return ballState;
         } else {
             return updateWithKineticFriction(ballState, stepSize);
         }
     }
 
+    /**
+     * Updates the state of the ball to a certain time using the specified step size.
+     *
+     * @param ballState the initial state of the ball
+     * @param stepSize the time step size for the simulation
+     * @param time the total time duration for the simulation
+     * @return the final state of the ball after simulation
+     */
     public BallState updateToCertaintTime(BallState ballState, double stepSize, double time) {
         if (isAtRest(ballState)) {
-            // Check if the force exceeds static friction threshold to start moving
             if (canOvercomeStaticFriction(ballState)) {
                 return updateWithKineticFriction(ballState, stepSize, time);
             }
-            // No movement, return current state
             return ballState;
         } else {
             return updateWithKineticFriction(ballState, stepSize, time);
         }
     }
 
-
+    /**
+     * Checks if the ball is at rest based on its velocity.
+     *
+     * @param ballState the current state of the ball
+     * @return true if the ball is at rest, false otherwise
+     */
     public boolean isAtRest(BallState ballState) {
-        return Math.abs(ballState.getVx())<0.001&&Math.abs(ballState.getVy())<0.001;
+        return Math.abs(ballState.getVx()) < 0.001 && Math.abs(ballState.getVy()) < 0.001;
     }
-    
+
+    /**
+     * Checks if the ball can overcome static friction to start moving.
+     *
+     * @param ballState the current state of the ball
+     * @return true if the ball can overcome static friction, false otherwise
+     */
     private boolean canOvercomeStaticFriction(BallState ballState) {
         double dx = derivativeX(ballState.getX(), ballState.getY());
         double dy = derivativeY(ballState.getX(), ballState.getY());
         double normalForce = g * (1 + Math.pow(dx, 2) + Math.pow(dy, 2));
         double staticFrictionForce = mu_s * normalForce;
-        double gravitationalComponent = g * Math.sqrt(dx*dx + dy*dy);
-    
+        double gravitationalComponent = g * Math.sqrt(dx * dx + dy * dy);
+
         return gravitationalComponent > staticFrictionForce;
     }
 
+    /**
+     * Updates the state of the ball with kinetic friction over a given duration using the specified step size.
+     *
+     * @param ballState the initial state of the ball
+     * @param stepSize the time step size for the simulation
+     * @return the final state of the ball after simulation
+     */
     private BallState updateWithKineticFriction(BallState ballState, double stepSize) {
         Map<String, Function> differentials = getDifferentialEquations(ballState);
         Map<String, Double> initialState = new HashMap<>();
@@ -288,14 +302,14 @@ public class PhysicsEngine {
         initialState.put("vx", ballState.getVx());
         initialState.put("vy", ballState.getVy());
         initialState.put("t", 0.0);
-    
-        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, stepSize,"t");
-    
+
+        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, stepSize, "t");
+
         if (results.isEmpty()) {
             System.err.println("No states were returned by the ODE solver.");
             return ballState;
         }
-    
+
         Map<String, Double> finalState = results.get(results.size() - 1);
         ballState.setX(finalState.get("x"));
         ballState.setY(finalState.get("y"));
@@ -304,6 +318,14 @@ public class PhysicsEngine {
         return ballState;
     }
 
+    /**
+     * Updates the state of the ball with kinetic friction to a certain time using the specified step size.
+     *
+     * @param ballState the initial state of the ball
+     * @param stepSize the time step size for the simulation
+     * @param time the total time duration for the simulation
+     * @return the final state of the ball after simulation
+     */
     private BallState updateWithKineticFriction(BallState ballState, double stepSize, double time) {
         Map<String, Function> differentials = getDifferentialEquations(ballState);
         Map<String, Double> initialState = new HashMap<>();
@@ -312,14 +334,14 @@ public class PhysicsEngine {
         initialState.put("vx", ballState.getVx());
         initialState.put("vy", ballState.getVy());
         initialState.put("t", 0.0);
-    
-        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, time,"t");
-    
+
+        List<Map<String, Double>> results = solver.solve(differentials, initialState, stepSize, time, "t");
+
         if (results.isEmpty()) {
             System.err.println("No states were returned by the ODE solver.");
             return ballState;
         }
-    
+
         Map<String, Double> finalState = results.get(results.size() - 1);
         ballState.setX(finalState.get("x"));
         ballState.setY(finalState.get("y"));
@@ -328,15 +350,34 @@ public class PhysicsEngine {
         return ballState;
     }
 
+    /**
+     * Returns the slope of the surface along the x-axis at a given point.
+     *
+     * @param x the x-coordinate at which to calculate the slope
+     * @param y the y-coordinate at which to calculate the slope
+     * @return the slope along the x-axis
+     */
     public float getSlopeX(float x, float y) {
         return (float) derivativeX(x, y);
     }
-    
+
+    /**
+     * Returns the slope of the surface along the y-axis at a given point.
+     *
+     * @param x the x-coordinate at which to calculate the slope
+     * @param y the y-coordinate at which to calculate the slope
+     * @return the slope along the y-axis
+     */
     public float getSlopeY(float x, float y) {
         return (float) derivativeY(x, y);
     }
-    
-    public Function getSurfaceFunction(){
+
+    /**
+     * Returns the surface function.
+     *
+     * @return the surface function
+     */
+    public Function getSurfaceFunction() {
         return surfaceFunction;
     }
 }

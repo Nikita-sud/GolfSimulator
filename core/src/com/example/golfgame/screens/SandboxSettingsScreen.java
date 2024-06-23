@@ -56,6 +56,8 @@ public class SandboxSettingsScreen implements Screen {
 
     /**
      * Sets up the UI components for the sandbox settings screen.
+     * This includes input fields for sandbox boundaries, add and reset buttons,
+     * and labels for displaying current sandboxes.
      */
     private void setupUI() {
         Table mainTable = new Table();

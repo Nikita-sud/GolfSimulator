@@ -5,6 +5,11 @@ import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.BotBehavior;
 import com.example.golfgame.utils.BallState;
 
+/**
+ * The AdvancedBot class implements the BotBehavior interface and defines
+ * a behavior for the bot using advanced calculations to determine the direction
+ * and force for hitting the ball, considering terrain slopes and distances.
+ */
 public class AdvancedBot implements BotBehavior {
     private float deltaAngle;
 
@@ -18,6 +23,12 @@ public class AdvancedBot implements BotBehavior {
     private static final float SMOOTHING_FACTOR = 0.1f;
     private static final float SLOPE_POWER_ADJUSTMENT = 5.0f; // Adjustment factor for uphill slopes
 
+    /**
+     * Sets the direction for the bot by calculating an optimal angle based on terrain slopes.
+     *
+     * @param game the GolfGame instance containing the game state and settings
+     * @return the target angle for the camera
+     */
     @Override
     public float setDirection(GolfGame game) {
         // Get goal state and normalize
@@ -55,6 +66,13 @@ public class AdvancedBot implements BotBehavior {
         return adjustedAngle;
     }
 
+    /**
+     * Smoothly transitions the camera angle towards the target angle.
+     *
+     * @param currentAngle the current angle of the camera
+     * @param targetAngle the target angle to transition to
+     * @return the new adjusted angle
+     */
     private float smoothAngleTransition(float currentAngle, float targetAngle) {
         deltaAngle = targetAngle - currentAngle;
 
@@ -69,6 +87,11 @@ public class AdvancedBot implements BotBehavior {
         return currentAngle + SMOOTHING_FACTOR * deltaAngle;
     }
 
+    /**
+     * Hits the ball with an appropriate force based on the current state of the game.
+     *
+     * @param game the GolfGame instance containing the game state and settings
+     */
     @Override
     public void hit(GolfGame game) {
         // Only hit if the angle is close to the target angle
@@ -86,6 +109,15 @@ public class AdvancedBot implements BotBehavior {
         }
     }
 
+    /**
+     * Calculates the appropriate hit power based on the distance to the goal and terrain slopes.
+     *
+     * @param distance the distance to the goal
+     * @param ball the current ball state
+     * @param goal the goal state
+     * @param game the GolfGame instance containing the game state and settings
+     * @return the calculated hit power
+     */
     private float calculateHitPower(float distance, BallState ball, BallState goal, GolfGame game) {
         // Advanced calculation to determine hit power
         float basePower;
