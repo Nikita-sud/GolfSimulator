@@ -214,13 +214,13 @@ public class BallState {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BallState ballState = (BallState) o;
-        return Double.compare(ballState.x, x) == 0 &&
-               Double.compare(ballState.y, y) == 0;
+        BallState that = (BallState) o;
+        return Double.compare(that.x, x) == 0 &&
+            Double.compare(that.y, y) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(x, y, vx, vy);
+        return Objects.hash(x, y);
     }
 }

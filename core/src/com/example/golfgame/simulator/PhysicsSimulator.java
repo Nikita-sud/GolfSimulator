@@ -14,8 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.nd4j.nativeblas.Nd4jCpu.boolean_and;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.io.IOException;
@@ -72,7 +70,7 @@ public class PhysicsSimulator {
         inWater = false;
         BallState lastPosition = ball.deepCopy();
         BallState ballCopy = ball.deepCopy();
-        System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
+        // System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
         ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
         ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
         Map<String, Double> functionVals = new HashMap<>();
@@ -86,7 +84,7 @@ public class PhysicsSimulator {
             functionVals.put("x", ballCopy.getX());
             functionVals.put("y", ballCopy.getY());
             if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
-                System.out.println("Ball in water!");
+                // System.out.println("Ball in water!");
                 inWater = true;
                 ballCopy.setX(lastPosition.getX());
                 ballCopy.setY(lastPosition.getY());
@@ -103,7 +101,7 @@ public class PhysicsSimulator {
             System.out.println("Ball on sand!");
         }
 
-        System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
+        // System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
         return ballCopy;
     }
 

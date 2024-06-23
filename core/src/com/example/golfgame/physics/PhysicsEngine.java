@@ -218,9 +218,9 @@ public class PhysicsEngine {
         vars.put("vx", ballState.getVx());
         vars.put("vy", ballState.getVy());
 
-        String expressionVx = ((-g*dx)/(1+Math.pow(dx, 2)+Math.pow(dy, 2)))+"-"+((mu_k*g)/(Math.sqrt(1+Math.pow(dx, 2)+Math.pow(dy, 2))))+"*(vx/sqrt(vx^2 + vy^2 + ("+dx+"*vx"+"+"+dy+"*vy)^2))";
-        String expressionVy = ((-g*dy)/(1+Math.pow(dx, 2)+Math.pow(dy, 2))+"-"+(mu_k*g)/(Math.sqrt(1+Math.pow(dx, 2)+Math.pow(dy, 2))))+"*(vy/sqrt(vx^2 + vy^2 + ("+dx+"*vx"+"+"+dy+"*vy)^2))";
-
+        String expressionVx = -g * dx + "- " + mu_k * g + " * (vx / sqrt(vx^2 + vy^2))";
+        String expressionVy = -g * dy + "- " + mu_k * g + " * (vy / sqrt(vx^2 + vy^2))";
+        
         Map<String, Function> differentials = new HashMap<>();
         differentials.put("x", new Function("vx", "vx"));
         differentials.put("y", new Function("vy", "vy"));

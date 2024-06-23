@@ -7,11 +7,13 @@ import com.example.golfgame.simulator.PhysicsSimulator;
 import com.example.golfgame.utils.BallState;
 import com.example.golfgame.utils.ApproximateStateComparator;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.IntStream;
 
+
 public class AStarBot implements BotBehavior {
-    private static final float SHOT_ANGLE_STEP = 15f;
+    private static final float SHOT_ANGLE_STEP = 5f;
     private static final float SPEED_STEP = 1f;
     private static final float MIN_SPEED = 1;
     private static final float MAX_SPEED = 5;
@@ -102,7 +104,13 @@ public class AStarBot implements BotBehavior {
                 break;
             }
     
-            closedList.add(currentNode);
+            Node clonedNode = currentNode.deepClone();
+            if (!closedList.contains(clonedNode)) {
+                closedList.add(clonedNode);
+                System.out.println("Adding to closedList: " + clonedNode);
+                System.out.println("closedList size after addition: " + closedList.size());
+            }
+    
             boolean win = false;
             Node winNode = currentNode;
             for (Node neighbor : getNeighbors(currentNode)) {
@@ -139,12 +147,7 @@ public class AStarBot implements BotBehavior {
     }
 
     private boolean isNodeCloseToSet(Node node, Set<Node> nodeSet) {
-        for (Node existingNode : nodeSet) {
-            if (node.equals(existingNode)) {
-                return true;
-            }
-        }
-        return false;
+        return nodeSet.contains(node);
     }
 
     private double heuristic(BallState from, BallState to) {
@@ -193,7 +196,7 @@ public class AStarBot implements BotBehavior {
         return pathFound;
     }
 
-    private static class Node {
+    public class Node implements Serializable {
         private BallState state;
         private Node parent;
         private double gCost;
@@ -202,7 +205,7 @@ public class AStarBot implements BotBehavior {
         private float speed;
         private float angle;
     
-        private static final double DISTANCE_THRESHOLD = 2; 
+        private static final double DISTANCE_THRESHOLD = 0.5; 
     
         public Node(BallState state, Node parent, double gCost, double hCost, float speed, float angle) {
             this.state = state;
@@ -261,10 +264,9 @@ public class AStarBot implements BotBehavior {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Node node = (Node) o;
-            return Math.abs(state.getX() - node.state.getX()) < DISTANCE_THRESHOLD &&
-                   Math.abs(state.getY() - node.state.getY()) < DISTANCE_THRESHOLD;
+            return state.epsilonPositionEquals(node.state, DISTANCE_THRESHOLD);
         }
-    
+
         @Override
         public int hashCode() {
             return Objects.hash(Math.round(state.getX() / DISTANCE_THRESHOLD), Math.round(state.getY() / DISTANCE_THRESHOLD));
@@ -272,6 +274,10 @@ public class AStarBot implements BotBehavior {
     
         private double roundToHundredths(double value) {
             return Math.round(value * 100.0) / 100.0;
+        }
+        public Node deepClone() {
+            BallState clonedState = this.state.deepCopy();
+            return new Node(clonedState, this.parent != null ? this.parent.deepClone() : null, this.gCost, this.hCost, this.speed, this.angle);
         }
     }
 }
