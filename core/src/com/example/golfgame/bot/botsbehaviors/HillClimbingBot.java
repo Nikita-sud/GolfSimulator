@@ -230,7 +230,7 @@ public class HillClimbingBot implements BotBehavior {
         }
 
         // Introduce random jumps to escape local minima
-        for (int I = 0; I < 5; I++) { // Try 5 random jumps
+        for (int i = 0; i < 5; i++) { // Try 5 random jumps
             float randomHitPower = Math.max(0.1f, originalHitPower + (random.nextFloat() - 0.5f) * 4 * DELTAHITPOWER);
             float randomAngle = originalAngle + (random.nextFloat() - 0.5f) * 4 * DELTAANGLE;
 

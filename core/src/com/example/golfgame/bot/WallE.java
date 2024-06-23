@@ -1,7 +1,6 @@
 package com.example.golfgame.bot;
 
 import com.example.golfgame.GolfGame;
-import com.example.golfgame.bot.botsbehaviors.AdvancedBot;
 import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
 import com.example.golfgame.bot.botsbehaviors.RuleBasedBot;
 
@@ -14,7 +13,6 @@ public class WallE {
     private BotBehavior botBehavior;
     private RuleBasedBot ruleBasedBot;
     private HillClimbingBot hillClimbingBot;
-    private AdvancedBot advancedBot;
 
     /**
      * Constructs a WallE bot for the given game.
@@ -24,7 +22,6 @@ public class WallE {
     public WallE(GolfGame game) {
         this.game = game;
         this.ruleBasedBot = new RuleBasedBot();
-        this.advancedBot = new AdvancedBot();
         this.hillClimbingBot = new HillClimbingBot();
         this.botBehavior = ruleBasedBot; // Default behavior
     }
@@ -64,7 +61,7 @@ public class WallE {
      * Switches the bot's behavior to advanced.
      */
     public void switchToAdvanced() {
-        setBotBehavior(advancedBot);
+        setBotBehavior(hillClimbingBot);
     }
 
     /**

@@ -279,8 +279,6 @@ public class SettingsScreen implements Screen {
         stage.addActor(rootTable);
     }
 
-    
-    
     @Override
     public void show() {
         Gdx.input.setInputProcessor(stage);
