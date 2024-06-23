@@ -145,7 +145,7 @@ public class GolfGameScreen implements Screen, Disposable {
     // Bots
     private WallE wallE;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private Future<?> ruleBasedBotFuture = null;
+    private Future<?> hillClimbingBotFuture = null;
 
     /**
      * Constructs a new GolfGameScreen with necessary dependencies.
@@ -816,11 +816,11 @@ public class GolfGameScreen implements Screen, Disposable {
      * Updates the behavior of the bot based on its current state.
      */
     private void updateBotBehavior() {
-        if (hillClimbingBotActive) {
-            advancedBotPlay();
-        } else if (ruleBasedBotActive) {
-            if (ruleBasedBotFuture == null || ruleBasedBotFuture.isDone()) {
-                ruleBasedBotFuture = executorService.submit(this::ruleBasedbotPlay);
+        if (ruleBasedBotActive) {
+            ruleBasedbotPlay();
+        } else if (hillClimbingBotActive) {
+            if (hillClimbingBotFuture == null || hillClimbingBotFuture.isDone()) {
+                hillClimbingBotFuture = executorService.submit(this::advancedBotPlay);
             }
         }   
     }
@@ -1005,7 +1005,7 @@ public class GolfGameScreen implements Screen, Disposable {
         if (!isBallAllowedToMove) {
             wallE.switchToRuleBased();
             wallE.setDirection();
-            waitForHillClimbDirectionSetAndHit();
+            wallE.hit();
         }
     }
 
@@ -1034,6 +1034,7 @@ public class GolfGameScreen implements Screen, Disposable {
             wallE.switchToAdvanced();    
             wallE.setDirection();
             wallE.hit();
+            waitForHillClimbDirectionSetAndHit();
         }
     }
 
