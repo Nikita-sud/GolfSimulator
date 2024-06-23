@@ -206,6 +206,7 @@ public class HillClimbingBot implements BotBehavior {
      * @param random the Random instance for generating random values
      */
     private void expandSearchRange(PhysicsSimulator simulator, GolfGame game, BallState goal, Random random) {
+        System.out.println("EXPANDING SEARCH RANGE-------");
         float originalHitPower = hitPower;
         float originalAngle = angle;
 
