@@ -164,23 +164,34 @@ public class PhysicsSimulator {
         List<Vector2> path = new ArrayList<>();
         path.add(new Vector2((float)ballCopy.getX(), (float)ballCopy.getY()));
 
-        BallState lastBallState = null;
-        do {
-            if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
-                System.out.println("Ball in water!");
-                inWater = true;
-                ballCopy.setX(lastPosition.getX());
-                ballCopy.setY(lastPosition.getY());
-                return new Pair<>(ballCopy, path);
-            }
-            lastBallState = new BallState(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
-            engine.update(ballCopy, engineStepSize);
-            path.add(new Vector2((float)ballCopy.getX(), (float)ballCopy.getY()));
-        } while (!ballCopy.epsilonEquals(lastBallState, 0));
-
-        if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float) ballCopy.getY())) { // Sand
-            System.out.println("Ball on sand!");
+    while (true) {
+        if (terrainManager.isWater((float) ballCopy.getX(), (float) ballCopy.getY())) { // Water
+            System.out.println("Ball in water!");
+            inWater = true;
+            ballCopy.setX(lastBallState.getX());
+            ballCopy.setY(lastBallState.getY());
+            return new Pair<>(ballCopy, path);
         }
+
+        // Save the current state before updating
+        lastBallState.set(ballCopy.getX(), ballCopy.getY(), ballCopy.getVx(), ballCopy.getVy());
+
+        // Update the ball state
+        engine.update(ballCopy, engineStepSize);
+
+        // Add the new position to the path
+        path.add(new Vector2((float) ballCopy.getX(), (float) ballCopy.getY()));
+
+        // Check if the ball is at rest
+        if (engine.isAtRest(ballCopy)) {
+            break;
+        }
+    }
+
+    // Check if the ball is on sand
+    if (terrainManager.isBallOnSand((float) ballCopy.getX(), (float) ballCopy.getY())) {
+        System.out.println("Ball on sand!");
+    }
 
         System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
         return new Pair<>(ballCopy, path);
