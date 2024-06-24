@@ -118,7 +118,7 @@ public class AdvancedBot implements BotBehavior {
      * @param game the GolfGame instance containing the game state and settings
      * @return the calculated hit power
      */
-    private float calculateHitPower(float distance, BallState ball, BallState goal, GolfGame game) {
+    public float calculateHitPower(float distance, BallState ball, BallState goal, GolfGame game) {
         // Advanced calculation to determine hit power
         float basePower;
         if (distance < CLOSE_DISTANCE_THRESHOLD) {

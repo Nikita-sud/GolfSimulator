@@ -166,7 +166,7 @@ public class HillClimbingBot implements BotBehavior {
                 curSimResult
             };
 
-            BallState bestState = bestState(neighbors, goal);
+            BallState bestState = bestState(neighbors, goal, game);
 
             if (!bestState.equals(curSimResult)) {
                 improved = true;
@@ -264,10 +264,13 @@ public class HillClimbingBot implements BotBehavior {
      * @param goal the goal BallState
      * @return the best BallState
      */
-    private BallState bestState(BallState[] states, BallState goal) {
+    private BallState bestState(BallState[] states, BallState goal, GolfGame game) {
         double smallestDistance = Integer.MAX_VALUE;
         BallState best = null;
         for (BallState state : states) {
+            if (state.isInWater(game.getGolfGameScreen())){
+                continue;
+            }
             if (GolfGameScreen.validGoal(state, goal)){
                 return state;
             }
