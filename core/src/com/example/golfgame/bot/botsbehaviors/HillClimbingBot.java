@@ -266,7 +266,7 @@ public class HillClimbingBot implements BotBehavior {
      */
     private BallState bestState(BallState[] states, BallState goal, GolfGame game) {
         double smallestDistance = Integer.MAX_VALUE;
-        BallState best = null;
+        BallState best = states[states.length-1];
         for (BallState state : states) {
             if (state.isInWater(game.getGolfGameScreen())){
                 continue;
