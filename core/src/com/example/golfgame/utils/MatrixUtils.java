@@ -1,5 +1,7 @@
 package com.example.golfgame.utils;
 
+import java.util.Arrays;
+
 /**
  * Utility class for various matrix operations commonly used in neural network computations.
  */
@@ -211,27 +213,6 @@ public class MatrixUtils {
         return result;
     }
 
-    /**
-     * Applies the sigmoid function to each element of a matrix.
-     *
-     * @param z The input matrix.
-     * @return A new matrix with the sigmoid function applied to each element.
-     * @throws IllegalStateException if a NaN value is encountered after applying the sigmoid function.
-     */
-    public static double[][] sigmoidVector(double[][] z) {
-        double[][] result = new double[z.length][z[0].length];
-        for (int i = 0; i < z.length; i++) {
-            for (int j = 0; j < z[i].length; j++) {
-                result[i][j] = sigmoid(-z[i][j]);
-    
-                // Check for NaN after applying the sigmoid
-                if (Double.isNaN(result[i][j])) {
-                    throw new IllegalStateException("NaN value encountered in sigmoid function");
-                }
-            }
-        }
-        return result;
-    }
 
     /**
      * Applies the sigmoid function to a single value.
@@ -239,8 +220,10 @@ public class MatrixUtils {
      * @param x The input value.
      * @return The result of applying the sigmoid function to the input value.
      */
-    public static double sigmoid(double x) {
-        return 1 / (1 + Math.exp(-x));
+    public static double sigmoid(double z) {
+        if (z < -45.0) return 0.0;
+        if (z > 45.0) return 1.0;
+        return 1.0 / (1.0 + Math.exp(-z));
     }
 
     /**
@@ -533,6 +516,20 @@ public class MatrixUtils {
         return result;
     }
 
+    public static double sigmoidPrime(double z) {
+        double sig = sigmoid(z);
+        return sig * (1 - sig);
+    }
+
+    public static double[][] sigmoidVector(double[][] z) {
+        double[][] result = new double[z.length][z[0].length];
+        for (int i = 0; i < z.length; i++) {
+            for (int j = 0; j < z[0].length; j++) {
+                result[i][j] = sigmoid(z[i][j]);
+            }
+        }
+        return result;
+    }
     /**
      * Applies the derivative of the sigmoid function to each element of a matrix.
      *
@@ -540,11 +537,10 @@ public class MatrixUtils {
      * @return A new matrix with the derivative of the sigmoid function applied to each element.
      */
     public static double[][] sigmoidPrimeVector(double[][] z) {
-        double[][] sigmoid = sigmoidVector(z);
         double[][] result = new double[z.length][z[0].length];
         for (int i = 0; i < z.length; i++) {
-            for (int j = 0; j < z[i].length; j++) {
-                result[i][j] = sigmoid[i][j] * (1 - sigmoid[i][j]);
+            for (int j = 0; j < z[0].length; j++) {
+                result[i][j] = sigmoidPrime(z[i][j]);
             }
         }
         return result;
@@ -566,4 +562,96 @@ public class MatrixUtils {
         }
         return result;
     }
+    public static double relu(double z) {
+        return Math.max(0, z);
+    }
+
+    public static double reluPrime(double z) {
+        return z > 0 ? 1.0 : 0.0;
+    }
+
+    public static double[][] reluVector(double[][] z) {
+        double[][] result = new double[z.length][z[0].length];
+        for (int i = 0; i < z.length; i++) {
+            for (int j = 0; j < z[0].length; j++) {
+                result[i][j] = relu(z[i][j]);
+            }
+        }
+        return result;
+    }
+
+    public static double[][] reluPrimeVector(double[][] z) {
+        double[][] result = new double[z.length][z[0].length];
+        for (int i = 0; i < z.length; i++) {
+            for (int j = 0; j < z[0].length; j++) {
+                result[i][j] = reluPrime(z[i][j]);
+            }
+        }
+        return result;
+    }
+
+    // --- Tanh ---
+    public static double tanh(double z) {
+        return Math.tanh(z);
+    }
+
+    public static double tanhPrime(double z) {
+        double tanh_z = Math.tanh(z);
+        return 1.0 - tanh_z * tanh_z;
+    }
+
+    public static double[][] tanhVector(double[][] z) {
+        double[][] result = new double[z.length][z[0].length];
+        for (int i = 0; i < z.length; i++) {
+            for (int j = 0; j < z[0].length; j++) {
+                result[i][j] = tanh(z[i][j]);
+            }
+        }
+        return result;
+    }
+
+     public static double[][] tanhPrimeVector(double[][] z) {
+        double[][] result = new double[z.length][z[0].length];
+        for (int i = 0; i < z.length; i++) {
+            for (int j = 0; j < z[0].length; j++) {
+                result[i][j] = tanhPrime(z[i][j]);
+            }
+        }
+        return result;
+    }
+
+    // --- Linear (для единообразия, хотя он ничего не делает) ---
+    public static double linear(double z) {
+        return z;
+    }
+
+     public static double linearPrime(double z) {
+        return 1.0;
+     }
+
+     public static double[][] linearVector(double[][] z) {
+        // Возвращает копию, чтобы избежать изменения оригинала при необходимости
+        return MatrixUtils.copyMatrix(z);
+     }
+
+     public static double[][] linearPrimeVector(double[][] z) {
+        // Возвращает матрицу единиц той же размерности
+        double[][] result = new double[z.length][z[0].length];
+        for(int i=0; i<z.length; i++) {
+            Arrays.fill(result[i], 1.0);
+        }
+        return result;
+     }
+
+     // Добавим вспомогательный метод копирования матрицы
+     public static double[][] copyMatrix(double[][] original) {
+         if (original == null) {
+             return null;
+         }
+         double[][] copy = new double[original.length][];
+         for (int i = 0; i < original.length; i++) {
+             copy[i] = Arrays.copyOf(original[i], original[i].length);
+         }
+         return copy;
+     }
 }

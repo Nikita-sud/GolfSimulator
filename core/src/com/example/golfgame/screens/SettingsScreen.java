@@ -40,9 +40,9 @@ public class SettingsScreen implements Screen {
     public SettingsScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
         stage = new Stage(new ScreenViewport());
-        skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
+        skin = new Skin(Gdx.files.internal("uiskin.json"));
         curHeightFunction = new Function("e^(-((x)^6+(y)^2)/500)-e^(-((x)^2+(y)^2)/500)+0.6", "x", "y");  // Default height function
-        music = assetManager.get("assets/music/settings.mp3", Music.class);
+        music = assetManager.get("music/settings.mp3", Music.class);
 
         setupUI();
     }

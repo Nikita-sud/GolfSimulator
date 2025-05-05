@@ -35,8 +35,8 @@ public class MainMenuScreen implements Screen {
     public MainMenuScreen(GolfGame game, AssetManager assetManager) {
         this.game = game;
         stage = new Stage(new ScreenViewport());
-        skin = new Skin(Gdx.files.internal("assets/uiskin.json")); // Load the UI skin
-        music = assetManager.get("assets/music/main-menu.mp3", Music.class);
+        skin = new Skin(Gdx.files.internal("uiskin.json")); // Load the UI skin
+        music = assetManager.get("music/main-menu.mp3", Music.class);
 
         // Setup buttons and add them to the stage
         setupButtons();

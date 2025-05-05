@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "TrainingRunner",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.TrainingRunner",
+            "projectName": "core"
+        },
+        {
+            "type": "java",
+            "name": "DesktopLauncher",
+            "request": "launch",
+            "mainClass": "com.example.golfgame.DesktopLauncher",
+            "projectName": "desktop"
+        },
+        {
+            "type": "java",
             "name": "test",
             "request": "launch",
             "mainClass": "test",
@@ -75,6 +89,5 @@
             "vmArgs": "-XstartOnFirstThread",
             "args": ""
         }
-
     ]
 }

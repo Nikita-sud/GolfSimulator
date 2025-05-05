@@ -36,9 +36,9 @@ public class GolfGame extends Game {
         assetManager = new AssetManager();
 
         // Load music files
-        assetManager.load("assets/music/main-menu.mp3", Music.class);
-        assetManager.load("assets/music/game-screen.mp3", Music.class);
-        assetManager.load("assets/music/settings.mp3", Music.class);
+        assetManager.load("music/main-menu.mp3", Music.class);
+        assetManager.load("music/game-screen.mp3", Music.class);
+        assetManager.load("music/settings.mp3",    Music.class);
 
         assetManager.finishLoading(); // Ensure all assets are loaded before using them
 

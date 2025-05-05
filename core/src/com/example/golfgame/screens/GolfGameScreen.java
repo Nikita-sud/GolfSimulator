@@ -224,7 +224,7 @@ public class GolfGameScreen implements Screen, Disposable {
      * Initializes the skin and dialog for the UI.
      */
     private void initializeSkinAndDialog() {
-        skin = new Skin(Gdx.files.internal("assets/uiskin.json"));
+        skin = new Skin(Gdx.files.internal("uiskin.json"));
         pauseDialog = new Dialog("", skin, "dialog") {
             public void result(Object obj) {
                 if ((Boolean) obj) {
@@ -249,7 +249,7 @@ public class GolfGameScreen implements Screen, Disposable {
         golfBallModel = assetManager.get("models/sphere.obj", Model.class);
         flagModel = assetManager.get("models/flag.obj", Model.class);
         flagStemModel = assetManager.get("models/flagStem.obj", Model.class);
-        music = assetManager.get("assets/music/game-screen.mp3");
+        music = assetManager.get("music/game-screen.mp3");
     }
 
     /**

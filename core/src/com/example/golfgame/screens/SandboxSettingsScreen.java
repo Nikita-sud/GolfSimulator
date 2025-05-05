@@ -40,7 +40,7 @@ public class SandboxSettingsScreen implements Screen {
         this.game = game;
         this.stage = new Stage(new ScreenViewport());
         this.skin = new Skin(Gdx.files.internal("uiskin.json"));  // Ensure 'uiskin.json' exists in assets
-        music = assetManager.get("assets/music/settings.mp3", Music.class);
+        music = assetManager.get("music/settings.mp3", Music.class);
     }
 
     @Override

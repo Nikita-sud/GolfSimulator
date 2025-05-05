@@ -5,18 +5,12 @@ import com.example.golfgame.bot.agents.PPOAgent;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.gameUtils.TerrainManager;
 import com.example.golfgame.utils.ppoUtils.Action;
-import com.example.golfgame.utils.ppoUtils.Batch;
 import com.example.golfgame.utils.ppoUtils.State;
 import com.example.golfgame.utils.ppoUtils.Transition;
 import com.example.golfgame.physics.PhysicsEngine;
 import com.example.golfgame.physics.ODE.ODE;
 import com.example.golfgame.physics.ODE.RungeKutta;
 import com.example.golfgame.screens.GolfGameScreen;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.*;
 
 public class PhysicsSimulator {
@@ -27,7 +21,6 @@ public class PhysicsSimulator {
     private PPOAgent agent;
     private boolean inWater = false;
     private TerrainManager terrainManager;
-    private List<Batch> data = new ArrayList<>();
     private List<Function> functions = new ArrayList<>();
 
     private static final double GOAL_RADIUS = 1.5; // Radius for goal reward
@@ -48,9 +41,13 @@ public class PhysicsSimulator {
         Function fheightFunction = new Function(heightFunction, "x","y");
         this.engine = new PhysicsEngine(new RungeKutta(), fheightFunction);
         this.ball = new BallState(0, 0, 0, 0);
-        this.terrainManager = new TerrainManager(fheightFunction);
+        // ИЗМЕНИТЕ ЭТУ СТРОКУ: Используйте конструктор с размерами
+        // Например, для карты 10x10 (stateDim=100):
+        this.terrainManager = new TerrainManager(fheightFunction, 10, 10, 1, 1); // Передаем 10, 10
+        // Или для карты 20x20 (stateDim=400):
+        // this.terrainManager = new TerrainManager(fheightFunction, 20, 20, 1, 1);
         this.agent = agent;
-        this.goal = new BallState(-7, 7, 0, 0);
+        this.goal = new BallState(-7, 7, 0, 0); // Пример цели
     }
     
     /**
@@ -100,7 +97,7 @@ public class PhysicsSimulator {
     public BallState hit(float velocityMagnitude, float angle) {
         inWater = false;
         BallState ballCopy = ball.deepCopy();
-        System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
+        // System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
         ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
         ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
 
@@ -143,7 +140,7 @@ public class PhysicsSimulator {
             System.out.println("Ball on sand!");
         }
 
-        System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
+        // System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
         return ballCopy;
     }
 
@@ -158,7 +155,7 @@ public class PhysicsSimulator {
         inWater = false;
         BallState lastPosition = ball.deepCopy();
         BallState ballCopy = ball.deepCopy();
-        System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
+        // System.out.printf("Hitting with force: %.2f and angle: %.2f\n", velocityMagnitude, angle);
         ballCopy.setVx(-velocityMagnitude * Math.cos(angle));
         ballCopy.setVy(-velocityMagnitude * Math.sin(angle));
         List<Vector2> path = new ArrayList<>();
@@ -182,7 +179,7 @@ public class PhysicsSimulator {
             System.out.println("Ball on sand!");
         }
 
-        System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
+        // System.out.printf("New ball position: (%.2f, %.2f)\n", ballCopy.getX(), ballCopy.getY());
         return new Pair<>(ballCopy, path);
     }
 
@@ -309,7 +306,17 @@ public class PhysicsSimulator {
      * @return a flattened array representing the normalized height map with marked ball, goal, and sand positions
      */
     public double[] getState() {
-        return MatrixUtils.flattenArray(terrainManager.getNormalizedMarkedHeightMap((float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()));
+        double[][] heightMap = terrainManager.getNormalizedMarkedHeightMap(
+            (float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()
+        );
+        double[] flattenedState = MatrixUtils.flattenArray(heightMap);
+        // System.out.println("PhysicsSimulator.getState() array size: " + flattenedState.length); // <--- ДОБАВЬТЕ ЭТОТ ВЫВОД
+        if (flattenedState.length != 100) { // Проверка соответствия stateDim
+             System.err.println("FATAL ERROR: State dimension mismatch! Expected 100, got " + flattenedState.length);
+             // Можно даже выбросить исключение, чтобы остановить выполнение
+             // throw new IllegalStateException("State dimension mismatch!");
+        }
+        return flattenedState;
     }
 
     /**
@@ -328,109 +335,107 @@ public class PhysicsSimulator {
     public void addFunction(String function){
         functions.add(new Function(function, "x","y"));
     }
-
-    /**
-     * Runs a simulation for a specified number of episodes.
-     *
-     * @param episodes the number of episodes to run
-     * @param radius the radius around the goal
-     * @param steps the number of steps in each episode
-     */
-    public void runSimulation(int episodes, float radius, int steps) {
-        for(Function function : functions){
-            changeHeightFunction(function);
-            for (int episode = 0; episode < episodes; episode++) {
-                data.add(runSingleEpisode(radius,(int) Math.round(steps*0.2),true));
-                data.add(runSingleEpisode(radius,(int) Math.round(steps*0.8),false));
-                System.out.println("Episode: " + episode);
-            }
-        }
-        agent.trainOnData(data);
-    }
-
-    /**
-     * Runs a parallel simulation for a specified number of episodes.
-     *
-     * @param episodes the number of episodes to run
-     * @param radius the radius around the goal
-     * @param steps the number of steps in each episode
-     */
-    public void runSimulationParallel(int episodes, float radius, int steps) {
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<Future<Batch>> futures = new ArrayList<>();
-        
-        for (Function function : functions) {
-            changeHeightFunction(function);
-            
-            for (int episode = 0; episode < episodes; episode++) {
-                final int ep = episode; // For lambda expression
-                Callable<Batch> task = () -> {
-                    if (ep % 2 == 0) {
-                        return runSingleEpisode(radius, (int) Math.round(steps * 0.2), true);
-                    } else {
-                        return runSingleEpisode(radius, (int) Math.round(steps * 0.8), false);
-                    }
-                };
-                futures.add(executor.submit(task));
-            }
-        }
-        
-        for (Future<Batch> future : futures) {
-            try {
-                data.add(future.get());
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-        
-        executor.shutdown();
-        agent.trainOnData(data);
-    }
-
-    /**
-     * Runs a single episode of the simulation.
-     *
-     * @param radius the radius around the goal
-     * @param steps the number of steps in the episode
-     * @param randomAction whether to use random actions
-     * @return a Batch containing the transitions for the episode
-     */
-    private Batch runSingleEpisode(float radius, int steps, boolean randomAction) {
-        List<Transition> batchTransitions = new ArrayList<>();
-        resetBallPosition();
-        float ballX = random.nextFloat() * (2 * radius) - radius;
-        float ballY = random.nextBoolean() ? (float) Math.sqrt(radius * radius - ballX * ballX) : -(float) Math.sqrt(radius * radius - ballX * ballX);
-        ballX += goal.getX();
-        ballY += goal.getY();
-        ball.setX(ballX);
-        ball.setY(ballY);
-        double totalReward = 0;
-        BallState lastPosition = new BallState(ball.getX(), ball.getY(), ball.getVx(), ball.getVy());
-
-        for (int step = 0; step < steps; step++) {
+    public List<Transition> collectTransitions(int n_steps) {
+        List<Transition> collectedData = new ArrayList<>();
+        // Сбрасываем состояние симулятора (позиция мяча и т.д.)
+        resetSimulationState(); // Вам нужно будет реализовать этот метод
+    
+        int current_step = 0;
+        while (current_step < n_steps) {
+            // Логика одного шага симуляции:
+            // 1. Получить текущее состояние (state)
+            // 2. Выбрать действие (action) с помощью agent.selectAction(state)
+            // 3. Выполнить действие в симуляторе, получить новое состояние (newState), награду (reward)
+            // 4. Проверить, не закончился ли эпизод (win, inWater, outOfBounds)
+    
             double[] stateArray = getState();
             State state = new State(stateArray);
-            Action action;
-            if(randomAction){
-                action = agent.selectRandomAction();
-            }else{
-                action = agent.selectAction(state);
-            }
-            BallState newBallState = hit((float) action.getForce(), (float) action.getAngle());
-            boolean win = newBallState.distanceTo(goal) < GOAL_RADIUS;
-            double reward = getReward(newBallState, lastPosition, win, inWater);
-            totalReward += reward;
-            double[] newStateArray = getState();
+            Action action = agent.selectAction(state); // Или selectRandomAction в начале
+            BallState lastBallStateBeforeHit = ball.deepCopy(); // Сохраняем состояние ДО удара
+            BallState newBallStateAfterHit = hit((float) action.getForce(), (float) action.getAngle());
+    
+            boolean win = GolfGameScreen.validSimulatorGoal(newBallStateAfterHit, goal);
+            // `inWater` устанавливается внутри `hit`
+            double reward = getReward(newBallStateAfterHit, lastBallStateBeforeHit, win, inWater);
+    
+            double[] newStateArray = getState(); // Получаем состояние ПОСЛЕ того, как мяч остановился
             State newState = new State(newStateArray);
+    
             Transition transition = new Transition(state, action, reward, newState);
-            batchTransitions.add(transition);
-            lastPosition = new BallState(newBallState.getX(), newBallState.getY(), newBallState.getVx(), newBallState.getVy());
-            if (win) {
-                break;
+            collectedData.add(transition);
+            current_step++;
+    
+            // Если эпизод закончился (победа, вода, и т.д.), сбросить состояние симулятора
+            if (win || inWater /* || isOutOfBounds(...) */) {
+                 resetSimulationState();
+            } else {
+                // Обновляем текущее состояние мяча для следующего шага, если эпизод не закончился
+                 ball.set(newBallStateAfterHit.getX(), newBallStateAfterHit.getY(),
+                          newBallStateAfterHit.getVx(), newBallStateAfterHit.getVy());
             }
         }
+        return collectedData;
+    }
 
-        System.out.println("Total Reward: "+ totalReward);
-        return new Batch(batchTransitions);
+    private void resetSimulationState() {
+        // Например, случайная позиция в радиусе или всегда из (0,0)
+         float radius = 10; // Пример радиуса
+         float ballX = random.nextFloat() * (2 * radius) - radius;
+         float ballY = random.nextBoolean() ? (float) Math.sqrt(radius * radius - ballX * ballX) : -(float) Math.sqrt(radius * radius - ballX * ballX);
+         ballX += goal.getX();
+         ballY += goal.getY();
+         ball.set(ballX, ballY, 0, 0); // Сброс скорости
+         inWater = false;
+         // Другие необходимые сбросы
+    }
+    
+    public void runSimulation(int total_timesteps, int n_steps_per_batch, int epochs_per_batch, int mini_batch_size) {
+        int current_total_steps = 0;
+        int batch_num = 0;
+
+        // --- НАЧАЛО ЦИКЛА WHILE ---
+        while(current_total_steps < total_timesteps) { // Условие проверяется здесь
+            batch_num++;
+            System.out.println("--------------------");
+            System.out.println("Starting Batch " + batch_num);
+            // --- ВЫВОД СООБЩЕНИЯ ---
+            // Вот это сообщение выводится ПЕРЕД сбором данных для ТЕКУЩЕГО батча
+            System.out.println("Collecting data... Timestep " + current_total_steps + "/" + total_timesteps);
+
+            List<Transition> batchData = collectTransitions(n_steps_per_batch);
+
+            // --- Логирование Наград (без изменений) ---
+            double totalRewardInBatch = 0;
+            if (batchData != null && !batchData.isEmpty()) {
+                for(Transition t : batchData) {
+                    totalRewardInBatch += t.getReward();
+                }
+                double averageReward = totalRewardInBatch / batchData.size();
+                System.out.printf("Batch %d finished collecting. Steps: %d, Total Reward: %.4f, Average Reward: %.6f%n",
+                                batch_num, batchData.size(), totalRewardInBatch, averageReward);
+            } else {
+                System.out.println("Batch " + batch_num + " finished collecting. No data collected.");
+                if (n_steps_per_batch > 0) {
+                    System.err.println("Warning: No data collected, potentially stuck. Check simulator logic.");
+                    break;
+                }
+            }
+
+            // --- Обучение (без изменений) ---
+            if (batchData != null && !batchData.isEmpty()) {
+                System.out.println("Training on collected data (" + batchData.size() + " transitions)...");
+                agent.train(batchData, epochs_per_batch, mini_batch_size, 0.0001, 0.0003);
+            }
+
+            // --- Обновление счетчика ---
+            // Счетчик обновляется ПОСЛЕ обучения на батче
+            current_total_steps += (batchData != null ? batchData.size() : 0);
+
+        } // --- КОНЕЦ ЦИКЛА WHILE ---
+        // Условие current_total_steps < total_timesteps проверяется снова
+
+        System.out.println("--------------------");
+        // Этот вывод происходит ПОСЛЕ выхода из цикла while
+        System.out.println("Simulation finished after " + current_total_steps + " timesteps.");
     }
 }
