@@ -125,20 +125,37 @@ public class PPOAgent implements Serializable {
                     double reward = transition.getReward();
 
                     // === Value Network Update ===
-                    double nextValue = valueNetwork.forward(nextState)[0][0];
+                    double nextValue;
+                    try {
+                        nextValue = valueNetwork.forward(nextState)[0][0];
+                    } catch (Exception e) {
+                        nextValue = 0.0;
+                    }
                     double targetValue = reward + gamma * nextValue;
-                    NeuralNetwork.Pair<List<double[][]>, List<double[][]>> valueForwardResult = valueNetwork.forwardWithZs(currentState);
+                    NeuralNetwork.Pair<List<double[][]>, List<double[][]>> valueForwardResult;
+                    try {
+                        valueForwardResult = valueNetwork.forwardWithZs(currentState);
+                    } catch (Exception e) {
+                        continue; // Skip this transition if forward pass fails
+                    }
                     double predictedValue = valueForwardResult._1.get(valueForwardResult._1.size() - 1)[0][0];
                     double dL_dValue = predictedValue - targetValue;
+                    // Clip value gradient to prevent explosion
+                    dL_dValue = Math.max(-1.0, Math.min(1.0, dL_dValue));
                     double[][] value_initial_delta = new double[1][1];
-                    value_initial_delta[0][0] = dL_dValue; // dL/dz = dL/d(output) * 1 (for linear output)
+                    value_initial_delta[0][0] = dL_dValue;
                     BackPropResult valueBackpropResult = valueNetwork.backprop(currentState, value_initial_delta);
                     accumulateGradients(mb_nabla_w_value, valueBackpropResult.getNablaW());
                     accumulateGradients(mb_nabla_b_value, valueBackpropResult.getNablaB());
-                    totalValueLossEpoch += 0.5 * Math.pow(dL_dValue, 2); // Accumulate MSE loss for logging
+                    totalValueLossEpoch += 0.5 * Math.pow(dL_dValue, 2);
 
                     // === Policy Network Update ===
-                    NeuralNetwork.Pair<List<double[][]>, List<double[][]>> policyForwardResult = policyNetwork.forwardWithZs(currentState);
+                    NeuralNetwork.Pair<List<double[][]>, List<double[][]>> policyForwardResult;
+                    try {
+                        policyForwardResult = policyNetwork.forwardWithZs(currentState);
+                    } catch (Exception e) {
+                        continue; // Skip this transition if forward pass fails
+                    }
                     double[][] policyOutput = policyForwardResult._1.get(policyForwardResult._1.size() - 1);
 
                     // --- Calculate Policy Gradient dL/dz_L ---

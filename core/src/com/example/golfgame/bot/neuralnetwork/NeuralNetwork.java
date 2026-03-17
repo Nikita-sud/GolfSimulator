@@ -158,41 +158,41 @@ public abstract class NeuralNetwork implements Serializable {
         double biasCorrection1 = 1.0 - Math.pow(beta1, t);
         double biasCorrection2 = 1.0 - Math.pow(beta2, t);
 
-        for (int j = 0; j < weights.length; j++) { // Индекс слоя (0 = первый скрытый)
-            for (int m = 0; m < weights[j].length; m++) { // Индекс нейрона в слое j+1
-                for (int n = 0; n < weights[j][m].length; n++) { // Индекс нейрона в слое j
-                    // Вычисляем средний градиент по мини-батчу
+        for (int j = 0; j < weights.length; j++) {
+            for (int m = 0; m < weights[j].length; m++) {
+                for (int n = 0; n < weights[j][m].length; n++) {
                     double grad_w = nabla_w[j][m][n] / miniBatchSize;
+                    if (!Double.isFinite(grad_w)) { grad_w = 0.0; }
 
-                    // Обновляем моменты для веса w[j][m][n]
                     m_weights[j][m][n] = beta1 * m_weights[j][m][n] + (1.0 - beta1) * grad_w;
                     v_weights[j][m][n] = beta2 * v_weights[j][m][n] + (1.0 - beta2) * (grad_w * grad_w);
 
-                    // Коррекция смещения моментов
                     double m_hat_w = m_weights[j][m][n] / biasCorrection1;
                     double v_hat_w = v_weights[j][m][n] / biasCorrection2;
 
-                    // Обновление веса по формуле Adam
-                    this.weights[j][m][n] -= eta * m_hat_w / (Math.sqrt(v_hat_w) + epsilon_adam);
+                    double update = eta * m_hat_w / (Math.sqrt(v_hat_w) + epsilon_adam);
+                    if (Double.isFinite(update)) {
+                        this.weights[j][m][n] -= update;
+                    }
                 }
             }
         }
 
-        for (int j = 0; j < biases.length; j++) { // Индекс слоя (0 = первый скрытый)
-            for (int m = 0; m < biases[j].length; m++) { // Индекс нейрона (смещения) в слое j+1
-                 // Вычисляем средний градиент по мини-батчу
+        for (int j = 0; j < biases.length; j++) {
+            for (int m = 0; m < biases[j].length; m++) {
                 double grad_b = nabla_b[j][m] / miniBatchSize;
+                if (!Double.isFinite(grad_b)) { grad_b = 0.0; }
 
-                 // Обновляем моменты для смещения b[j][m]
                 m_biases[j][m] = beta1 * m_biases[j][m] + (1.0 - beta1) * grad_b;
                 v_biases[j][m] = beta2 * v_biases[j][m] + (1.0 - beta2) * (grad_b * grad_b);
 
-                 // Коррекция смещения моментов
                 double m_hat_b = m_biases[j][m] / biasCorrection1;
                 double v_hat_b = v_biases[j][m] / biasCorrection2;
 
-                 // Обновление смещения по формуле Adam
-                this.biases[j][m] -= eta * m_hat_b / (Math.sqrt(v_hat_b) + epsilon_adam);
+                double update = eta * m_hat_b / (Math.sqrt(v_hat_b) + epsilon_adam);
+                if (Double.isFinite(update)) {
+                    this.biases[j][m] -= update;
+                }
             }
         }
     }

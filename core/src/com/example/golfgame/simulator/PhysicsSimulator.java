@@ -43,11 +43,11 @@ public class PhysicsSimulator {
         this.ball = new BallState(0, 0, 0, 0);
         // ИЗМЕНИТЕ ЭТУ СТРОКУ: Используйте конструктор с размерами
         // Например, для карты 10x10 (stateDim=100):
-        this.terrainManager = new TerrainManager(fheightFunction, 10, 10, 1, 1); // Передаем 10, 10
+        this.terrainManager = new TerrainManager(fheightFunction, 10, 10, 5, 1); // 10x10 grid, scale=5
         // Или для карты 20x20 (stateDim=400):
         // this.terrainManager = new TerrainManager(fheightFunction, 20, 20, 1, 1);
         this.agent = agent;
-        this.goal = new BallState(-7, 7, 0, 0); // Пример цели
+        this.goal = new BallState(-20, 20, 0, 0); // Match game's default goal position
     }
     
     /**
@@ -209,24 +209,19 @@ public class PhysicsSimulator {
         double distanceToGoal = currentBall.distanceTo(goal);
         double lastDistanceToGoal = lastPosition.distanceTo(goal);
 
-        // Reward calculation
-        double reward = lastDistanceToGoal - distanceToGoal;
-
         if (distanceToGoal < GOAL_RADIUS) {
-            System.out.println("");
-            System.out.println("Goal Reached");
-            System.out.println("");
+            System.out.println("Goal Reached!");
             return REWARD_GOAL;
         }
         if (isBallInWater) {
-            return reward + PENALTY_WATER;
+            return PENALTY_WATER;
         }
+
+        // Reward = how much closer we got to the goal (positive = closer, negative = farther)
+        double reward = lastDistanceToGoal - distanceToGoal;
+
         if (terrainManager.isBallOnSand((float) currentBall.getX(), (float) currentBall.getY())) {
-            return reward + PENALTY_SAND;
-        }
-        if (reward < 0) {
-            double penaltyFactor = Math.exp(Math.abs(reward) / 10.0); // Exponential function
-            reward -= penaltyFactor * 10; // Increase the penalty
+            reward += PENALTY_SAND;
         }
         return reward;
     }
@@ -306,17 +301,9 @@ public class PhysicsSimulator {
      * @return a flattened array representing the normalized height map with marked ball, goal, and sand positions
      */
     public double[] getState() {
-        double[][] heightMap = terrainManager.getNormalizedMarkedHeightMap(
+        return terrainManager.getState(
             (float) ball.getX(), (float) ball.getY(), (float) goal.getX(), (float) goal.getY()
         );
-        double[] flattenedState = MatrixUtils.flattenArray(heightMap);
-        // System.out.println("PhysicsSimulator.getState() array size: " + flattenedState.length); // <--- ДОБАВЬТЕ ЭТОТ ВЫВОД
-        if (flattenedState.length != 100) { // Проверка соответствия stateDim
-             System.err.println("FATAL ERROR: State dimension mismatch! Expected 100, got " + flattenedState.length);
-             // Можно даже выбросить исключение, чтобы остановить выполнение
-             // throw new IllegalStateException("State dimension mismatch!");
-        }
-        return flattenedState;
     }
 
     /**
@@ -350,43 +337,39 @@ public class PhysicsSimulator {
     
             double[] stateArray = getState();
             State state = new State(stateArray);
-            Action action = agent.selectAction(state); // Или selectRandomAction в начале
-            BallState lastBallStateBeforeHit = ball.deepCopy(); // Сохраняем состояние ДО удара
+            Action action = agent.selectAction(state);
+            BallState lastBallStateBeforeHit = ball.deepCopy();
             BallState newBallStateAfterHit = hit((float) action.getForce(), (float) action.getAngle());
-    
+
             boolean win = GolfGameScreen.validSimulatorGoal(newBallStateAfterHit, goal);
-            // `inWater` устанавливается внутри `hit`
             double reward = getReward(newBallStateAfterHit, lastBallStateBeforeHit, win, inWater);
-    
-            double[] newStateArray = getState(); // Получаем состояние ПОСЛЕ того, как мяч остановился
+
+            // Update ball position BEFORE getting new state so getState() reflects the new position
+            if (win || inWater) {
+                resetSimulationState();
+            } else {
+                ball.set(newBallStateAfterHit.getX(), newBallStateAfterHit.getY(),
+                         newBallStateAfterHit.getVx(), newBallStateAfterHit.getVy());
+            }
+
+            double[] newStateArray = getState();
             State newState = new State(newStateArray);
-    
+
             Transition transition = new Transition(state, action, reward, newState);
             collectedData.add(transition);
             current_step++;
-    
-            // Если эпизод закончился (победа, вода, и т.д.), сбросить состояние симулятора
-            if (win || inWater /* || isOutOfBounds(...) */) {
-                 resetSimulationState();
-            } else {
-                // Обновляем текущее состояние мяча для следующего шага, если эпизод не закончился
-                 ball.set(newBallStateAfterHit.getX(), newBallStateAfterHit.getY(),
-                          newBallStateAfterHit.getVx(), newBallStateAfterHit.getVy());
-            }
         }
         return collectedData;
     }
 
     private void resetSimulationState() {
-        // Например, случайная позиция в радиусе или всегда из (0,0)
-         float radius = 10; // Пример радиуса
-         float ballX = random.nextFloat() * (2 * radius) - radius;
-         float ballY = random.nextBoolean() ? (float) Math.sqrt(radius * radius - ballX * ballX) : -(float) Math.sqrt(radius * radius - ballX * ballX);
-         ballX += goal.getX();
-         ballY += goal.getY();
-         ball.set(ballX, ballY, 0, 0); // Сброс скорости
-         inWater = false;
-         // Другие необходимые сбросы
+        // Spawn ball at random distance from goal, simulating realistic game starts
+        float radius = 5 + random.nextFloat() * 25; // 5 to 30 units from goal
+        float angle = random.nextFloat() * 2 * (float) Math.PI;
+        float ballX = (float) goal.getX() + radius * (float) Math.cos(angle);
+        float ballY = (float) goal.getY() + radius * (float) Math.sin(angle);
+        ball.set(ballX, ballY, 0, 0);
+        inWater = false;
     }
     
     public void runSimulation(int total_timesteps, int n_steps_per_batch, int epochs_per_batch, int mini_batch_size) {

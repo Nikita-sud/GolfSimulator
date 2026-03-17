@@ -44,6 +44,8 @@ import java.util.concurrent.Future;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.WallE;
+import com.example.golfgame.bot.agents.PPOAgent;
+import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.utils.*;
 import com.example.golfgame.utils.animations.FlagAnimation;
 import com.example.golfgame.utils.animations.WaterAnimation;
@@ -129,6 +131,7 @@ public class GolfGameScreen implements Screen, Disposable {
     private float cameraViewAngle = 0;
     private boolean ruleBasedBotActive = false;
     private boolean hillClimbingBotActive = false;
+    private boolean ppoBotActive = false;
     private float ballRotationAngleX = 0f;
     private float ballRotationAngleY = 0f;
     private final float ballRadius = 1f; // радиус мяча в метрах
@@ -218,6 +221,26 @@ public class GolfGameScreen implements Screen, Disposable {
      */
     private void initializeBot(){
         this.wallE = new WallE(mainGame);
+        initializePPOBot();
+    }
+
+    /**
+     * Loads the PPO agent from file (if available) or creates a new one, and sets it on WallE.
+     */
+    private void initializePPOBot() {
+        int stateDim = 102; // 10x10 heightmap + distance + angle to goal
+        PPOAgent ppoAgent = null;
+        try {
+            ppoAgent = PPOAgent.loadAgent("ppo_agent.ser");
+            System.out.println("PPO agent loaded successfully.");
+        } catch (Exception e) {
+            System.out.println("No trained PPO agent found, creating new one: " + e.getMessage());
+            int[] policyNetworkSizes = {stateDim, 128, 128, 4};
+            int[] valueNetworkSizes = {stateDim, 128, 128, 1};
+            ppoAgent = new PPOAgent(policyNetworkSizes, valueNetworkSizes, 0.99, 0.95, 0.2);
+        }
+        PPOBot ppoBot = new PPOBot(ppoAgent, terrainHeightFunction);
+        wallE.setPPOBot(ppoBot);
     }
 
     /**
@@ -822,7 +845,9 @@ public class GolfGameScreen implements Screen, Disposable {
             if (hillClimbingBotFuture == null || hillClimbingBotFuture.isDone()) {
                 hillClimbingBotFuture = executorService.submit(this::advancedBotPlay);
             }
-        }   
+        } else if (ppoBotActive) {
+            ppoBotPlay();
+        }
     }
 
     /**
@@ -1010,31 +1035,24 @@ public class GolfGameScreen implements Screen, Disposable {
     }
 
     /**
-     * Waits for the HillClimb direction to be set and then hits the ball.
-     */
-    private void waitForHillClimbDirectionSetAndHit(){
-        // Run a separate thread to periodically check if the direction is set
-        new Thread(() -> {
-            while (wallE.getHillClimbingBot().isDirectionSet()) {
-                try {
-                    Thread.sleep(10); // 10 milliseconds
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            wallE.hit();
-        }).start();
-    }
-
-    /**
      * Executes the advanced bot logic for playing the game.
      */
     private void advancedBotPlay() {
         if (!isBallAllowedToMove) {
-            wallE.switchToAdvanced();    
+            wallE.switchToAdvanced();
             wallE.setDirection();
             wallE.hit();
-            waitForHillClimbDirectionSetAndHit();
+        }
+    }
+
+    /**
+     * Executes the PPO bot logic for playing the game.
+     */
+    private void ppoBotPlay() {
+        if (!isBallAllowedToMove) {
+            wallE.switchToPPO();
+            wallE.setDirection();
+            wallE.hit();
         }
     }
 
@@ -1441,6 +1459,22 @@ public class GolfGameScreen implements Screen, Disposable {
     }
 
     /**
+     * Toggles the PPO bot activeness.
+     */
+    public void togglePPOBotActiveness() {
+        ppoBotActive = !ppoBotActive;
+    }
+
+    /**
+     * Sets the PPO bot activeness.
+     *
+     * @param activeness the activeness state to set
+     */
+    public void setPPOBotActive(boolean activeness) {
+        ppoBotActive = activeness;
+    }
+
+    /**
      * Gets the current height function for the terrain.
      *
      * @return the current height function
@@ -1469,5 +1503,6 @@ public class GolfGameScreen implements Screen, Disposable {
         mainModelBatch.dispose();
         mainShadowLight.dispose();
         shadowModelBatch.dispose();
+        executorService.shutdown();
     }
 }

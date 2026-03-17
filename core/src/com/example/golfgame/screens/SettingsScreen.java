@@ -193,6 +193,7 @@ public class SettingsScreen implements Screen {
         // Add bot labels
         Label ruleBasedBotStatus = new Label("Rule-Based Bot: Off", skin);
         Label hillClimbingBotStatus = new Label("Advanced Bot: Off", skin);
+        Label ppoBotStatus = new Label("PPO AI Bot: Off", skin);
 
         // Add the rule-based bot UI
         TextButton toggleRuleBasedBot = new TextButton("Toggle Rule-Based Bot", skin);
@@ -203,7 +204,9 @@ public class SettingsScreen implements Screen {
                 if (ruleBasedBotStatus.getText().toString().equals("Rule-Based Bot: Off")) {
                     ruleBasedBotStatus.setText("Rule-Based Bot: On");
                     hillClimbingBotStatus.setText("Advanced Bot: Off");
+                    ppoBotStatus.setText("PPO AI Bot: Off");
                     game.getGolfGameScreen().setHillClimbingBotActive(false);
+                    game.getGolfGameScreen().setPPOBotActive(false);
                 } else {
                     ruleBasedBotStatus.setText("Rule-Based Bot: Off");
                 }
@@ -219,9 +222,29 @@ public class SettingsScreen implements Screen {
                 if (hillClimbingBotStatus.getText().toString().equals("Advanced Bot: Off")) {
                     hillClimbingBotStatus.setText("Advanced Bot: On");
                     ruleBasedBotStatus.setText("Rule-Based Bot: Off");
+                    ppoBotStatus.setText("PPO AI Bot: Off");
                     game.getGolfGameScreen().setRuleBasedBotActive(false);
+                    game.getGolfGameScreen().setPPOBotActive(false);
                 } else {
                     hillClimbingBotStatus.setText("Advanced Bot: Off");
+                }
+            }
+        });
+
+        // Add the PPO AI Bot UI
+        TextButton togglePPOBot = new TextButton("Toggle PPO AI Bot", skin);
+        togglePPOBot.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.getGolfGameScreen().togglePPOBotActiveness();
+                if (ppoBotStatus.getText().toString().equals("PPO AI Bot: Off")) {
+                    ppoBotStatus.setText("PPO AI Bot: On");
+                    ruleBasedBotStatus.setText("Rule-Based Bot: Off");
+                    hillClimbingBotStatus.setText("Advanced Bot: Off");
+                    game.getGolfGameScreen().setRuleBasedBotActive(false);
+                    game.getGolfGameScreen().setHillClimbingBotActive(false);
+                } else {
+                    ppoBotStatus.setText("PPO AI Bot: Off");
                 }
             }
         });
@@ -268,6 +291,8 @@ public class SettingsScreen implements Screen {
         botTable.add(toggleRuleBasedBot).pad(10).row();
         botTable.add(hillClimbingBotStatus).pad(10);
         botTable.add(toggleHillClimbingBot).pad(10).row();
+        botTable.add(ppoBotStatus).pad(10);
+        botTable.add(togglePPOBot).pad(10).row();
         middleTable.add(botTable).pad(10).row();
 
         // Add components to root table

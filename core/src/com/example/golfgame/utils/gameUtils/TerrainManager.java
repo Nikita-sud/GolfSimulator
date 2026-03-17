@@ -449,14 +449,14 @@ public class TerrainManager {
     public double[][] getNormalizedMarkedHeightMap(float ballX, float ballY, float goalX, float goalY) {
         double[][] heightMap = new double[gridWidth][gridHeight];
 
-        // Step 1: Calculate the height map and find min and max heights
+        // Step 1: Calculate the height map CENTERED ON THE BALL and find min/max heights
         float minHeight = Float.MAX_VALUE;
         float maxHeight = Float.MIN_VALUE;
 
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                float worldX = (x - gridWidth / 2) * scale; 
-                float worldZ = (y - gridHeight / 2) * scale;
+                float worldX = ballX + (x - gridWidth / 2) * scale;
+                float worldZ = ballY + (y - gridHeight / 2) * scale;
                 float height = getTerrainHeight(worldX, worldZ);
                 heightMap[x][y] = height;
                 if (height < minHeight) {
@@ -472,7 +472,7 @@ public class TerrainManager {
         if (minHeight == maxHeight) {
             for (int x = 0; x < gridWidth; x++) {
                 for (int y = 0; y < gridHeight; y++) {
-                    heightMap[x][y] = 0; // All points will be at the same height, normalized value 0
+                    heightMap[x][y] = 0;
                 }
             }
         } else {
@@ -490,34 +490,30 @@ public class TerrainManager {
         // Step 3: Mark the sand areas if sandAreas is not empty
         if (!sandAreas.isEmpty()) {
             for (float[] area : sandAreas) {
-                int startX = (int)((area[0] / scale) + gridWidth / 2);
-                int startY = (int)((area[1] / scale) + gridHeight / 2);
-                int endX = (int)((area[2] / scale) + gridWidth / 2);
-                int endY = (int)((area[3] / scale) + gridHeight / 2);
+                // Convert sand world coords to ball-centered grid coords
+                int startX = (int)(((area[0] - ballX) / scale) + gridWidth / 2);
+                int startY = (int)(((area[1] - ballY) / scale) + gridHeight / 2);
+                int endX = (int)(((area[2] - ballX) / scale) + gridWidth / 2);
+                int endY = (int)(((area[3] - ballY) / scale) + gridHeight / 2);
 
-                for (int x = startX; x <= endX; x++) {
-                    for (int y = startY; y <= endY; y++) {
-                        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
-                            heightMap[x][y] = 1; // Assuming 1 for sand areas to mark on the map
-                        }
+                for (int x = Math.max(0, startX); x <= Math.min(gridWidth - 1, endX); x++) {
+                    for (int y = Math.max(0, startY); y <= Math.min(gridHeight - 1, endY); y++) {
+                        heightMap[x][y] = -0.5;
                     }
                 }
             }
         }
 
-        // Step 4: Mark the ball and goal positions
-        int ballPosX = (int) ((ballX / scale) + gridWidth / 2);
-        int ballPosY = (int) ((ballY / scale) + gridHeight / 2);
-        int goalPosX = (int) ((goalX / scale) + gridWidth / 2);
-        int goalPosY = (int) ((goalY / scale) + gridHeight / 2);
+        // Step 4: Ball is always at center of grid
+        int ballPosX = gridWidth / 2;
+        int ballPosY = gridHeight / 2;
+        heightMap[ballPosX][ballPosY] = 0.5;
 
-        // Assuming 3 for ball and 5 for goal to mark on the map
-        if (ballPosX >= 0 && ballPosX < gridWidth && ballPosY >= 0 && ballPosY < gridHeight) {
-            heightMap[ballPosX][ballPosY] = 3;
-        }
-
+        // Goal position relative to ball
+        int goalPosX = (int)(((goalX - ballX) / scale) + gridWidth / 2);
+        int goalPosY = (int)(((goalY - ballY) / scale) + gridHeight / 2);
         if (goalPosX >= 0 && goalPosX < gridWidth && goalPosY >= 0 && goalPosY < gridHeight) {
-            heightMap[goalPosX][goalPosY] = 5;
+            heightMap[goalPosX][goalPosY] = 1.0;
         }
 
         return heightMap;
@@ -562,7 +558,20 @@ public class TerrainManager {
      * @return A flattened array representing the normalized height map with marked ball, goal, and sand positions.
      */
     public double[] getState(float ballX, float ballY, float goalX, float goalY) {
-        return MatrixUtils.flattenArray(getNormalizedMarkedHeightMap(ballX, ballY, goalX, goalY));
+        double[] heightMapFlat = MatrixUtils.flattenArray(getNormalizedMarkedHeightMap(ballX, ballY, goalX, goalY));
+        // Append distance and angle to goal as extra features
+        double dx = goalX - ballX;
+        double dy = goalY - ballY;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        double angle = Math.atan2(dy, dx);
+        // Normalize: distance by max expected distance (50), angle by PI
+        double normalizedDistance = Math.min(distance / 50.0, 1.0);
+        double normalizedAngle = angle / Math.PI;
+        double[] state = new double[heightMapFlat.length + 2];
+        System.arraycopy(heightMapFlat, 0, state, 0, heightMapFlat.length);
+        state[heightMapFlat.length] = normalizedDistance;
+        state[heightMapFlat.length + 1] = normalizedAngle;
+        return state;
     }
 
     /**

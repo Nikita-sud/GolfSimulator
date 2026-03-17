@@ -2,6 +2,7 @@ package com.example.golfgame.bot;
 
 import com.example.golfgame.GolfGame;
 import com.example.golfgame.bot.botsbehaviors.HillClimbingBot;
+import com.example.golfgame.bot.botsbehaviors.PPOBot;
 import com.example.golfgame.bot.botsbehaviors.RuleBasedBot;
 
 /**
@@ -13,6 +14,7 @@ public class WallE {
     private BotBehavior botBehavior;
     private RuleBasedBot ruleBasedBot;
     private HillClimbingBot hillClimbingBot;
+    private PPOBot ppoBot;
 
     /**
      * Constructs a WallE bot for the given game.
@@ -62,6 +64,24 @@ public class WallE {
      */
     public void switchToAdvanced() {
         setBotBehavior(hillClimbingBot);
+    }
+
+    /**
+     * Sets the PPO bot instance and switches to it.
+     *
+     * @param ppoBot the PPOBot to use
+     */
+    public void setPPOBot(PPOBot ppoBot) {
+        this.ppoBot = ppoBot;
+    }
+
+    /**
+     * Switches the bot's behavior to PPO.
+     */
+    public void switchToPPO() {
+        if (ppoBot != null) {
+            setBotBehavior(ppoBot);
+        }
     }
 
     /**

@@ -11,8 +11,7 @@ public class TrainingRunner {
         // --- Параметры ---
         // Размеры сетей (Пример: вход - 100 (10x10 карта). Добавьте скорость, если нужно!)
         // УБЕДИТЕСЬ, ЧТО РАЗМЕР СООТВЕТСТВУЕТ ВЫХОДУ simulator.getState()
-        int stateDim = 100; // ЗАМЕНИТЕ на реальный размер вашего состояния (10x10 карта -> 100)
-                            // Если вы добавили скорость, то stateDim = 102
+        int stateDim = 102; // 10x10 heightmap (100) + distance to goal + angle to goal (2)
         int[] policyNetworkSizes = {stateDim, 128, 128, 4}; // Пример: 2 скрытых слоя по 128 нейронов, 4 выхода (mu_t, sig_t, mu_f, sig_f)
         int[] valueNetworkSizes = {stateDim, 128, 128, 1};  // Пример: 2 скрытых слоя по 128 нейронов, 1 выход (ценность V(s))
 
@@ -22,7 +21,7 @@ public class TrainingRunner {
         double epsilon = 0.2;
 
         // Параметры обучения
-        int total_timesteps = 5*2048;
+        int total_timesteps = 50*2048;
         int n_steps_per_batch = 2048;      // Сколько шагов собирать перед одним вызовом train()
         int epochs_per_batch = 5;         // Сколько раз проходить по собранному батчу
         int mini_batch_size = 64;          // Размер мини-батча внутри эпохи
@@ -32,7 +31,7 @@ public class TrainingRunner {
         // double valueLr = 0.001;   // Используется для обучения Value Network
 
         // Путь для сохранения/загрузки агента (опционально)
-        String agentFilePath = "ppo_agent.ser";
+        String agentFilePath = "assets/ppo_agent.ser";
 
         PPOAgent agent = null;
         boolean loadedSuccessfully = false; // Флаг для отслеживания загрузки
@@ -59,7 +58,7 @@ public class TrainingRunner {
 
         // --- Создание Симулятора ---
         // Укажите вашу функцию высот или способ ее получения
-        String heightFunctionString = "0"; // ПРОСТЕЙШАЯ ПЛОСКАЯ КАРТА ДЛЯ ТЕСТА! Замените на вашу
+        String heightFunctionString = "0.05*(sin(x)+1)+0.03*(cos(y)+1)"; // Always positive terrain (no water)
         System.out.println("Using height function: " + heightFunctionString);
         PhysicsSimulator simulator = new PhysicsSimulator(heightFunctionString, agent);
         // simulator.addFunction("0.1*sin(x)+0.05*cos(y)"); // Если хотите добавить другие позже
